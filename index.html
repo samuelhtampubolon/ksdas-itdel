@@ -8,6 +8,9 @@
   <meta name="author" content="Unit Kerja Sama Institut Teknologi Del">
   <title>KSDAS IT Del &bull; Kerja Sama Data & Analytics System</title>
 
+  <!-- Content Security Policy (CSP) for Data Protection -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;">
+
   <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -727,6 +730,33 @@
                   Dokumentasi teknis lengkap tersedia di folder <code>/docs</code> repositori GitHub.
                 </p>
               </div>
+            </div>
+          </div>
+
+          <!-- Data Protection & Privacy Notice (UU PDP No. 27/2022) -->
+          <div class="card" style="margin-top: 24px; border-left: 4px solid var(--color-success); background: #F8FAFC;">
+            <div class="card-header">
+              <h3 class="card-title" style="color: var(--color-primary-dark);">
+                🛡️ Kebijakan Keamanan & Perlindungan Data Pribadi (UU PDP No. 27/2022)
+              </h3>
+              <span class="badge badge-validated">PATUH TATA KELOLA IT DEL</span>
+            </div>
+            <div style="font-size: 0.85rem; line-height: 1.7; color: var(--text-main);">
+              <p style="margin-bottom: 8px;">
+                <b>Pernyataan Data Sintetis (Synthetic Demo Data):</b> Seluruh entitas mitra, nama penandatangan, nomor naskah, dan berkas lampiran yang dimuat dalam prototype ini adalah <b>data simulasi sintetis</b> untuk keperluan pembuktian konsep arsitektur (*proof of concept*). Tidak ada data pribadi rahasia (seperti NIK, nomor kontak pribadi), nomor rekening perbankan, atau klausul perjanjian rahasia (*Non-Disclosure Agreement / NDA*) riil yang diunggah ke repositori publik ini.
+              </p>
+              <p style="margin-bottom: 8px;">
+                <b>Perlindungan Sisi Klien (Client-Side Security):</b>
+              </p>
+              <ul style="padding-left: 20px; margin-bottom: 8px;">
+                <li><b>XSS Protection:</b> Seluruh data teks naskah dan input pengguna di-sanitize dan di-escape sebelum dirender ke DOM.</li>
+                <li><b>Content Security Policy (CSP):</b> Header meta CSP aktif membatasi eksekusi skrip hanya dari sumber terpercaya (*self* dan CDN Chart.js terverifikasi).</li>
+                <li><b>File Validation:</b> Validasi tipe ekstensi berkas (.pdf, .docx) dan batas ukuran maksimum 25 MB untuk mencegah *buffer overflow* atau serangan *untrusted payload*.</li>
+                <li><b>Pencegahan Overflow Storage:</b> Penanganan eksepsi <code>QuotaExceededError</code> pada <code>localStorage</code> untuk mencegah korupsi data sesi.</li>
+              </ul>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Untuk panduan implementasi keamanan produksi lengkap (enkripsi AES-256, autentikasi SSO IT Del, pemindaian antivirus ClamAV, dan audit trail), rujuk ke berkas <a href="docs/SECURITY.md" style="color: var(--color-primary); font-weight: 600;">docs/SECURITY.md</a>.
+              </p>
             </div>
           </div>
         </section>

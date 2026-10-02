@@ -112,8 +112,10 @@ Dokumentasi lengkap untuk tim teknis Direktorat SDI / TSI / Duktek tersedia di f
 | Dokumen | Deskripsi |
 | :--- | :--- |
 | 📄 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Arsitektur modul, diagram alur data, ERD Mermaid, dan batasan REST API produksi |
+| 📄 [`docs/SECURITY.md`](docs/SECURITY.md) | Kebijakan keamanan data, kepatuhan UU PDP No. 27/2022, proteksi XSS/CSP, dan panduan mitigasi risiko |
 | 📄 [`docs/HANDOFF_SPEC_SDI_TSI.md`](docs/HANDOFF_SPEC_SDI_TSI.md) | Spesifikasi formal serah terima dari Unit Kerja Sama ke tim IT kampus |
 | 📄 [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) | Kamus data dan tipe kolom untuk migrasi ke basis data PostgreSQL |
+| 📄 [`docs/schema_production_postgres.sql`](docs/schema_production_postgres.sql) | Skrip migrasi DDL lengkap PostgreSQL 14/16 untuk produksi |
 | 📄 [`docs/AI_PROCESSING_SPEC.md`](docs/AI_PROCESSING_SPEC.md) | Spesifikasi mesin ekstraksi 26 field, confidence score, dan aturan parser NLP |
 | 📄 [`docs/DEMO_SCRIPTS.md`](docs/DEMO_SCRIPTS.md) | Panduan langkah per langkah pengujian demo penerimaan |
 

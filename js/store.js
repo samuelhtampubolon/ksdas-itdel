@@ -44,6 +44,11 @@ class KSDASStore {
       this.notify("state_changed", this.state);
     } catch (e) {
       console.error("Error saving state to localStorage:", e);
+      if (e.name === "QuotaExceededError" || e.code === 22) {
+        if (window.ksdasUI) {
+          window.ksdasUI.showToast("Kapasitas penyimpanan lokal browser (localStorage) penuh! Silakan lakukan ekspor cadangan JSON.", "danger", 6000);
+        }
+      }
     }
   }
 

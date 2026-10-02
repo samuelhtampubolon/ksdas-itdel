@@ -541,23 +541,30 @@ class KSDASApp {
         ? `<span class="flag-pill">Orphan</span>` 
         : "";
 
+      const safeTitle = this.ui.escapeHtml(doc.title);
+      const safeDocNum = this.ui.escapeHtml(doc.documentNumber);
+      const safePartner = this.ui.escapeHtml(doc.partnerName);
+      const safeCountry = this.ui.escapeHtml(doc.country || "Indonesia");
+      const safeFaculty = this.ui.escapeHtml(doc.facultyId || "FITE");
+      const safeTriDharma = this.ui.escapeHtml(doc.triDharma || "EDUCATION");
+
       return `
         <tr>
           <td>
             <div class="doc-title-cell">
-              <span class="doc-primary-title" onclick="ksdasApp.viewDocumentDetail('${doc.id}')">${doc.title}</span>
-              <span class="doc-number-sub">${doc.documentNumber}</span>
+              <span class="doc-primary-title" onclick="ksdasApp.viewDocumentDetail('${doc.id}')">${safeTitle}</span>
+              <span class="doc-number-sub">${safeDocNum}</span>
               ${orphanBadge}
             </div>
           </td>
           <td>${this.ui.renderTypeBadge(doc.type)}</td>
           <td>
-            <div><strong>${doc.partnerName}</strong></div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">${doc.country || "Indonesia"}</div>
+            <div><strong>${safePartner}</strong></div>
+            <div style="font-size: 0.74rem; color: var(--text-muted);">${safeCountry}</div>
           </td>
           <td>
-            <span style="font-size: 0.78rem; font-weight: 600; color: var(--color-primary);">${doc.triDharma || "EDUCATION"}</span>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${doc.facultyId || "FITE"}</div>
+            <span style="font-size: 0.78rem; font-weight: 600; color: var(--color-primary);">${safeTriDharma}</span>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${safeFaculty}</div>
           </td>
           <td>
             <div style="font-size: 0.78rem;">${doc.signedDate || "-"}</div>
@@ -642,18 +649,37 @@ class KSDASApp {
   }
 
   handleFilesSelected(files) {
+    const allowedExtensions = [".pdf", ".docx", ".doc"];
+    const maxSizeBytes = 25 * 1024 * 1024; // 25 MB limit
+    let acceptedCount = 0;
+
     files.forEach(f => {
+      const ext = f.name.substring(f.name.lastIndexOf(".")).toLowerCase();
+      if (!allowedExtensions.includes(ext)) {
+        this.ui.showToast(`Berkas ditolak: "${this.ui.escapeHtml(f.name)}". Hanya format .pdf dan .docx yang diizinkan untuk keamanan dokumen.`, "danger", 5000);
+        return;
+      }
+      if (f.size > maxSizeBytes) {
+        this.ui.showToast(`Berkas "${this.ui.escapeHtml(f.name)}" melebihi ukuran maksimum 25 MB.`, "danger", 5000);
+        return;
+      }
+
+      acceptedCount++;
+      const safeName = this.ui.escapeHtml(f.name);
       this.batchQueue.push({
         id: "QUEUE-" + Math.floor(Math.random() * 10000),
-        fileName: f.name,
+        fileName: safeName,
         fileSize: (f.size / (1024 * 1024)).toFixed(1) + " MB",
-        simulatedOcrText: `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${f.name}. Mengatur tentang pelaksanaan Tri Dharma Perguruan Tinggi, pengembangan riset bersama dan magang industri bersertifikat di kampus IT Del.`,
+        simulatedOcrText: `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}. Mengatur tentang pelaksanaan Tri Dharma Perguruan Tinggi, pengembangan riset bersama dan magang industri bersertifikat di kampus IT Del.`,
         status: "QUEUED",
         progress: 0,
         result: null
       });
     });
-    this.renderQueueItems();
+
+    if (acceptedCount > 0) {
+      this.renderQueueItems();
+    }
   }
 
   renderQueueItems() {

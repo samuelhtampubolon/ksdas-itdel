@@ -85,6 +85,19 @@ class KSDASUI {
   }
 
   /**
+   * Security: Sanitize and escape HTML strings to prevent XSS
+   */
+  escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /**
    * Helper to format currency
    */
   formatRupiah(amount) {
