@@ -1,11 +1,28 @@
 /**
- * KSDAS IT DEL - Storage & State Management Engine
- * Handles localStorage persistence, state versioning, event dispatching,
- * export/import JSON, and CRUD operations.
+ * ============================================================================
+ * KSDAS IT DEL - STORAGE & ADAPTER ENGINE
+ * Author: Samuel Hasudungan Tampubolon
+ * Copyright: © 2026 Samuel Hasudungan Tampubolon
+ * Target: Tim SDI / TSI / DukTek Institut Teknologi Del
+ *
+ * Catatan untuk Tim SDI/TSI:
+ * Arsitektur Store ini menggunakan pola Repository/Adapter.
+ * Mode Prototipe saat ini menggunakan localStorage reaktif.
+ * Untuk menghubungkan ke Backend PostgreSQL / REST API kampus:
+ * 1. Ubah USE_BACKEND_API menjadi true.
+ * 2. Sesuaikan API_BASE_URL (default: /api/v1).
+ * ============================================================================
  */
+
+const KSDAS_API_CONFIG = {
+  USE_BACKEND_API: false, // Set 'true' untuk mode integrasi server kampus IT Del
+  API_BASE_URL: "/api/v1",
+  TIMEOUT_MS: 10000
+};
 
 class KSDASStore {
   constructor() {
+    this.apiConfig = KSDAS_API_CONFIG;
     this.STORAGE_KEY = "ksdas_itdel_store_v2";
     this.CURRENT_ROLE_KEY = "ksdas_itdel_current_role";
     this.VERSION = "0.2.0";
