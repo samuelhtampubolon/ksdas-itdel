@@ -1,0 +1,17 @@
+{
+  "exportInfo": {
+    "system": "KSDAS IT DEL",
+    "version": "0.2.0",
+    "exportedAt": "2026-10-03T01:00:00Z",
+    "institution": "Institut Teknologi Del"
+  },
+  "summary": {
+    "partnersCount": 8,
+    "documentsCount": 20,
+    "activitiesCount": 5,
+    "evidencesCount": 6,
+    "frameworksCount": 2,
+    "auditLogsCount": 6
+  },
+  "note": "Full initial state seed for KSDAS IT Del. Use this file to import or reset system state."
+}

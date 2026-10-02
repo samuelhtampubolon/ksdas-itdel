@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="KSDAS IT Del - Kerja Sama Data & Analytics System. Platform manajemen kemitraan, repositori dokumen, relasi MoU/PKS, batch processing AI, analytics, dan instrumen akreditasi Institut Teknologi Del.">
+  <meta name="keywords" content="IT Del, KSDAS, Kerja Sama, Kemitraan, MoU, PKS, IA, Akreditasi, BAN-PT, LAM-INFOKOM, Laguboti, Toba">
+  <meta name="author" content="Unit Kerja Sama Institut Teknologi Del">
+  <title>KSDAS IT Del &bull; Kerja Sama Data & Analytics System</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Chart.js CDN for Analytics & Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css">
+</head>
+<body>
+  <div id="app">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">DEL</div>
+        <div class="brand-text">
+          <h1>KSDAS IT Del</h1>
+          <p>Kerja Sama & Analytics</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Menu Utama</div>
+        <a class="nav-item active" data-route="dashboard" href="#dashboard">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          <span>Dashboard</span>
+        </a>
+
+        <a class="nav-item" data-route="repository" href="#repository">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <span>Repositori Dokumen</span>
+        </a>
+
+        <a class="nav-item" data-route="batch-upload" href="#batch-upload">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <span>Batch Upload AI</span>
+        </a>
+
+        <a class="nav-item" data-route="validation" href="#validation">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Validasi Manusia</span>
+          <span class="nav-badge" id="sidebar-validation-badge" style="display: none;">0</span>
+        </a>
+
+        <a class="nav-item" data-route="relationships" href="#relationships">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+          <span>Hierarki & Relasi</span>
+        </a>
+
+        <div class="nav-section-title">Data Master & Kemitraan</div>
+        <a class="nav-item" data-route="partners" href="#partners">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          <span>Master Mitra</span>
+        </a>
+
+        <a class="nav-item" data-route="activities" href="#activities">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+          <span>Aktivitas & Evidence</span>
+        </a>
+
+        <div class="nav-section-title">Analitik & Penjaminan Mutu</div>
+        <a class="nav-item" data-route="analytics" href="#analytics">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <span>Analitik Eksekutif</span>
+        </a>
+
+        <a class="nav-item" data-route="accreditation" href="#accreditation">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+          <span>Akreditasi & AMI</span>
+        </a>
+
+        <a class="nav-item" data-route="reports" href="#reports">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>Generator Laporan</span>
+        </a>
+
+        <a class="nav-item" data-route="nl-query" href="#nl-query">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          <span>Pencarian Cerdas AI</span>
+        </a>
+
+        <div class="nav-section-title">Sistem & Audit</div>
+        <a class="nav-item" data-route="audit" href="#audit">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Audit Trail</span>
+        </a>
+
+        <a class="nav-item" data-route="settings" href="#settings">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span>Pengaturan & Data</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-badge-tag">
+          <span class="pulse-dot"></span>
+          <span>Prototype v0.2 IT Del</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="app-main">
+      <!-- TOP HEADER -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" id="mobile-menu-btn" title="Toggle Menu">&#9776;</button>
+          
+          <div class="quick-search-trigger" id="header-search-trigger">
+            <span>🔍</span>
+            <span>Cari dokumen, mitra, atau indikator...</span>
+            <span class="search-shortcut">Ctrl+K</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Role Switcher -->
+          <div class="role-switcher-container">
+            <span class="role-switcher-label">Peran:</span>
+            <select class="role-select" id="header-role-select"></select>
+          </div>
+
+          <!-- Notification Bell -->
+          <button class="header-icon-btn" id="header-notif-btn" title="Pusat Pemberitahuan">
+            <span>🔔</span>
+            <span class="notification-count" id="header-notif-count" style="display: none;">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT WRAPPER -->
+      <main class="content-wrapper">
+
+        <!-- ==============================================
+             1. DASHBOARD VIEW
+             ============================================== -->
+        <section id="view-dashboard" class="view-section active">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Executive Dashboard Kemitraan</h2>
+              <p>Ringkasan capaian kerja sama, implementasi Tri Dharma, dan pemantauan masa berlaku dokumen IT Del.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="ksdasStore.exportJSON()">Unduh Backup JSON</button>
+              <button class="btn btn-primary" onclick="ksdasRouter.navigate('batch-upload')">+ Batch Upload Dokumen</button>
+            </div>
+          </div>
+
+          <!-- Alert Banner (Expiring / Orphans) -->
+          <div id="dashboard-alert-banner" class="alert-banner alert-warning" style="display: none;"></div>
+
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid" id="dashboard-kpi-container"></div>
+
+          <!-- Grid: Funnel + Yearly Trend -->
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Implementation Funnel</h3>
+                <span class="card-subtitle">Mitra &rarr; Pelaksanaan</span>
+              </div>
+              <div id="dashboard-funnel-container" style="padding: 4px 0;"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Tren Kerjasama per Tahun</h3>
+                <span class="card-subtitle">MoU, PKS, dan IA (2023 - 2027)</span>
+              </div>
+              <div style="position: relative; height: 260px;">
+                <canvas id="chart-agreements-trend"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid: Tri Dharma, Partner Type, Faculty -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Distribusi Tri Dharma</h3>
+              </div>
+              <div style="position: relative; height: 220px;">
+                <canvas id="chart-tridharma-distribution"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Tipe Mitra Strategis</h3>
+              </div>
+              <div style="position: relative; height: 220px;">
+                <canvas id="chart-partner-type"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Kinerja Fakultas</h3>
+              </div>
+              <div style="position: relative; height: 220px;">
+                <canvas id="chart-faculty-performance"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Documents Table -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Dokumen Kerjasama Terkini</h3>
+              <a href="#repository" class="btn btn-sm btn-secondary">Lihat Semua &rarr;</a>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Judul Dokumen & Nomor</th>
+                    <th>Tipe</th>
+                    <th>Mitra</th>
+                    <th>Tanggal Berlaku</th>
+                    <th>Status Validasi</th>
+                    <th>Confidence AI</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-recent-docs-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             2. REPOSITORY VIEW
+             ============================================== -->
+        <section id="view-repository" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Repositori Dokumen Kerja Sama</h2>
+              <p>Basis data terstruktur seluruh naskah perjanjian MoU, PKS, IA, Proposal, dan Laporan Akhir.</p>
+            </div>
+            <div class="view-actions">
+              <span class="badge badge-mou" id="repo-total-count-badge">0 Dokumen</span>
+              <button class="btn btn-primary" onclick="ksdasRouter.navigate('batch-upload')">+ Batch Upload</button>
+            </div>
+          </div>
+
+          <!-- Dynamic Multi-Filter Bar -->
+          <div class="filter-bar" id="repository-filter-container"></div>
+
+          <!-- Document Table -->
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Judul Dokumen & Nomor</th>
+                  <th>Jenis</th>
+                  <th>Mitra Kerjasama</th>
+                  <th>Tri Dharma & Fakultas</th>
+                  <th>Masa Berlaku</th>
+                  <th>Status Validasi</th>
+                  <th>AI Score</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="repo-table-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             3. BATCH UPLOAD VIEW (Scenario A)
+             ============================================== -->
+        <section id="view-batch-upload" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Batch Document Processing Engine</h2>
+              <p>Unggah banyak dokumen kerja sama sekaligus. Mesin AI mengekstrak 26 metadata field dan mendeteksi relasi secara deterministik.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" id="batch-load-sample-btn">
+                🧪 Muat 10 Dokumen Sampel Demo (Scenario A)
+              </button>
+            </div>
+          </div>
+
+          <!-- Dropzone -->
+          <input type="file" id="batch-file-input" multiple accept=".pdf,.docx,.doc" style="display: none;">
+          <div class="upload-dropzone" id="batch-upload-dropzone">
+            <div class="upload-icon-circle">📂</div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px;">
+              Tarik & Letakkan File Dokumen di Sini
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 480px; margin: 0 auto;">
+              Mendukung berkas PDF dan DOCX (MoU, PKS, IA, Proposal, LPJ). Atau klik area ini untuk memilih file dari komputer Anda.
+            </p>
+          </div>
+
+          <!-- Processing Progress & Stage Tracker -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="upload-queue-header">
+              <div style="font-weight: 700; color: var(--color-primary-dark);">
+                Daftar Antrean Berkas (<span id="batch-queue-count">0 File</span>)
+              </div>
+              <button class="btn btn-primary btn-sm" id="batch-start-process-btn" disabled>
+                ⚡ Mulai Ekstraksi AI & Deteksi Relasi
+              </button>
+            </div>
+
+            <div class="batch-progress-bar">
+              <div class="batch-progress-fill" id="batch-overall-progress-fill"></div>
+            </div>
+            <div id="batch-processing-stage-indicator" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;">
+              Siap memproses antrean berkas.
+            </div>
+
+            <div id="batch-complete-action-area" style="margin-top: 16px; display: none; gap: 10px;"></div>
+          </div>
+
+          <!-- Queue List -->
+          <div id="batch-upload-queue-list"></div>
+        </section>
+
+        <!-- ==============================================
+             4. HUMAN VALIDATION WORKSPACE
+             ============================================== -->
+        <section id="view-validation" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Human-in-the-Loop Validation Workspace</h2>
+              <p>AI tidak menetapkan data resmi secara mandiri. Verifikasi hasil ekstraksi dan tetapkan status resmi institusi.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-success" id="validation-bulk-approve-btn">
+                Setujui Sekaligus Confidence Tinggi (≥ 90%)
+              </button>
+            </div>
+          </div>
+
+          <div class="alert-banner alert-info">
+            <span>ℹ️</span>
+            <div>
+              <b>Prinsip Tata Kelola KSDAS:</b> Seluruh data baru hasil ekstraksi AI berstatus <code>AI_EXTRACTED</code> atau <code>NEEDS_REVIEW</code>.
+              Data hanya akan masuk ke pelaporan resmi akreditasi dan IKU setelah divalidasi oleh Staf Unit Kerja Sama atau Kepala Biro.
+            </div>
+          </div>
+
+          <div style="margin-bottom: 16px; font-weight: 700; color: var(--color-primary-dark);">
+            Antrean Menunggu Review Manusia: <span class="badge badge-warning" id="validation-pending-count">0 Dokumen</span>
+          </div>
+
+          <div id="validation-queue-list"></div>
+        </section>
+
+        <!-- ==============================================
+             5. RELATIONSHIPS & HIERARCHY TREE
+             ============================================== -->
+        <section id="view-relationships" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Pohon Relasi Dokumen Kemitraan</h2>
+              <p>Visualisasi hierarki: <b>Mitra &rarr; MoU &rarr; PKS &rarr; IA &rarr; Proposal &rarr; Laporan Akhir</b>.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="ksdasRouter.navigate('analytics')">Lihat Follow-up Gap</button>
+            </div>
+          </div>
+
+          <!-- Orphan agreements warning section -->
+          <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--color-danger);">
+            <div class="card-header">
+              <h3 class="card-title" style="color: var(--color-danger);">Dokumen Tanpa Induk (Orphan Agreements)</h3>
+              <span class="card-subtitle">PKS atau IA yang belum ditautkan ke MoU payung</span>
+            </div>
+            <div id="relationships-orphan-list"></div>
+          </div>
+
+          <!-- Hierarchy Container -->
+          <div id="relationships-tree-container"></div>
+        </section>
+
+        <!-- ==============================================
+             6. MASTER PARTNERS VIEW
+             ============================================== -->
+        <section id="view-partners" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Master Data Mitra Kerjasama</h2>
+              <p>Direktori mitra industri, universitas dalam/luar negeri, instansi pemerintah, dan BUMN.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary staff-only-action" onclick="ksdasUI.openModal('modal-add-partner')">+ Tambah Mitra Baru</button>
+            </div>
+          </div>
+
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));" id="partners-cards-grid"></div>
+        </section>
+
+        <!-- ==============================================
+             7. ACTIVITIES & EVIDENCE VIEW
+             ============================================== -->
+        <section id="view-activities" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Pelaksanaan Tri Dharma & Bukti Fisik (Evidence)</h2>
+              <p>Pelacakan kegiatan riil, luaran (output), hasil (outcome), dampak institusional, serta verifikasi evidence untuk akreditasi.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary staff-only-action" onclick="ksdasUI.openModal('modal-add-evidence')">+ Unggah Evidence</button>
+            </div>
+          </div>
+
+          <!-- Tabs: Activities vs Evidence -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Daftar Aktivitas Kemitraan Riil</h3>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nama Aktivitas & Naskah</th>
+                    <th>Tri Dharma</th>
+                    <th>Mitra</th>
+                    <th>PIC IT Del</th>
+                    <th>Partisipan</th>
+                    <th>Anggaran</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="activities-table-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="margin-top: 32px;">
+            <div class="view-header" style="margin-bottom: 16px;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-primary-dark);">Repositori Bukti Fisik (Evidence Repository)</h3>
+            </div>
+            <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));" id="evidences-cards-grid"></div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             8. IN-DEPTH ANALYTICS & CROSS TABULATION
+             ============================================== -->
+        <section id="view-analytics" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Analitik Lanjutan & Tabulasi Silang</h2>
+              <p>Eksplorasi multidimensi: Tri Dharma vs Fakultas, kesenjangan follow-up, dan monitoring kedaluwarsa dokumen.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="window.print()">Cetak Halaman</button>
+            </div>
+          </div>
+
+          <!-- Cross Tabulation -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Cross-Tabulation: Fakultas vs Bidang Tri Dharma</h3>
+              <span class="card-subtitle">Matriks sebaran implementasi naskah kerjasama aktif</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Fakultas</th>
+                    <th style="text-align: center;">Pendidikan</th>
+                    <th style="text-align: center;">Penelitian</th>
+                    <th style="text-align: center;">Pengabdian (PkM)</th>
+                    <th style="text-align: center;">Tata Kelola</th>
+                    <th style="text-align: center; background: #F1F5F9;">Total Dokumen</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-crosstab-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Expiry Monitoring Timeline -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">Expiry Monitoring Timeline</h3>
+              <span class="card-subtitle">Dokumen kedaluwarsa atau yang berakhir dalam kurun waktu 90 hari</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Judul Dokumen & Nomor</th>
+                    <th>Mitra</th>
+                    <th>Jenis</th>
+                    <th>Tanggal Berakhir</th>
+                    <th>Status Urgensi</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-expiry-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Follow-up Gap Detection -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Follow-up Gap Analysis</h3>
+              <span class="card-subtitle">MoU tanpa PKS turunan atau PKS tanpa catatan aktivitas pelaksanaan</span>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Dokumen Perjanjian</th>
+                    <th>Tingkat Kesenjangan</th>
+                    <th>Deskripsi Kendala</th>
+                    <th>Rekomendasi Tindak Lanjut</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-gaps-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             9. ACCREDITATION & AMI WORKSPACE (Configurable!)
+             ============================================== -->
+        <section id="view-accreditation" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Workspace Akreditasi & SPM / AMI</h2>
+              <p>Pemetaan otomatis indikator kerja sama ke instrumen BAN-PT, LAM-INFOKOM, dan bukti fisik terkait.</p>
+            </div>
+            <div class="view-actions">
+              <select id="accreditation-framework-select" class="form-control" style="font-weight: 700; color: var(--color-primary-dark);"></select>
+              <button class="btn btn-secondary" onclick="ksdasRouter.navigate('reports', { type: 'ACCREDITATION_PACK' })">
+                Ekspor Paket Bukti Akreditasi
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Kode Indikator</th>
+                    <th>Nama Standar / Kriteria</th>
+                    <th>Syarat Bukti Dukung (Evidence)</th>
+                    <th style="text-align: center;">Dokumen Tertaut</th>
+                    <th style="text-align: center;">Evidence Tertaut</th>
+                    <th>Status Kepatuhan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="accreditation-indicators-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             10. REPORT GENERATOR VIEW
+             ============================================== -->
+        <section id="view-reports" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Generator Laporan Resmi & Eksekutif</h2>
+              <p>Penyusunan berkas laporan capaian kerjasama siap cetak untuk Wakil Rektor 3, Rektor, SPM, dan Lembaga Akreditasi.</p>
+            </div>
+            <div class="view-actions">
+              <select id="report-type-selector" class="form-control">
+                <option value="EXECUTIVE_BRIEF">Laporan Eksekutif Capaian Kemitraan</option>
+                <option value="ACCREDITATION_PACK">Paket Data Pemetaan Kemitraan & Akreditasi</option>
+              </select>
+              <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak / Unduh PDF</button>
+            </div>
+          </div>
+
+          <div id="report-preview-container"></div>
+        </section>
+
+        <!-- ==============================================
+             11. NATURAL LANGUAGE QUERY
+             ============================================== -->
+        <section id="view-nl-query" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Pencarian Berbasis Bahasa Alami (Natural Language Query)</h2>
+              <p>Ketik kebutuhan data dalam bahasa Indonesia wajar. Mesin NLP KSDAS menerjemahkan kueri ke filter terstruktur.</p>
+            </div>
+          </div>
+
+          <div class="nl-copilot-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #38BDF8; font-weight: 700;">
+              🤖 KSDAS Query Interpreter Copilot
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin-top: 4px;">
+              Apa yang ingin Anda cari dari repositori kerja sama IT Del?
+            </h3>
+
+            <div class="nl-input-group">
+              <input type="text" id="nl-query-input" class="nl-input" 
+                     placeholder="Contoh: Tampilkan PKS industri aktif tahun 2026 yang punya kegiatan penelitian">
+              <button class="btn btn-primary" id="nl-execute-btn">Interpretasikan</button>
+            </div>
+
+            <div class="nl-examples">
+              <span style="font-size: 0.76rem; color: #94A3B8;">Contoh Kueri Cepat:</span>
+              <span class="nl-example-tag" onclick="ksdasApp.setNLQueryExample('Tampilkan PKS industri aktif tahun 2026 yang punya kegiatan penelitian')">
+                PKS Industri Penelitian 2026
+              </span>
+              <span class="nl-example-tag" onclick="ksdasApp.setNLQueryExample('Cari MoU luar negeri yang masa berlakunya masih aktif')">
+                MoU Internasional Aktif
+              </span>
+              <span class="nl-example-tag" onclick="ksdasApp.setNLQueryExample('Tampilkan dokumen kerja sama FITE yang memiliki bukti sertifikasi')">
+                Dokumen FITE & Sertifikasi
+              </span>
+              <span class="nl-example-tag" onclick="ksdasApp.setNLQueryExample('Cari dokumen orphan yang belum ditautkan ke MoU induk')">
+                Dokumen Orphan
+              </span>
+            </div>
+          </div>
+
+          <!-- Interpretation Output Box -->
+          <div id="nl-result-container" class="nl-result-box" style="display: none;"></div>
+        </section>
+
+        <!-- ==============================================
+             12. AUDIT TRAIL VIEW
+             ============================================== -->
+        <section id="view-audit" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Audit Trail & Rekam Jejak Sistem</h2>
+              <p>Log aktivitas yang tidak dapat diubah (immutable-style log) untuk kepatuhan tata kelola data institusi.</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="ksdasStore.exportJSON()">Ekspor Log JSON</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Waktu (WIB)</th>
+                    <th>Aksi Sistem</th>
+                    <th>Pengguna / Role</th>
+                    <th>Nomor Dokumen</th>
+                    <th>Rincian Catatan Perubahan</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================
+             13. SETTINGS & DATA MANAGEMENT VIEW
+             ============================================== -->
+        <section id="view-settings" class="view-section">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h2>Pengaturan & Pengelolaan Data KSDAS</h2>
+              <p>Manajemen penyimpanan browser (localStorage), cadangan data JSON, dan parameter sistem.</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Penyimpanan & Cadangan Data</h3>
+              </div>
+              <div id="settings-storage-stats" style="font-size: 0.86rem; line-height: 1.8; margin-bottom: 20px;"></div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-primary" onclick="ksdasStore.exportJSON()">
+                  ⬇️ Unduh File Cadangan Lengkap (JSON Export)
+                </button>
+
+                <label class="btn btn-secondary" style="cursor: pointer;">
+                  ⬆️ Pulihkan Data dari Cadangan JSON
+                  <input type="file" accept=".json" style="display: none;" onchange="ksdasStore.importJSON(this.files[0])">
+                </label>
+
+                <button class="btn btn-danger" onclick="if(confirm('Apakah Anda yakin ingin mereset seluruh database demo ke kondisi awal Institut Teknologi Del? Data inputan kustom akan ditimpa dengan dataset resmi seed.')) { ksdasStore.resetDemoData(); }">
+                  ⚠️ Reset Database ke Data Demo Awal IT Del
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Informasi Handoff SDI / TSI / Duktek</h3>
+              </div>
+              <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted);">
+                <p style="margin-bottom: 10px;">
+                  <b>Status:</b> Prototype Tahap Pembuktian Konsep (PoC) Frontend GitHub Pages.
+                </p>
+                <p style="margin-bottom: 10px;">
+                  Untuk beralih ke lingkungan produksi resmi IT Del:
+                </p>
+                <ul style="padding-left: 20px; margin-bottom: 12px;">
+                  <li>Ganti <code>localStorage</code> dengan PostgreSQL + PostgREST / Node.js API</li>
+                  <li>Ganti Mock Role Auth dengan SSO Institusi Del (SAML / OAuth2)</li>
+                  <li>Hubungkan Batch Upload ke MinIO / Server Berkas Resmi</li>
+                  <li>Hubungkan Heuristic NLP ke Service OCR Tesseract / Gemini API</li>
+                </ul>
+                <p style="font-size: 0.8rem; font-style: italic;">
+                  Dokumentasi teknis lengkap tersedia di folder <code>/docs</code> repositori GitHub.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       MODALS
+       ============================================== -->
+
+  <!-- 1. Document Detail Modal -->
+  <div class="modal-overlay" id="modal-document-detail">
+    <div class="modal-container modal-xl">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detail-modal-title">Rincian Dokumen</h3>
+        <button class="modal-close" data-close-modal="modal-document-detail">&times;</button>
+      </div>
+      <div class="modal-body" id="detail-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-document-detail">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Side-by-side Human Validation Modal -->
+  <div class="modal-overlay" id="modal-side-by-side-validation">
+    <div class="modal-container modal-xl">
+      <div class="modal-header">
+        <h3 class="modal-title" id="validation-modal-title">Validasi Staf Unit Kerja Sama</h3>
+        <button class="modal-close" data-close-modal="modal-side-by-side-validation">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="validation-split-screen">
+          <!-- Left: Document Text / OCR View -->
+          <div class="validation-doc-pane">
+            <div class="validation-pane-header">
+              <span>📄 Salinan Teks Berkas / OCR Preview</span>
+              <span class="badge badge-info">Source Document</span>
+            </div>
+            <div class="validation-pane-content">
+              <div class="ocr-text-view" id="validation-modal-ocr-text"></div>
+            </div>
+          </div>
+
+          <!-- Right: 26 Extraction Fields -->
+          <div class="validation-doc-pane">
+            <div class="validation-pane-header">
+              <span>🛡️ Ekstraksi Metadata & Nilai Terverifikasi</span>
+              <span class="badge badge-warning">Editable Fields</span>
+            </div>
+            <div class="validation-pane-content">
+              <div class="field-review-list" id="validation-modal-fields-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-side-by-side-validation">Batal</button>
+        <button class="btn btn-danger" onclick="ksdasApp.saveValidationModalDecision('REJECTED')">Tolak (Reject)</button>
+        <button class="btn btn-secondary" onclick="ksdasApp.saveValidationModalDecision('CORRECTED')">Simpan Koreksi</button>
+        <button class="btn btn-success" onclick="ksdasApp.saveValidationModalDecision('VALIDATED')">Setujui sebagai Data Resmi (Approve)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Link Parent Document Modal -->
+  <div class="modal-overlay" id="modal-link-parent">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Tautkan ke Dokumen Induk (MoU)</h3>
+        <button class="modal-close" data-close-modal="modal-link-parent">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="link-parent-target-doc-id">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+          Dokumen terpilih: <b id="link-parent-doc-title"></b>
+        </p>
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-weight: 700; font-size: 0.82rem; margin-bottom: 6px;">Pilih Nota Kesepahaman (MoU) Induk:</label>
+          <select id="link-parent-select" class="form-control" style="width: 100%;"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-link-parent">Batal</button>
+        <button class="btn btn-primary" onclick="ksdasApp.saveParentLinkDecision()">Tautkan Relasi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Quick Search Modal (Ctrl+K) -->
+  <div class="modal-overlay" id="modal-quick-search">
+    <div class="modal-container" style="max-width: 650px;">
+      <div class="modal-header">
+        <input type="text" id="quick-search-input" class="form-control" style="width: 100%; border: none; font-size: 1rem;" placeholder="Cari dokumen, mitra, atau indikator... (Esc untuk menutup)">
+        <button class="modal-close" data-close-modal="modal-quick-search">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 0; max-height: 400px;" id="quick-search-results"></div>
+    </div>
+  </div>
+
+  <!-- 5. Notifications Modal -->
+  <div class="modal-overlay" id="modal-notifications">
+    <div class="modal-container" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Pusat Pemberitahuan Sistem</h3>
+        <button class="modal-close" data-close-modal="modal-notifications">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 0; max-height: 450px;" id="notification-list-container"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-notifications">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Add Partner Modal -->
+  <div class="modal-overlay" id="modal-add-partner">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Daftarkan Mitra Baru</h3>
+        <button class="modal-close" data-close-modal="modal-add-partner">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label style="font-weight: 700; font-size: 0.8rem;">Nama Lembaga Mitra:</label>
+            <input type="text" id="add-partner-name" class="form-control" style="width: 100%;" placeholder="Contoh: PT Telkom Indonesia (Persero) Tbk">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-weight: 700; font-size: 0.8rem;">Tipe Mitra:</label>
+              <select id="add-partner-type" class="form-control" style="width: 100%;">
+                <option value="INDUSTRY">Industri Swasta</option>
+                <option value="BUMN">BUMN</option>
+                <option value="UNIVERSITY">Perguruan Tinggi</option>
+                <option value="GOVERNMENT">Pemerintah / Pemda</option>
+                <option value="NGO">Yayasan / NGO</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-weight: 700; font-size: 0.8rem;">Negara Asal:</label>
+              <input type="text" id="add-partner-country" class="form-control" style="width: 100%;" value="Indonesia">
+            </div>
+          </div>
+          <div>
+            <label style="font-weight: 700; font-size: 0.8rem;">Nama PIC & Kontak:</label>
+            <input type="text" id="add-partner-contact" class="form-control" style="width: 100%;" placeholder="Nama, Jabatan, dan Nomor Telepon/Email">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-add-partner">Batal</button>
+        <button class="btn btn-primary" onclick="
+          const pName = document.getElementById('add-partner-name').value;
+          const pType = document.getElementById('add-partner-type').value;
+          const pCountry = document.getElementById('add-partner-country').value;
+          const pContact = document.getElementById('add-partner-contact').value;
+          if (pName) {
+            ksdasStore.addPartner({ name: pName, type: pType, country: pCountry, contactPerson: pContact, status: 'ACTIVE' });
+            ksdasUI.closeModal('modal-add-partner');
+            ksdasApp.renderPartnersView();
+            ksdasUI.showToast('Mitra baru berhasil didaftarkan!', 'success');
+          }
+        ">Simpan Mitra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Add Evidence Modal -->
+  <div class="modal-overlay" id="modal-add-evidence">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Unggah Bukti Fisik (Evidence)</h3>
+        <button class="modal-close" data-close-modal="modal-add-evidence">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <label style="font-weight: 700; font-size: 0.8rem;">Judul / Nama Bukti:</label>
+            <input type="text" id="add-evi-title" class="form-control" style="width: 100%;" placeholder="Contoh: Sertifikat Pelatihan Mahasiswa / Dokumentasi Kegiatan">
+          </div>
+          <div>
+            <label style="font-weight: 700; font-size: 0.8rem;">Pilih Dokumen Naskah Kerjasama Terkait:</label>
+            <select id="add-evi-doc-select" class="form-control" style="width: 100%;">
+              <option value="DOC-PKS-2024-002">028/ITDel/PKS/FITE/VI/2024 - Huawei ICT Academy</option>
+              <option value="DOC-PKS-2024-007">019/ITDel/PKS/FTI/V/2024 - Astra Capstone Magang</option>
+              <option value="DOC-PKS-2026-008">007/ITDel/PKS/FITE/I/2026 - Astra Riset AI</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight: 700; font-size: 0.8rem;">Pemetaan Standar Akreditasi (Opsional):</label>
+            <input type="text" id="add-evi-criteria" class="form-control" style="width: 100%;" placeholder="Contoh: LAM-INFOKOM C.1.4.a, BAN-PT C.1.b">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-add-evidence">Batal</button>
+        <button class="btn btn-primary" onclick="
+          const eTitle = document.getElementById('add-evi-title').value;
+          const eDocId = document.getElementById('add-evi-doc-select').value;
+          const eCrit = document.getElementById('add-evi-criteria').value;
+          if (eTitle) {
+            ksdasStore.addEvidence({
+              title: eTitle,
+              type: 'OFFICIAL_ATTACHMENT',
+              documentId: eDocId,
+              fileName: eTitle.toLowerCase().replace(/\s+/g, '_') + '.pdf',
+              fileSize: '2.5 MB',
+              uploadedDate: new Date().toISOString().split('T')[0],
+              uploadedBy: ksdasStore.getRoleDefinition().name,
+              verified: false,
+              mappedCriteria: eCrit ? [eCrit] : ['BAN-PT C.1.b']
+            });
+            ksdasUI.closeModal('modal-add-evidence');
+            ksdasApp.renderActivitiesView();
+            ksdasUI.showToast('Bukti fisik berhasil ditambahkan!', 'success');
+          }
+        ">Simpan Evidence</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/mock-ai.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
