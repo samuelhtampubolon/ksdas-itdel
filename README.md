@@ -2,10 +2,13 @@
 
 [![Live Demo on GitHub Pages](https://img.shields.io/badge/Demo-GitHub%20Pages-brightgreen?style=for-the-badge&logo=github)](https://samuelhtampubolon.github.io/ksdas-itdel/)
 [![Institut Teknologi Del](https://img.shields.io/badge/Institusi-Institut%20Teknologi%20Del-0B2545?style=for-the-badge)](https://www.del.ac.id)
+[![Author](https://img.shields.io/badge/Author%20%26%20Architect-Samuel%20Hasudungan%20Tampubolon-1D3557?style=for-the-badge)](https://github.com/samuelhtampubolon)
+[![Copyright](https://img.shields.io/badge/Copyright-%C2%A9%202026%20Samuel%20Hasudungan%20Tampubolon-E63946?style=for-the-badge)](#)
 [![Version](https://img.shields.io/badge/Version-0.2.0%20(PoC)-0077B6?style=for-the-badge)](#)
 [![Zero Backend](https://img.shields.io/badge/Architecture-Single%20Page%20App%20(Zero%20Backend)-2A9D8F?style=for-the-badge)](#)
 
-> **Platform Terpadu Manajemen Kemitraan Strategis, Repositori Naskah Perjanjian, Ekstraksi Metadata AI, Pemantauan Masa Berlaku, dan Pemetaan Instrumen Akreditasi Institut Teknologi Del (IT Del), Laguboti, Kabupaten Toba.**
+> **Platform Terpadu Manajemen Kemitraan Strategis, Repositori Naskah Perjanjian, Ekstraksi Metadata AI, Pemantauan Masa Berlaku, dan Pemetaan Instrumen Akreditasi Institut Teknologi Del (IT Del), Laguboti, Kabupaten Toba.**  
+> **Copyright &copy; 2026 Samuel Hasudungan Tampubolon.**
 
 ---
 
@@ -121,6 +124,9 @@ Dokumentasi lengkap untuk tim teknis Direktorat SDI / TSI / Duktek tersedia di f
 
 ---
 
-## 🏛️ Tata Kelola & Kepemilikan Sistem (Governance)
+## ⚖️ Tata Kelola, Hak Cipta & Lisensi (Governance & Copyright)
 
-Hak Kekayaan Intelektual, kepemilikan kode sumber (*source code*), kepemilikan basis data, serta status ciptaan sistem ditetapkan sepenuhnya sebagai milik institusi **Institut Teknologi Del (IT Del)**. Prototype ini dikembangkan oleh Unit Kerja Sama sebagai bukti konsep dan dasar pengembangan sistem resmi kampus bersama Direktorat SDI / TSI.
+- **Hak Cipta (Copyright):** **Copyright &copy; 2026 Samuel Hasudungan Tampubolon**. Seluruh rancangan arsitektur sistem, desain antarmuka modular, algoritma ekstraksi data cerdas, serta prototipe KSDAS dilindungi atas nama **Samuel Hasudungan Tampubolon**.
+- **Institusi Sasaran:** Dikembangkan untuk dan diselaraskan dengan kebutuhan tata kelola data kemitraan **Institut Teknologi Del (IT Del)**, Sitoluama, Laguboti, Toba, Sumatera Utara.
+- **Karya Produksi Kampus:** Penerapan implementasi operasional resmi, basis data institusi kampus terpadu, dan integrasi SSO diserahkan kepada Institut Teknologi Del bersama Direktorat SDI / TSI / Duktek sesuai [Spesifikasi Handoff SDI/TSI](docs/HANDOFF_SPEC_SDI_TSI.md).
+- **Lisensi Kode Sumber:** [MIT License](LICENSE) &bull; Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon.

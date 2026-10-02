@@ -205,7 +205,7 @@ class KSDASApp {
 
     const matches = this.store.getDocuments({ search: q }).slice(0, 8);
     if (matches.length === 0) {
-      resultsContainer.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Tidak ditemukan dokumen yang cocok dengan "${query}".</div>`;
+      resultsContainer.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">Tidak ditemukan dokumen yang cocok dengan "${this.ui.escapeHtml(query)}".</div>`;
       return;
     }
 
@@ -214,8 +214,8 @@ class KSDASApp {
            onclick="ksdasApp.viewDocumentDetail('${doc.id}'); ksdasUI.closeModal('modal-quick-search');"
            onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
         <div>
-          <div style="font-weight: 600; font-size: 0.88rem; color: var(--color-primary-dark);">${doc.title}</div>
-          <div style="font-size: 0.76rem; color: var(--text-muted);">${doc.documentNumber} &bull; ${doc.partnerName}</div>
+          <div style="font-weight: 600; font-size: 0.88rem; color: var(--color-primary-dark);">${this.ui.escapeHtml(doc.title)}</div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">${this.ui.escapeHtml(doc.documentNumber)} &bull; ${this.ui.escapeHtml(doc.partnerName)}</div>
         </div>
         <div>${this.ui.renderTypeBadge(doc.type)}</div>
       </div>
@@ -883,11 +883,11 @@ class KSDASApp {
     const fieldsList = document.getElementById("validation-modal-fields-list");
 
     if (modalTitle) {
-      modalTitle.innerHTML = `🛡️ Validasi Staf: <span>${doc.documentNumber}</span>`;
+      modalTitle.innerHTML = `🛡️ Validasi Staf: <span>${this.ui.escapeHtml(doc.documentNumber)}</span>`;
     }
 
     if (ocrPane) {
-      ocrPane.innerHTML = doc.rawText || "Teks hasil OCR simulasi tidak tersedia.";
+      ocrPane.textContent = doc.rawText || "Teks hasil OCR simulasi tidak tersedia.";
     }
 
     if (fieldsList) {
@@ -913,6 +913,9 @@ class KSDASApp {
           extraction_method: "NLP"
         };
 
+        const safeVal = this.ui.escapeHtml(ext.value || "");
+        const safeSrc = this.ui.escapeHtml((ext.source_text || "").slice(0, 80));
+
         return `
           <div class="field-review-item">
             <div class="field-review-top">
@@ -922,8 +925,8 @@ class KSDASApp {
                 ${this.ui.renderConfidenceBadge(ext.confidence)}
               </div>
             </div>
-            <input type="text" class="form-control" id="val-field-${f.key}" value="${ext.value || ''}" style="width: 100%;">
-            <div class="field-review-source">Sumber: "${(ext.source_text || '').slice(0, 80)}"</div>
+            <input type="text" class="form-control" id="val-field-${f.key}" value="${safeVal}" style="width: 100%;">
+            <div class="field-review-source">Sumber: "${safeSrc}"</div>
           </div>
         `;
       }).join("");
@@ -974,15 +977,19 @@ class KSDASApp {
     treeContainer.innerHTML = partners.map(p => {
       const partnerDocs = docs.filter(d => d.partnerId === p.id || d.partnerName === p.name);
       const mous = partnerDocs.filter(d => d.type === "MOU_LOI");
+      const safePName = this.ui.escapeHtml(p.name);
+      const safePCountry = this.ui.escapeHtml(p.country || "");
+      const safePCity = this.ui.escapeHtml(p.city || "");
+      const safePPic = this.ui.escapeHtml(p.contactPerson || "-");
 
       return `
         <div class="card" style="margin-bottom: 24px;">
           <div class="tree-node-partner">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 4px;">${p.type}</span>
-                <h3 style="font-size: 1.15rem; font-weight: 700;">${p.name}</h3>
-                <div style="font-size: 0.78rem; opacity: 0.85;">${p.country} &bull; ${p.city} &bull; PIC: ${p.contactPerson || '-'}</div>
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 4px;">${this.ui.escapeHtml(p.type)}</span>
+                <h3 style="font-size: 1.15rem; font-weight: 700;">${safePName}</h3>
+                <div style="font-size: 0.78rem; opacity: 0.85;">${safePCountry} &bull; ${safePCity} &bull; PIC: ${safePPic}</div>
               </div>
               <span class="badge badge-success" style="background: #2A9D8F; color: white;">${partnerDocs.length} Dokumen</span>
             </div>
@@ -993,6 +1000,8 @@ class KSDASApp {
             ${mous.map(mou => {
               // Find child PKS
               const childPks = partnerDocs.filter(d => d.type === "PKS_MOA" && (d.parentId === mou.id || d.parentNumber === mou.documentNumber));
+              const safeMouTitle = this.ui.escapeHtml(mou.title);
+              const safeMouNum = this.ui.escapeHtml(mou.documentNumber);
 
               return `
                 <div class="tree-branch">
@@ -1000,9 +1009,9 @@ class KSDASApp {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                       <div>
                         ${this.ui.renderTypeBadge("MOU_LOI")}
-                        <span style="font-weight: 700; margin-left: 6px; color: var(--color-primary-dark); cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${mou.id}')">${mou.title}</span>
+                        <span style="font-weight: 700; margin-left: 6px; color: var(--color-primary-dark); cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${mou.id}')">${safeMouTitle}</span>
                         <div style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
-                          ${mou.documentNumber} (${mou.signedDate} s/d ${mou.effectiveEndDate})
+                          ${safeMouNum} (${mou.signedDate} s/d ${mou.effectiveEndDate})
                         </div>
                       </div>
                       ${this.ui.renderStatusBadge(mou.status)}
@@ -1012,15 +1021,18 @@ class KSDASApp {
                   <!-- Children PKS -->
                   ${childPks.map(pks => {
                     const childIAs = partnerDocs.filter(d => d.type === "IA" && (d.parentId === pks.id || d.parentNumber === pks.documentNumber));
+                    const safePksTitle = this.ui.escapeHtml(pks.title);
+                    const safePksNum = this.ui.escapeHtml(pks.documentNumber);
+
                     return `
                       <div class="tree-branch">
                         <div class="tree-card" style="border-left: 4px solid #0077B6;">
                           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                               ${this.ui.renderTypeBadge("PKS_MOA")}
-                              <span style="font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${pks.id}')">${pks.title}</span>
+                              <span style="font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${pks.id}')">${safePksTitle}</span>
                               <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">
-                                ${pks.documentNumber} &bull; Anggaran: ${this.ui.formatRupiah(pks.budget)}
+                                ${safePksNum} &bull; Anggaran: ${this.ui.formatRupiah(pks.budget)}
                               </div>
                             </div>
                             ${this.ui.renderStatusBadge(pks.status)}
@@ -1028,15 +1040,20 @@ class KSDASApp {
                         </div>
 
                         <!-- Children IA -->
-                        ${childIAs.map(ia => `
-                          <div class="tree-branch">
-                            <div class="tree-card" style="border-left: 4px solid #2A9D8F;">
-                              ${this.ui.renderTypeBadge("IA")}
-                              <span style="font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${ia.id}')">${ia.title}</span>
-                              <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted);">${ia.documentNumber}</div>
+                        ${childIAs.map(ia => {
+                          const safeIaTitle = this.ui.escapeHtml(ia.title);
+                          const safeIaNum = this.ui.escapeHtml(ia.documentNumber);
+
+                          return `
+                            <div class="tree-branch">
+                              <div class="tree-card" style="border-left: 4px solid #2A9D8F;">
+                                ${this.ui.renderTypeBadge("IA")}
+                                <span style="font-weight: 600; margin-left: 6px; cursor: pointer;" onclick="ksdasApp.viewDocumentDetail('${ia.id}')">${safeIaTitle}</span>
+                                <div style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted);">${safeIaNum}</div>
+                              </div>
                             </div>
-                          </div>
-                        `).join("")}
+                          `;
+                        }).join("")}
                       </div>
                     `;
                   }).join("")}
@@ -1057,8 +1074,8 @@ class KSDASApp {
         orphanList.innerHTML = orphans.map(orp => `
           <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
             <div>
-              <div style="font-weight: 600; color: var(--color-primary-dark); font-size: 0.88rem;">${orp.title}</div>
-              <div style="font-size: 0.76rem; color: var(--text-muted);">${orp.documentNumber} &bull; ${orp.partnerName}</div>
+              <div style="font-weight: 600; color: var(--color-primary-dark); font-size: 0.88rem;">${this.ui.escapeHtml(orp.title)}</div>
+              <div style="font-size: 0.76rem; color: var(--text-muted);">${this.ui.escapeHtml(orp.documentNumber)} &bull; ${this.ui.escapeHtml(orp.partnerName)}</div>
             </div>
             <button class="btn btn-sm btn-primary staff-only-action" onclick="ksdasApp.openLinkParentModal('${orp.id}')">
               Tautkan ke MoU Induk
@@ -1131,17 +1148,17 @@ class KSDASApp {
       <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <span class="badge" style="background: #EFF6FF; color: #1E40AF;">${p.type}</span>
-            <span class="badge ${p.status === 'ACTIVE' ? 'badge-validated' : 'badge-rejected'}">${p.status}</span>
+            <span class="badge" style="background: #EFF6FF; color: #1E40AF;">${this.ui.escapeHtml(p.type)}</span>
+            <span class="badge ${p.status === 'ACTIVE' ? 'badge-validated' : 'badge-rejected'}">${this.ui.escapeHtml(p.status)}</span>
           </div>
 
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px;">${p.name}</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">${p.notes || '-'}</p>
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px;">${this.ui.escapeHtml(p.name)}</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">${this.ui.escapeHtml(p.notes || '-')}</p>
 
           <div style="font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-            <div>📍 <b>Lokasi:</b> ${p.city}, ${p.country}</div>
-            <div>👤 <b>PIC:</b> ${p.contactPerson || '-'}</div>
-            <div>✉️ <b>Email:</b> ${p.email || '-'}</div>
+            <div>📍 <b>Lokasi:</b> ${this.ui.escapeHtml(p.city)}, ${this.ui.escapeHtml(p.country)}</div>
+            <div>👤 <b>PIC:</b> ${this.ui.escapeHtml(p.contactPerson || '-')}</div>
+            <div>✉️ <b>Email:</b> ${this.ui.escapeHtml(p.email || '-')}</div>
           </div>
         </div>
 
@@ -1169,15 +1186,15 @@ class KSDASApp {
       actTbody.innerHTML = acts.map(a => `
         <tr>
           <td>
-            <div style="font-weight: 600; color: var(--color-primary-dark);">${a.title}</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono);">${a.documentNumber}</div>
+            <div style="font-weight: 600; color: var(--color-primary-dark);">${this.ui.escapeHtml(a.title)}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono);">${this.ui.escapeHtml(a.documentNumber)}</div>
           </td>
-          <td><span class="badge" style="background: #EBF5FF; color: #1E40AF;">${a.triDharma}</span></td>
-          <td><b>${a.partnerName}</b></td>
-          <td>${a.pic}</td>
-          <td>${a.participantCount} peserta</td>
+          <td><span class="badge" style="background: #EBF5FF; color: #1E40AF;">${this.ui.escapeHtml(a.triDharma)}</span></td>
+          <td><b>${this.ui.escapeHtml(a.partnerName)}</b></td>
+          <td>${this.ui.escapeHtml(a.pic)}</td>
+          <td>${Number(a.participantCount) || 0} peserta</td>
           <td>${this.ui.formatRupiah(a.budget)}</td>
-          <td><span class="badge badge-validated">${a.status}</span></td>
+          <td><span class="badge badge-validated">${this.ui.escapeHtml(a.status)}</span></td>
         </tr>
       `).join("");
     }
@@ -1187,20 +1204,20 @@ class KSDASApp {
       eviGrid.innerHTML = evidences.map(e => `
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-            <span class="badge" style="background: #F1F5F9; color: #475569;">${e.type}</span>
+            <span class="badge" style="background: #F1F5F9; color: #475569;">${this.ui.escapeHtml(e.type)}</span>
             ${e.verified ? '<span class="badge badge-validated">TERVERIFIKASI</span>' : '<span class="badge badge-needs-review">BELUM VERIFIKASI</span>'}
           </div>
-          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 4px;">${e.title}</h4>
-          <div style="font-size: 0.76rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px;">${e.documentNumber}</div>
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 4px;">${this.ui.escapeHtml(e.title)}</h4>
+          <div style="font-size: 0.76rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px;">${this.ui.escapeHtml(e.documentNumber)}</div>
           
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px;">
-            <div>📁 File: <code>${e.fileName}</code> (${e.fileSize})</div>
-            <div>📅 Diunggah: ${e.uploadedDate} oleh ${e.uploadedBy}</div>
+            <div>📁 File: <code>${this.ui.escapeHtml(e.fileName)}</code> (${this.ui.escapeHtml(e.fileSize)})</div>
+            <div>📅 Diunggah: ${this.ui.escapeHtml(e.uploadedDate)} oleh ${this.ui.escapeHtml(e.uploadedBy)}</div>
           </div>
 
           <div style="border-top: 1px solid var(--border-color); padding-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.72rem; color: var(--color-primary);">Kriteria: ${(e.mappedCriteria || []).join(", ")}</span>
-            ${!e.verified ? `<button class="btn btn-sm btn-success" onclick="ksdasStore.verifyEvidence('${e.id}')">Verifikasi</button>` : `<span style="font-size: 0.75rem; color: var(--color-success); font-weight: 600;">✓ Oleh ${e.verifiedBy}</span>`}
+            <span style="font-size: 0.72rem; color: var(--color-primary);">Kriteria: ${(e.mappedCriteria || []).map(c => this.ui.escapeHtml(c)).join(", ")}</span>
+            ${!e.verified ? `<button class="btn btn-sm btn-success" onclick="ksdasStore.verifyEvidence('${e.id}')">Verifikasi</button>` : `<span style="font-size: 0.75rem; color: var(--color-success); font-weight: 600;">✓ Oleh ${this.ui.escapeHtml(e.verifiedBy)}</span>`}
           </div>
         </div>
       `).join("");
@@ -1430,13 +1447,13 @@ class KSDASApp {
             <tbody>
               ${docs.slice(0, 8).map(d => `
                 <tr>
-                  <td style="font-family: var(--font-mono); font-size: 0.78rem;">${d.documentNumber}</td>
+                  <td style="font-family: var(--font-mono); font-size: 0.78rem;">${this.ui.escapeHtml(d.documentNumber)}</td>
                   <td>
-                    <div style="font-weight: 600;">${d.title}</div>
-                    <div style="font-size: 0.74rem; color: var(--text-muted);">${d.partnerName}</div>
+                    <div style="font-weight: 600;">${this.ui.escapeHtml(d.title)}</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted);">${this.ui.escapeHtml(d.partnerName)}</div>
                   </td>
-                  <td>${d.triDharma}</td>
-                  <td style="font-size: 0.78rem;">${d.effectiveStartDate} s/d ${d.effectiveEndDate}</td>
+                  <td>${this.ui.escapeHtml(d.triDharma || "EDUCATION")}</td>
+                  <td style="font-size: 0.78rem;">${d.effectiveStartDate || "-"} s/d ${d.effectiveEndDate || "-"}</td>
                   <td>${this.ui.renderStatusBadge(d.status)}</td>
                 </tr>
               `).join("")}
@@ -1455,6 +1472,11 @@ class KSDASApp {
             <div style="margin-top: 50px; font-weight: 700;">Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.</div>
             <div style="color: var(--text-muted);">Rektor Institut Teknologi Del</div>
           </div>
+        </div>
+
+        <div style="margin-top: 36px; padding-top: 14px; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted);">
+          <span>KSDAS IT Del &bull; Sistem Informasi Kerja Sama & Analitik Data</span>
+          <span>Copyright &copy; 2026 <b>Samuel Hasudungan Tampubolon</b>. All rights reserved.</span>
         </div>
       </div>
     `;
@@ -1586,10 +1608,28 @@ class KSDASApp {
     const modalBody = document.getElementById("detail-modal-body");
 
     if (modalTitle) {
-      modalTitle.innerHTML = `📄 ${doc.documentNumber} &bull; ${doc.title}`;
+      modalTitle.innerHTML = `📄 ${this.ui.escapeHtml(doc.documentNumber)} &bull; ${this.ui.escapeHtml(doc.title)}`;
     }
 
     if (modalBody) {
+      const safeTitle = this.ui.escapeHtml(doc.title);
+      const safeScope = this.ui.escapeHtml(doc.scope || "-");
+      const safePartner = this.ui.escapeHtml(doc.partnerName);
+      const safeCountry = this.ui.escapeHtml(doc.country || "Indonesia");
+      const safePartSign = this.ui.escapeHtml(doc.partnerSignatoryName || "-");
+      const safeDelSign = this.ui.escapeHtml(doc.itDelSignatoryName || "-");
+      const safeFaculty = this.ui.escapeHtml(doc.facultyId || "-");
+      const safeProdi = this.ui.escapeHtml(doc.studyProgramId || "-");
+      const safeStart = this.ui.escapeHtml(doc.effectiveStartDate || "-");
+      const safeEnd = this.ui.escapeHtml(doc.effectiveEndDate || "-");
+      const safePic = this.ui.escapeHtml(doc.pic || "-");
+      const safeExpOut = this.ui.escapeHtml(doc.expectedOutput || "-");
+      const safeActOut = this.ui.escapeHtml(doc.actualOutput || "-");
+      const safeImpact = this.ui.escapeHtml(doc.impact || "-");
+      const safeFollowUp = this.ui.escapeHtml(doc.followUp || "-");
+      const safeParent = this.ui.escapeHtml(doc.parentNumber || (doc.parentId ? doc.parentId : "Tidak ada (Dokumen Induk MoU)"));
+      const safeFile = this.ui.escapeHtml(doc.fileName || "dokumen.pdf");
+
       modalBody.innerHTML = `
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
           <div>
@@ -1600,22 +1640,22 @@ class KSDASApp {
             </div>
 
             <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 8px;">
-              ${doc.title}
+              ${safeTitle}
             </h3>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6;">
-              <b>Ruang Lingkup:</b> ${doc.scope || '-'}
+              <b>Ruang Lingkup:</b> ${safeScope}
             </p>
 
             <div class="card" style="padding: 16px; margin-bottom: 16px; background: #F8FAFC;">
               <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: var(--color-primary-dark);">Metadata Penandatangan & Institusi:</h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem;">
-                <div><b>Mitra:</b> ${doc.partnerName} (${doc.country || 'Indonesia'})</div>
-                <div><b>Penandatangan Mitra:</b> ${doc.partnerSignatoryName || '-'}</div>
-                <div><b>Penandatangan IT Del:</b> ${doc.itDelSignatoryName || '-'}</div>
-                <div><b>Fakultas / Prodi:</b> ${doc.facultyId || '-'} / ${doc.studyProgramId || '-'}</div>
-                <div><b>Mulai Berlaku:</b> ${doc.effectiveStartDate || '-'}</div>
-                <div><b>Berakhir Pada:</b> ${doc.effectiveEndDate || '-'}</div>
-                <div><b>PIC IT Del:</b> ${doc.pic || '-'}</div>
+                <div><b>Mitra:</b> ${safePartner} (${safeCountry})</div>
+                <div><b>Penandatangan Mitra:</b> ${safePartSign}</div>
+                <div><b>Penandatangan IT Del:</b> ${safeDelSign}</div>
+                <div><b>Fakultas / Prodi:</b> ${safeFaculty} / ${safeProdi}</div>
+                <div><b>Mulai Berlaku:</b> ${safeStart}</div>
+                <div><b>Berakhir Pada:</b> ${safeEnd}</div>
+                <div><b>PIC IT Del:</b> ${safePic}</div>
                 <div><b>Komitmen Dana:</b> ${this.ui.formatRupiah(doc.budget)}</div>
               </div>
             </div>
@@ -1623,10 +1663,10 @@ class KSDASApp {
             <div class="card" style="padding: 16px;">
               <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--color-primary-dark);">Capaian Output, Outcome & Dampak:</h4>
               <ul style="font-size: 0.82rem; padding-left: 20px; line-height: 1.6; color: var(--text-main);">
-                <li><b>Target Luaran:</b> ${doc.expectedOutput || '-'}</li>
-                <li><b>Realisasi Luaran:</b> ${doc.actualOutput || '-'}</li>
-                <li><b>Dampak (Impact):</b> ${doc.impact || '-'}</li>
-                <li><b>Rencana Tindak Lanjut:</b> ${doc.followUp || '-'}</li>
+                <li><b>Target Luaran:</b> ${safeExpOut}</li>
+                <li><b>Realisasi Luaran:</b> ${safeActOut}</li>
+                <li><b>Dampak (Impact):</b> ${safeImpact}</li>
+                <li><b>Rencana Tindak Lanjut:</b> ${safeFollowUp}</li>
               </ul>
             </div>
           </div>
@@ -1637,7 +1677,7 @@ class KSDASApp {
               <div style="font-size: 0.8rem;">
                 <div><b>Dokumen Induk:</b></div>
                 <div style="color: var(--color-primary); font-family: var(--font-mono); margin-top: 2px;">
-                  ${doc.parentNumber || (doc.parentId ? doc.parentId : 'Tidak ada (Dokumen Induk MoU)')}
+                  ${safeParent}
                 </div>
               </div>
             </div>
@@ -1645,8 +1685,8 @@ class KSDASApp {
             <div class="card" style="padding: 16px;">
               <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; color: var(--color-primary-dark);">File & Bukti Fisik:</h4>
               <div style="font-size: 0.8rem; margin-bottom: 10px;">
-                <div>📄 File: <code>${doc.fileName || 'dokumen.pdf'}</code></div>
-                <div>Ukuran: ${doc.fileSize || '2.1 MB'}</div>
+                <div>📄 File: <code>${safeFile}</code></div>
+                <div>Ukuran: ${this.ui.escapeHtml(doc.fileSize || "2.1 MB")}</div>
                 <div>Jumlah Evidence: <b>${doc.evidenceCount || 0} file</b></div>
               </div>
               <button class="btn btn-sm btn-secondary" style="width: 100%;" onclick="ksdasUI.showToast('Mengunduh salinan berkas...', 'info')">

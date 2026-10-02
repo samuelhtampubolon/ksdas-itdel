@@ -2,6 +2,8 @@
 
 **Sistem Informasi Kerja Sama & Analitik Data (KSDAS)**  
 **Institut Teknologi Del, Laguboti, Sumatera Utara**  
+**Author & Solution Architect:** Samuel Hasudungan Tampubolon  
+**Copyright:** Copyright &copy; 2026 Samuel Hasudungan Tampubolon  
 **Versi:** 0.2.0  
 **Status:** Spesifikasi Inti untuk Prototype & Acuan Basis Data Produksi  
 

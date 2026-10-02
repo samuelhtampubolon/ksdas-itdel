@@ -248,7 +248,9 @@ Integrasi yang diharapkan pada fase produksi resmi:
 
 ## 18. TATA KELOLA & KEPEMILIKAN ASET (GOVERNANCE)
 
-Hak Kekayaan Intelektual, kepemilikan kode sumber (*source code*), kepemilikan basis data, serta status ciptaan sistem ditetapkan sepenuhnya sebagai milik institusi **Institut Teknologi Del**. Prototype ini tidak mengasumsikan kepemilikan perseorangan atau satu unit secara terpisah.
+- **Hak Cipta Desain & Prototype:** **Copyright &copy; 2026 Samuel Hasudungan Tampubolon**. Hak cipta atas konsep sistem, arsitektur, algoritma ekstraksi cerdas, dan prototipe kode sumber dilindungi atas nama **Samuel Hasudungan Tampubolon**.
+- **Penyelarasan Institusional:** Dikembangkan untuk kepentingan tata kelola kemitraan dan akreditasi **Institut Teknologi Del (IT Del)**.
+- **Produksi & Operasional Kampus:** Kepemilikan basis data produksi resmi kampus, data naskah resmi, infrastruktur server, dan deployment sistem operasional diatur berdasarkan kebijakan resmi pimpinan Institut Teknologi Del bersama Direktorat SDI / TSI / Duktek.
 
 ---
 

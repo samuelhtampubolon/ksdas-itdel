@@ -2,6 +2,8 @@
 
 **Sistem Informasi Kerja Sama & Analitik Data (KSDAS)**  
 **Institut Teknologi Del, Sitoluama, Laguboti, Kabupaten Toba**  
+**Author & Solution Architect:** Samuel Hasudungan Tampubolon  
+**Copyright:** Copyright &copy; 2026 Samuel Hasudungan Tampubolon  
 **Versi:** 0.2.0  
 **Klasifikasi:** Dokumen Kebijakan & Rujukan Teknis Keamanan  
 

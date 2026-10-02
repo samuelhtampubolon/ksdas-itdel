@@ -2,7 +2,8 @@
 
 **Sistem Informasi Kerja Sama & Analitik Data (KSDAS)**  
 **Institut Teknologi Del, Laguboti, Kabupaten Toba, Sumatera Utara**  
-**Role:** Senior Higher Education Solution Architect  
+**Author & Solution Architect:** Samuel Hasudungan Tampubolon  
+**Copyright:** Copyright &copy; 2026 Samuel Hasudungan Tampubolon  
 **Versi:** 0.2.0  
 **Target:** Tim Teknis SDI / TSI / Tim Pengembang / Stakeholder Institusi  
 

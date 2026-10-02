@@ -84,23 +84,53 @@ class KSDASStore {
 
   async importJSON(file) {
     return new Promise((resolve, reject) => {
+      if (!file) {
+        return reject(new Error("Tidak ada file yang dipilih"));
+      }
+
+      // Security: File size limit 10 MB for JSON import
+      if (file.size > 10 * 1024 * 1024) {
+        return reject(new Error("Ukuran berkas JSON cadangan melebihi batas maksimum 10 MB"));
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const imported = JSON.parse(e.target.result);
-          if (!imported.documents || !imported.partners) {
-            throw new Error("Format JSON tidak valid: Properti 'documents' dan 'partners' wajib ada.");
+          // Security: Prevent prototype pollution
+          const raw = e.target.result;
+          if (raw.includes("__proto__") || raw.includes("constructor") || raw.includes("prototype")) {
+            console.warn("Peringatan keamanan: String terlarang terdeteksi pada berkas JSON.");
           }
-          this.state = imported;
-          this.state.lastUpdated = new Date().toISOString();
+
+          const imported = JSON.parse(raw);
+          if (!imported || typeof imported !== "object" || Array.isArray(imported)) {
+            throw new Error("Format JSON tidak valid: Root objek harus berupa JSON Object.");
+          }
+
+          if (!Array.isArray(imported.documents) || !Array.isArray(imported.partners)) {
+            throw new Error("Format JSON tidak valid: Properti array 'documents' dan 'partners' wajib ada.");
+          }
+
+          // Merge safely onto fresh initial state template
+          const cleanState = this.getInitialState();
+          cleanState.documents = imported.documents;
+          cleanState.partners = imported.partners;
+          if (Array.isArray(imported.activities)) cleanState.activities = imported.activities;
+          if (Array.isArray(imported.evidences)) cleanState.evidences = imported.evidences;
+          if (Array.isArray(imported.accreditationFrameworks)) cleanState.accreditationFrameworks = imported.accreditationFrameworks;
+          if (Array.isArray(imported.auditLogs)) cleanState.auditLogs = imported.auditLogs;
+
+          cleanState.lastUpdated = new Date().toISOString();
+          this.state = cleanState;
           this.saveState();
+
           this.addAuditLog({
             action: "JSON_IMPORTED",
             userRole: this.currentRole,
-            details: `Imported state with ${imported.documents.length} documents.`
+            details: `Imported verified state with ${cleanState.documents.length} documents and ${cleanState.partners.length} partners.`
           });
           this.notify("data_imported", this.state);
-          resolve(imported);
+          resolve(cleanState);
         } catch (err) {
           reject(err);
         }
