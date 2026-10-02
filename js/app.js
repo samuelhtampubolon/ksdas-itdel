@@ -516,10 +516,19 @@ class KSDASApp {
           <option value="2023" ${this.activeFilters.year === "2023" ? "selected" : ""}>2023</option>
         </select>
 
-        <button id="repo-reset-filter-btn" class="btn btn-secondary btn-sm">Reset Filter</button>
+        <button id="repo-reset-filter-btn" class="btn btn-secondary btn-sm">Bersihkan Filter</button>
       </div>
 
-      <div class="filter-chips" id="repo-active-chips"></div>
+      <!-- Quick Filter Presets (Section 5 UI/UX Spec v0.3) -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+        <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted);">Preset Cepat:</span>
+        <button class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 3px 10px; border-radius: 14px;" onclick="ksdasApp.applyFilterPreset('ami_fti')">📊 AMI 2026 - FTI</button>
+        <button class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 3px 10px; border-radius: 14px;" onclick="ksdasApp.applyFilterPreset('research')">🔬 Riset 2025-2026</button>
+        <button class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 3px 10px; border-radius: 14px;" onclick="ksdasApp.applyFilterPreset('needs_review')">⏳ Perlu Validasi</button>
+        <button class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 3px 10px; border-radius: 14px;" onclick="ksdasApp.applyFilterPreset('expiring')">⚠️ Tahun 2026</button>
+      </div>
+
+      <div class="filter-chips" id="repo-active-chips" style="margin-top: 8px;"></div>
     `;
 
     // Bind event listeners
@@ -540,6 +549,48 @@ class KSDASApp {
     });
 
     document.getElementById("repo-reset-filter-btn")?.addEventListener("click", () => {
+      this.resetFilters();
+    });
+  }
+
+  applyFilterPreset(presetKey) {
+    if (presetKey === "ami_fti") {
+      this.activeFilters = {
+        search: "",
+        type: "ALL",
+        status: "ALL",
+        partnerId: "ALL",
+        facultyId: "FTI",
+        triDharma: "ALL",
+        year: "2026",
+        qualityFlag: "ALL"
+      };
+      this.ui.showToast("Preset Filter diterapkan: AMI 2026 - FTI", "info");
+    } else if (presetKey === "research") {
+      this.activeFilters = {
+        search: "",
+        type: "ALL",
+        status: "ALL",
+        partnerId: "ALL",
+        facultyId: "ALL",
+        triDharma: "RESEARCH",
+        year: "ALL",
+        qualityFlag: "ALL"
+      };
+      this.ui.showToast("Preset Filter diterapkan: Penelitian / Riset", "info");
+    } else if (presetKey === "needs_review") {
+      this.activeFilters = {
+        search: "",
+        type: "ALL",
+        status: "NEEDS_REVIEW",
+        partnerId: "ALL",
+        facultyId: "ALL",
+        triDharma: "ALL",
+        year: "ALL",
+        qualityFlag: "ALL"
+      };
+      this.ui.showToast("Preset Filter diterapkan: Dokumen Perlu Validasi", "info");
+    } else if (presetKey === "expiring") {
       this.activeFilters = {
         search: "",
         type: "ALL",
@@ -547,12 +598,29 @@ class KSDASApp {
         partnerId: "ALL",
         facultyId: "ALL",
         triDharma: "ALL",
-        year: "ALL",
+        year: "2026",
         qualityFlag: "ALL"
       };
-      this.renderFilterBar();
-      this.renderRepositoryTable();
-    });
+      this.ui.showToast("Preset Filter diterapkan: Perjanjian Tahun 2026", "info");
+    }
+    this.renderFilterBar();
+    this.renderRepositoryTable();
+  }
+
+  resetFilters() {
+    this.activeFilters = {
+      search: "",
+      type: "ALL",
+      status: "ALL",
+      partnerId: "ALL",
+      facultyId: "ALL",
+      triDharma: "ALL",
+      year: "ALL",
+      qualityFlag: "ALL"
+    };
+    this.renderFilterBar();
+    this.renderRepositoryTable();
+    this.ui.showToast("Filter pencarian telah dibersihkan.", "info");
   }
 
   renderRepositoryTable() {
@@ -570,8 +638,12 @@ class KSDASApp {
         <tr>
           <td colspan="8" style="text-align: center; padding: 48px; color: var(--text-muted);">
             <div style="font-size: 2.2rem; margin-bottom: 8px;">📂</div>
-            <div style="font-weight: 600;">Tidak ada dokumen yang sesuai dengan kriteria filter.</div>
-            <div style="font-size: 0.8rem; margin-top: 4px;">Coba sesuaikan kata kunci pencarian atau reset filter.</div>
+            <div style="font-weight: 600; font-size: 1rem; color: var(--text-color);">Tidak ada dokumen yang cocok dengan filter saat ini.</div>
+            <div style="font-size: 0.82rem; margin-top: 6px; color: var(--text-muted);">Coba ubah filter atau unggah dokumen naskah baru ke sistem.</div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px;">
+              <button class="btn btn-secondary btn-sm" onclick="ksdasApp.resetFilters()">Bersihkan Filter</button>
+              <button class="btn btn-primary btn-sm" onclick="window.location.hash='#batch-upload'">Unggah Dokumen</button>
+            </div>
           </td>
         </tr>
       `;
@@ -980,6 +1052,35 @@ class KSDASApp {
   saveValidationModalDecision(decisionStatus) {
     if (!this.currentValidationDocId) return;
 
+    // Grab edited values from input fields
+    const docNumber = document.getElementById("val-field-document_number")?.value?.trim();
+    const title = document.getElementById("val-field-title")?.value?.trim();
+    const partner = document.getElementById("val-field-partner")?.value?.trim();
+    const scope = document.getElementById("val-field-scope")?.value?.trim();
+    const triDharma = document.getElementById("val-field-tri_dharma")?.value?.trim();
+    const signedDate = document.getElementById("val-field-signed_date")?.value?.trim();
+    const effectiveEndDate = document.getElementById("val-field-effective_end_date")?.value?.trim();
+    const partnerSignatoryName = document.getElementById("val-field-partner_signatory_name")?.value?.trim();
+    const itDelSignatoryName = document.getElementById("val-field-it_del_signatory_name")?.value?.trim();
+    const budgetRaw = document.getElementById("val-field-budget")?.value?.trim();
+
+    // Validation rules (Section 11 & 22 Human-Centered UI/UX spec v0.3)
+    if (decisionStatus === "VALIDATED") {
+      if (!title || !docNumber) {
+        this.ui.showToast("Nomor dokumen dan judul naskah wajib diisi sebelum divalidasi.", "error");
+        return;
+      }
+    }
+
+    if (signedDate && effectiveEndDate) {
+      const dStart = new Date(signedDate);
+      const dEnd = new Date(effectiveEndDate);
+      if (!isNaN(dStart.getTime()) && !isNaN(dEnd.getTime()) && dEnd < dStart) {
+        this.ui.showToast("Tanggal berakhir harus sama atau setelah tanggal mulai.", "error");
+        return;
+      }
+    }
+
     const updates = {
       status: decisionStatus,
       officialDataConfirmed: decisionStatus === "VALIDATED",
@@ -987,16 +1088,19 @@ class KSDASApp {
       validatedDate: new Date().toISOString()
     };
 
-    // Grab edited values from input fields
-    const docNumber = document.getElementById("val-field-document_number")?.value;
-    const title = document.getElementById("val-field-title")?.value;
-    const partner = document.getElementById("val-field-partner")?.value;
-    const scope = document.getElementById("val-field-scope")?.value;
-
     if (docNumber) updates.documentNumber = docNumber;
     if (title) updates.title = title;
     if (partner) updates.partnerName = partner;
     if (scope) updates.scope = scope;
+    if (triDharma) updates.triDharma = triDharma;
+    if (signedDate) updates.signedDate = signedDate;
+    if (effectiveEndDate) updates.effectiveEndDate = effectiveEndDate;
+    if (partnerSignatoryName) updates.partnerSignatoryName = partnerSignatoryName;
+    if (itDelSignatoryName) updates.itDelSignatoryName = itDelSignatoryName;
+    if (budgetRaw) {
+      const num = Number(budgetRaw.replace(/[^0-9.-]+/g, ""));
+      if (!isNaN(num)) updates.budget = num;
+    }
 
     this.store.updateDocument(this.currentValidationDocId, updates);
     this.ui.closeModal("modal-side-by-side-validation");

@@ -325,10 +325,13 @@ Untuk keperluan **pencatatan Hak Cipta resmi secara legal dan formal** ke Direkt
 
 | Berkas Dokumentasi | Peruntukan Utama | Deskripsi Isi |
 | :--- | :--- | :--- |
-| 🚀 [`docs/PANDUAN_DELIVERY_DEPLOYMENT.md`](docs/PANDUAN_DELIVERY_DEPLOYMENT.md) | Tim Teknis / DevOps | Panduan penerapan di GitHub Pages, Vercel Edge, dan Server Kampus IT Del |
+| 📘 [`docs/RUNBOOK_INTEGRASI_SDI_TSI_V03.md`](docs/RUNBOOK_INTEGRASI_SDI_TSI_V03.md) | Tim SDI / TSI / DukTek | **Runbook Integrasi Resmi Versi 0.3.0 (31 Bab):** Topologi produksi, Firewall matrix, Reverse proxy, SSO claim mapping, Kontrak API `/api/v1/`, UAT-01 s/d UAT-10, Rollback, dan 14 Keputusan Terbuka (TBD). |
+| 🛡️ [`docs/SECURITY_THREAT_MODEL_V03.md`](docs/SECURITY_THREAT_MODEL_V03.md) | Tim Keamanan & Jaringan | **Arsitektur Keamanan & Model Ancaman Versi 0.3.0 (12 Bab):** Analisis 22 vektor risiko (OWASP + Kampus), Trust boundaries, Sanitasi AI pasif, Sandboxing parser, Audit trail tamper-resistant, dan 10 Security Test Cases. |
+| 🎨 [`docs/UI_UX_DESIGN_SYSTEM_V03.md`](docs/UI_UX_DESIGN_SYSTEM_V03.md) | Desainer & Front-End Dev | **Sistem Desain UI/UX & Human Factors Versi 0.3.0 (26 Bab):** 8 Persona pengguna, 15 Arsitektur Informasi, Alur Batch Upload 8 Langkah, Split-screen validation, Tree hierarchy model, Preset filter, dan Pedoman Aksesibilitas. |
+| 🚀 [`docs/PANDUAN_DELIVERY_DEPLOYMENT.md`](docs/PANDUAN_DELIVERY_DEPLOYMENT.md) | Tim Teknis / DevOps | Panduan penerapan di GitHub Pages, Vercel Edge, dan Server Kampus IT Del (Docker on-premise) |
 | 🏛️ [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md) | Tim SDI / TSI / DukTek | Panduan teknis integrasi database, MinIO, SSO IT Del, dan REST API |
-| ⚖️ [`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md) | Legal / Kemenkumham | Naskah resmi pengajuan pencatatan Hak Cipta Program Komputer ke DJKI |
-| 🛡️ [`docs/CYBERSECURITY_AUDIT.md`](docs/CYBERSECURITY_AUDIT.md) | Tim Keamanan Siber | Laporan audit keamanan siber, no-harm certificate, dan kepatuhan UU PDP |
+| ⚖️ [`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md) | Legal / Kemenkumham | Naskah resmi pengajuan pencatatan Hak Cipta Program Komputer ke DJKI Kemenkumham RI |
+| 🛡️ [`docs/CYBERSECURITY_AUDIT.md`](docs/CYBERSECURITY_AUDIT.md) | Tim Keamanan Siber | Laporan audit keamanan siber, no-harm certificate, zero malware, dan kepatuhan UU PDP |
 | 📄 [`docs/HANDOFF_SPEC_SDI_TSI.md`](docs/HANDOFF_SPEC_SDI_TSI.md) | Manajemen & Tim Kampus | Spesifikasi formal serah terima kebutuhan dari Unit Kerja Sama (19 Bab) |
 | 📐 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Solution Architect | Arsitektur modul, diagram alur data, ERD Mermaid, dan batasan REST API |
 | 📚 [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) | Database Administrator | Kamus data lengkap dan definisi tipe kolom untuk 18 entitas relasional |
