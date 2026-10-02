@@ -18,6 +18,7 @@
 
 <p align="center">
   🌐 <strong>Live Demo GitHub Pages:</strong> <a href="https://samuelhtampubolon.github.io/ksdas-itdel/">https://samuelhtampubolon.github.io/ksdas-itdel/</a> &bull;
+  📂 <strong>Panduan Uji Coba Dokumen Sendiri:</strong> <a href="docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md">docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md</a> &bull;
   ⚡ <strong>Panduan Delivery & Deployment:</strong> <a href="docs/PANDUAN_DELIVERY_DEPLOYMENT.md">docs/PANDUAN_DELIVERY_DEPLOYMENT.md</a> &bull;
   🏛️ <strong>Panduan Integrasi SDI/TSI:</strong> <a href="docs/PANDUAN_INTEGRASI_SDI_TSI.md">docs/PANDUAN_INTEGRASI_SDI_TSI.md</a> &bull;
   ⚖️ <strong>Berkas Pendaftaran Hak Cipta DJKI:</strong> <a href="docs/HAK_CIPTA_LEGAL_DJKI.md">docs/HAK_CIPTA_LEGAL_DJKI.md</a>
@@ -27,6 +28,7 @@
 
 ## 📢 Berita & Pembaruan Terkini (News & Release Highlights)
 
+- **[2026-10-03] 📂 Fitur Uji Coba Nyata (Live Experience Upload &rarr; Analisis &rarr; Download):** Pengguna kini dapat menguji coba langsung dengan mengunggah dokumen naskah asli dari komputer lokal mereka sendiri (`.pdf`, `.docx`, `.txt`, `.md`), mengamati ekstraksi 26 metadata secara real-time di memori peramban (100% aman & privat), dan mengunduh berkas laporan hasil analisis JSON ke komputer lokal. Panduan lengkap: [`docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`](docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md).
 - **[2026-10-03] 📱 Mobile Optimization & Smartphone Native Experience:** Antarmuka disempurnakan secara menyeluruh untuk perangkat ponsel pintar (*smartphone*): laci navigasi *off-canvas* dengan efek *backdrop blur*, penutupan otomatis laci saat bernavigasi, *touch target* 44px, kartu KPI adaptif, serta tabel dengan pengguliran horizontal lancar (*smooth touch momentum*).
 - **[2026-10-03] 🌐 Multi-Channel Delivery Ready (Bukan Localhost):** Selain GitHub Pages, sistem kini mendukung opsi delivery serverless instan melalui **Vercel / Cloudflare Pages** ([`vercel.json`](vercel.json)) dan penerapan server on-premise kampus IT Del via **Docker Compose** ([`docker-compose.yml`](docker-compose.yml)).
 - **[2026-10-03] ⚖️ Kesiapan Berkas Pengajuan Hak Cipta Resmi DJKI:** Telah disusun berkas legal formal pengajuan Hak Cipta Program Komputer ke Ditjen KI Kemenkumham RI ([`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md)) atas nama **Samuel Hasudungan Tampubolon**.
@@ -329,6 +331,7 @@ Untuk keperluan **pencatatan Hak Cipta resmi secara legal dan formal** ke Direkt
 | 🛡️ [`docs/SECURITY_THREAT_MODEL_V03.md`](docs/SECURITY_THREAT_MODEL_V03.md) | Tim Keamanan & Jaringan | **Arsitektur Keamanan & Model Ancaman Versi 0.3.0 (12 Bab):** Analisis 22 vektor risiko (OWASP + Kampus), Trust boundaries, Sanitasi AI pasif, Sandboxing parser, Audit trail tamper-resistant, dan 10 Security Test Cases. |
 | 🎓 [`docs/STANDAR_MUTU_SPM_AMI_AKREDITASI_V03.md`](docs/STANDAR_MUTU_SPM_AMI_AKREDITASI_V03.md) | SPM, AMI & Biro Kerja Sama | **Pedoman Penjaminan Mutu & Akreditasi Nasional (8 Bab):** Kepatuhan Permendikbudristek No. 53 Tahun 2023, IKU 6 Mitra Kelas Dunia, Siklus PPEPP, Matriks BAN-PT & LAM-INFOKOM, serta Eliminasi *Pseudo-Compliance*. |
 | 🎨 [`docs/UI_UX_DESIGN_SYSTEM_V03.md`](docs/UI_UX_DESIGN_SYSTEM_V03.md) | Desainer & Front-End Dev | **Sistem Desain UI/UX & Human Factors Versi 0.3.0 (26 Bab):** 8 Persona pengguna, 15 Arsitektur Informasi, Alur Batch Upload 8 Langkah, Split-screen validation, Tree hierarchy model, Preset filter, dan Pedoman Aksesibilitas. |
+| 📂 [`docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`](docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md) | Penguji, Asesor & Pimpinan | **Panduan Pengujian Langsung Dokumen Sendiri:** Petunjuk langkah demi langkah mengunggah berkas lokal (.pdf, .docx, .txt), analisis cerdas di memori peramban, dan mengunduh laporan JSON ke komputer lokal. |
 | ⚙️ [`backend/`](backend/) | Tim SDI / Backend Dev | **Layanan REST API Resmi (FastAPI):** Endpoint `/health`, `/ready`, `/api/v1/partners`, `/api/v1/documents`, validasi Pydantic v2, sanitasi XSS, dan integrasi Docker Compose. |
 | 🚀 [`docs/PANDUAN_DELIVERY_DEPLOYMENT.md`](docs/PANDUAN_DELIVERY_DEPLOYMENT.md) | Tim Teknis / DevOps | Panduan penerapan di GitHub Pages, Vercel Edge, dan Server Kampus IT Del (Docker on-premise) |
 | 🏛️ [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md) | Tim SDI / TSI / DukTek | Panduan teknis integrasi database, MinIO, SSO IT Del, dan REST API |

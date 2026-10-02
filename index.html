@@ -307,15 +307,26 @@
             </div>
           </div>
 
+          <!-- Live Experience Banner -->
+          <div class="alert-banner alert-success" style="margin-bottom: 20px;">
+            <span style="font-size: 1.3rem;">✨</span>
+            <div>
+              <b>Pengalaman Nyata (Live Experience):</b> Anda dapat mengunggah dokumen <b>asli dari komputer lokal Anda sendiri</b> (.pdf, .docx, .txt, .md). Sistem akan membaca isi berkas secara instan di peramban, mengekstrak 26 metadata naskah, mendeteksi mitra &amp; masa berlaku, serta menyediakan tombol <b>Unduh Hasil Analisis</b> langsung ke perangkat Anda.
+              <span style="font-size: 0.78rem; opacity: 0.9; display: block; margin-top: 4px;">
+                🛡️ <i>Privasi Mutlak: Berkas diproses 100% di memori peramban (Client-Side Sandbox), tidak dikirim ke server luar, dan otomatis terhapus saat tab ditutup.</i>
+              </span>
+            </div>
+          </div>
+
           <!-- Dropzone -->
-          <input type="file" id="batch-file-input" multiple accept=".pdf,.docx,.doc" style="display: none;">
+          <input type="file" id="batch-file-input" multiple accept=".pdf,.docx,.doc,.txt,.md,.rtf" style="display: none;">
           <div class="upload-dropzone" id="batch-upload-dropzone">
             <div class="upload-icon-circle">📂</div>
             <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px;">
-              Tarik & Letakkan File Dokumen di Sini
+              Tarik & Letakkan File Dokumen Lokal di Sini
             </h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 480px; margin: 0 auto;">
-              Mendukung berkas PDF dan DOCX (MoU, PKS, IA, Proposal, LPJ). Atau klik area ini untuk memilih file dari komputer Anda.
+            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 520px; margin: 0 auto;">
+              Mendukung berkas <b>PDF, DOCX, TXT, dan Markdown</b> dari komputer Anda. Atau klik area ini untuk memilih file secara langsung.
             </p>
           </div>
 
@@ -325,9 +336,14 @@
               <div style="font-weight: 700; color: var(--color-primary-dark);">
                 Daftar Antrean Berkas (<span id="batch-queue-count">0 File</span>)
               </div>
-              <button class="btn btn-primary btn-sm" id="batch-start-process-btn" disabled>
-                ⚡ Mulai Ekstraksi AI & Deteksi Relasi
-              </button>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-outline btn-sm" id="batch-download-all-btn" onclick="ksdasApp.downloadBatchAnalysisReport()" style="display: none;">
+                  📥 Unduh Rekap Analisis
+                </button>
+                <button class="btn btn-primary btn-sm" id="batch-start-process-btn" disabled>
+                  ⚡ Mulai Ekstraksi AI & Deteksi Relasi
+                </button>
+              </div>
             </div>
 
             <div class="batch-progress-bar">
@@ -337,7 +353,7 @@
               Siap memproses antrean berkas.
             </div>
 
-            <div id="batch-complete-action-area" style="margin-top: 16px; display: none; gap: 10px;"></div>
+            <div id="batch-complete-action-area" style="margin-top: 16px; display: none; gap: 10px; flex-wrap: wrap;"></div>
           </div>
 
           <!-- Queue List -->
@@ -794,7 +810,10 @@
         <button class="modal-close" data-close-modal="modal-document-detail">&times;</button>
       </div>
       <div class="modal-body" id="detail-modal-body"></div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button class="btn btn-primary" id="detail-modal-download-btn" onclick="ksdasApp.downloadCurrentDetailDocument()">
+          📥 Unduh Laporan Analisis Dokumen (JSON)
+        </button>
         <button class="btn btn-secondary" data-close-modal="modal-document-detail">Tutup</button>
       </div>
     </div>
