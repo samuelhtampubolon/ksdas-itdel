@@ -210,11 +210,56 @@ class KSDASStore {
       docs = docs.filter(d => d.studyProgramId === "PRODI-IF");
     }
 
-    return docs;
+    return docs.map(d => this.enrichComputedFields(d));
   }
 
   getDocumentById(id) {
-    return (this.state.documents || []).find(d => d.id === id || d.documentNumber === id);
+    const doc = (this.state.documents || []).find(d => d.id === id || d.documentNumber === id);
+    return doc ? this.enrichComputedFields(doc) : null;
+  }
+
+  enrichComputedFields(doc) {
+    if (!doc) return doc;
+    const now = new Date();
+    
+    // 1. days_to_expiry & expiry_bucket (Data Dictionary Section T)
+    if (doc.effectiveEndDate) {
+      const end = new Date(doc.effectiveEndDate);
+      const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+      doc.days_to_expiry = diff;
+      if (diff < 0) doc.expiry_bucket = "EXPIRED";
+      else if (diff <= 30) doc.expiry_bucket = "0_30";
+      else if (diff <= 90) doc.expiry_bucket = "31_90";
+      else if (diff <= 180) doc.expiry_bucket = "91_180";
+      else if (diff <= 365) doc.expiry_bucket = "181_365";
+      else doc.expiry_bucket = "GT_365";
+    } else {
+      doc.days_to_expiry = null;
+      doc.expiry_bucket = "UNKNOWN";
+    }
+
+    // 2. Child relation flags
+    const allDocs = this.state.documents || [];
+    doc.has_child_pks = allDocs.some(d => d.type === "PKS_MOA" && (d.parentId === doc.id || d.parentNumber === doc.documentNumber));
+    doc.has_child_ia = allDocs.some(d => d.type === "IA" && (d.parentId === doc.id || d.parentNumber === doc.documentNumber));
+    doc.has_proposal = allDocs.some(d => d.type === "PROPOSAL" && (d.parentId === doc.id || d.parentNumber === doc.documentNumber));
+    doc.has_final_report = allDocs.some(d => d.type === "FINAL_REPORT" && (d.parentId === doc.id || d.parentNumber === doc.documentNumber));
+
+    // 3. Activity & Evidence flags
+    const activities = this.state.activities || [];
+    doc.has_activity = activities.some(a => a.documentId === doc.id || a.documentNumber === doc.documentNumber);
+    doc.has_evidence = !!(doc.evidenceCount && doc.evidenceCount > 0);
+
+    // 4. implementation_status
+    if (doc.type === "MOU_LOI") {
+      doc.implementation_status = doc.has_child_pks ? (doc.has_final_report ? "COMPLETED" : "IN_PROGRESS") : "NOT_STARTED";
+    } else if (doc.type === "PKS_MOA") {
+      doc.implementation_status = doc.has_final_report ? "COMPLETED" : (doc.has_activity ? "IN_PROGRESS" : "NOT_STARTED");
+    } else {
+      doc.implementation_status = doc.status === "VALIDATED" ? "COMPLETED" : "IN_PROGRESS";
+    }
+
+    return doc;
   }
 
   addDocument(doc) {

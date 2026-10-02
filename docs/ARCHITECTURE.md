@@ -1,218 +1,234 @@
-# KSDAS IT DEL - System Architecture & Engineering Specification
+# KSDAS IT DEL - SOLUTION ARCHITECTURE SPECIFICATION V0.2
 
 **Sistem Informasi Kerja Sama & Analitik Data (KSDAS)**  
-**Institut Teknologi Del (IT Del), Laguboti, Kabupaten Toba**  
-**Versi Dokumen:** 0.2.0  
-**Target Pembaca:** Direktorat SDI / TSI / Tim Duktek / Unit Kerja Sama  
+**Institut Teknologi Del, Laguboti, Kabupaten Toba, Sumatera Utara**  
+**Role:** Senior Higher Education Solution Architect  
+**Versi:** 0.2.0  
+**Target:** Tim Teknis SDI / TSI / Tim Pengembang / Stakeholder Institusi  
 
 ---
 
-## 1. Ringkasan Eksekutif
+## 1. VISI SISTEM & KONTEKS INSTITUSI
 
-KSDAS IT Del dirancang untuk mentransformasikan pengelolaan dokumen kemitraan yang sebelumnya terfragmentasi menjadi satu ekosistem data terpadu:
+KSDAS IT Del dirancang sebagai platform holistik untuk mengelola seluruh daur hidup kerja sama, kemitraan strategis, kolaborasi Tri Dharma Perguruan Tinggi, dokumen naskah, repositori bukti fisik (*evidence*), analitik eksekutif, dan otomasi pemrosesan cerdas.
 
-$$\text{Documents} \longrightarrow \text{Structured Data} \longrightarrow \text{Information} \longrightarrow \text{Analytics} \longrightarrow \text{Evidence} \longrightarrow \text{Accreditation Report}$$
-
-Prototype ini berjalan pada **GitHub Pages** sebagai aplikasi satu halaman (*Single-Page Application / SPA*) tanpa dependensi backend wajib pada fase pembuktian konsep (*Proof-of-Concept*), dengan persistensi lokal `localStorage` serta kapabilitas ekspor/impor JSON penuh.
+### Prinsip Utama Tata Kelola:
+1. **Pemisahan Peran Bisnis & Teknis:**
+   - *Unit Kerja Sama:* Menentukan **WHAT + WHY + WORKFLOW**.
+   - *Direktorat SDI / TSI:* Menentukan **HOW + INFRASTRUCTURE + DEPLOYMENT**.
+2. **Human-in-the-Loop:** AI tidak menetapkan data resmi institusi secara otonom. Output AI berstatus `SUGGESTION` hingga divalidasi manusia.
+3. **Penyimpanan Bertahap:** GitHub Pages + `localStorage` adalah **Prototype / Bukti Konsep**, bukan basis data produksi permanen.
+4. **Integritas Provenance:** Koreksi manusia tidak pernah menghapus riwayat teks dan metadata sumber ekstraksi.
 
 ---
 
-## 2. Arsitektur Komponen & Modul (SPA Prototype)
+## 2. ARSITEKTUR MODUL SISTEM (MODULAR ARCHITECTURE)
+
+Sistem dibagi menjadi 5 lapisan arsitektur modular yang terisolasi dengan rapi:
 
 ```mermaid
-graph TD
-    subgraph UI_Shell ["UI Shell & Presentation Layer"]
-        Nav["Sidebar Navigation"]
-        Header["Header (Role Switcher, Search Ctrl+K, Notif)"]
+graph TB
+    subgraph Layer1 ["1. Presentation Layer (UI / SPA)"]
+        UI_Shell["App Shell & Navigation (Sidebar, Header, Quick Search Ctrl+K)"]
+        Dash_View["Executive Dashboard & Visual Funnel"]
+        Repo_View["Document Repository & Dynamic Multi-Filter"]
+        Batch_View["Batch Upload Queue & Progress Engine"]
+        Val_View["Human-in-the-Loop Side-by-Side Validation Screen"]
+        Tree_View["Hierarchy Explorer (Partner-MoU-PKS-IA-Prop-LPJ)"]
+        Accred_View["Accreditation Workspace (BAN-PT & LAM-INFOKOM)"]
+        NLQ_View["Natural Language Query Copilot"]
+        Report_View["Report Generator (Print/PDF Engine)"]
+    end
+
+    subgraph Layer2 ["2. Application & Router Service Layer"]
         Router["Client Hash Router (#dashboard, #repository, ...)"]
+        AppController["KSDASApp Main Controller"]
+        AuthRBAC["Role-Based Access Controller (8 Institutional Roles)"]
+        NotificationMgr["Notification & Expiry Alert Center"]
+        AuditService["Audit Trail & Event Logger"]
     end
 
-    subgraph Core_Modules ["Core Business Modules"]
-        Dash["Dashboard & KPIs"]
-        Repo["Document Repository & Multi-filter"]
-        Batch["Batch Upload AI Engine"]
-        Val["Human-in-the-Loop Validation"]
-        Rel["Relationship & Tree Explorer"]
-        Part["Master Mitra Directory"]
-        Act["Activity & Evidence Management"]
-        AnalyticsMod["In-Depth Analytics & Crosstab"]
-        Accred["Accreditation Workspace (BAN-PT, LAM)"]
-        RepGen["Report Generator (Print/PDF)"]
-        NLQ["Natural Language Query Copilot"]
-        AuditMod["Audit Trail Log"]
+    subgraph Layer3 ["3. Domain & Analytics Engines"]
+        AnalyticsEng["KSDASAnalytics (KPIs, Funnel, Crosstab, Expiry Buckets)"]
+        AI_Engine["KSDASMockAI (Deterministic NLP, 26 Fields, Regex, Quality Flags)"]
+        UI_Formatters["KSDASUI (Modals, Toasts, Badges, Currency Formatters)"]
     end
 
-    subgraph Service_Engines ["Service & Logic Engines"]
-        Store["KSDASStore (State, Versioning, Subscriptions)"]
-        MockAI["KSDASMockAI (Deterministic NLP, 26 Fields, Regex)"]
-        AnalyticsEng["KSDASAnalytics (Chart.js, Funnel, Gaps, Expiry)"]
-        UIEng["KSDASUI (Modals, Toasts, Formatters)"]
+    subgraph Layer4 ["4. Storage & Persistence Boundary"]
+        StoreMgr["KSDASStore (State Management, Versioning, Event Emitter)"]
+        StorageDriver["Storage Adapter Interface"]
+        subgraph StorageAdapters ["Adapter Implementations"]
+            LocalStoreAdapter["LocalStorage Adapter (Prototype v0.2)"]
+            JSONBackupAdapter["JSON Export / Import Adapter"]
+            PostgresAdapter["PostgreSQL REST API Adapter (Target Production)"]
+        end
     end
 
-    subgraph Persistence ["Persistence Layer"]
-        LocalSt["Browser localStorage (Key: ksdas_itdel_store_v2)"]
-        Seed["Window.KSDAS_SEED_DATA (Laguboti Real Context)"]
-        JSONIO["JSON Export / Import Backup"]
+    subgraph Layer5 ["5. Production Infrastructure (Target SDI / TSI)"]
+        FastAPI_Worker["Python FastAPI OCR/LLM Worker (Tesseract / Gemini API)"]
+        PostgresDB["Institutional PostgreSQL 16 Database"]
+        MinIO_Storage["MinIO / S3 Encrypted Document Storage"]
+        SSO_Gateway["IT Del Central SSO (OAuth2 / SAML)"]
     end
 
-    Router --> Core_Modules
-    Core_Modules --> Service_Engines
-    Service_Engines --> Persistence
+    Layer1 --> Layer2
+    Layer2 --> Layer3
+    Layer3 --> Layer4
+    StorageDriver --> StorageAdapters
+    PostgresAdapter -.-> Layer5
 ```
 
 ---
 
-## 3. Alur Data (Data Flow Diagram)
+## 3. ALUR DATA SISTEM (DATA FLOW ARCHITECTURE)
 
+### A. Alur Ingesti Dokumen & Validasi Berjenjang:
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Staf as Staf Unit Kerja Sama / Pengunggah
-    participant UI as Batch Upload UI
-    participant AI as Mock AI Engine
-    participant Store as Store & LocalStorage
-    actor Reviewer as Reviewer / Kepala Biro / WR3
-    participant Dashboard as Dashboard & Repositori
+    actor Staf as Staf Unit Kerja Sama
+    participant Upload as Batch Upload UI
+    participant AI as Document Processing Engine
+    participant Store as Storage / State Manager
+    actor Validator as Kepala Biro / WR3 / Auditor
+    participant Public as Dashboard & Akreditasi
 
-    Staf->>UI: Unggah Berkas (PDF/DOCX) atau Muat 10 Dokumen Sampel
-    UI->>AI: Kirim Teks Dokumen & Nama Berkas
-    AI->>AI: 1. Klasifikasi Jenis (MoU/PKS/IA/Prop/Report)
+    Staf->>Upload: Unggah berkas dokumen (PDF/DOCX)
+    Upload->>AI: Kirim berkas & teks hasil OCR
+    AI->>AI: 1. Klasifikasi Jenis Dokumen
     AI->>AI: 2. Ekstraksi 26 Metadata Field
-    AI->>AI: 3. Normalisasi Mitra & Deteksi Relasi Parent
-    AI->>AI: 4. Hitung Skor Confidence & Quality Flags
-    AI->>Store: Simpan Dokumen dengan Status = AI_EXTRACTED
-    Store->>UI: Tampilkan Antrean Menunggu Validasi (Pusat Notifikasi)
-    
-    Reviewer->>UI: Buka Workspace Validasi Side-by-Side
-    UI->>Reviewer: Tampilkan Teks Asli Berkas (Kiri) vs Form Koreksi (Kanan)
-    Reviewer->>Store: Setujui (VALIDATED) / Simpan Koreksi (CORRECTED)
-    Store->>Store: Tambahkan Rekam Jejak ke Audit Trail
-    Store->>Dashboard: Data Resmi Diperbarui ke Dashboard & Pelaporan Akreditasi
+    AI->>AI: 3. Deteksi Dokumen Induk (Relationship Suggestion)
+    AI->>AI: 4. Hitung Quality Flags & Confidence Score
+    AI->>Store: Simpan data dengan status = AI_EXTRACTED
+    Store->>Upload: Terbitkan notifikasi antrean validasi
+
+    Validator->>Store: Buka Workspace Validasi Side-by-Side
+    Store-->>Validator: Tampilkan Salinan Berkas Asli (Kiri) vs Form Koreksi (Kanan)
+    Validator->>Store: Koreksi / Setujui Data (VALIDATED)
+    Store->>Store: Catat transaksi ke Audit Trail Log
+    Store->>Public: Data resmi tersinkronisasi ke Dashboard, IKU, dan AMI
 ```
 
 ---
 
-## 4. Entity Relationship Diagram (ERD)
+## 4. ENTITY RELATIONSHIP DIAGRAM (ERD V0.2 LENGKAP)
+
+Mencakup seluruh entitas inti sesuai **KSDAS Data Dictionary V0.2 (Seksi A sampai V)**:
 
 ```mermaid
 erDiagram
-    PARTNER ||--o{ DOCUMENT : "memiliki"
-    DOCUMENT ||--o{ DOCUMENT : "memiliki turunan (parentId)"
-    DOCUMENT ||--o{ ACTIVITY : "menghasilkan"
-    ACTIVITY ||--o{ EVIDENCE : "didukung oleh"
-    FACULTY ||--o{ STUDY_PROGRAM : "membawahi"
-    STUDY_PROGRAM ||--o{ DOCUMENT : "pelaksana"
-    INTERNAL_UNIT ||--o{ DOCUMENT : "pengelola"
-    ACCREDITATION_FRAMEWORK ||--o{ ACCREDITATION_INDICATOR : "memiliki"
-    ACCREDITATION_INDICATOR ||--o{ EVIDENCE : "memetakan"
-    USER_ROLE ||--o{ AUDIT_LOG : "mencatat aksi"
+    PARTNER ||--o{ DOCUMENT_REGISTRY : "mengunggah untuk"
+    PARTNER ||--o{ MOU : "mengadakan"
+    PARTNER ||--o{ PKS : "bermitra di"
+    DOCUMENT_REGISTRY ||--o| MOU : "naskah fisik"
+    DOCUMENT_REGISTRY ||--o| PKS : "naskah fisik"
+    DOCUMENT_REGISTRY ||--o| IA : "naskah fisik"
+    DOCUMENT_REGISTRY ||--o| PROPOSAL : "naskah fisik"
+    DOCUMENT_REGISTRY ||--o| FINAL_REPORT : "naskah fisik"
+    
+    MOU ||--o{ PKS : "memayungi (mou_id)"
+    PKS ||--o{ IA : "menurunkan (pks_id)"
+    IA ||--o{ PROPOSAL : "mendasari (ia_id)"
+    PROPOSAL ||--o| FINAL_REPORT : "dipertanggungjawabkan di (proposal_id)"
 
-    PARTNER {
-        string id PK
-        string name
-        string code
-        string type "INDUSTRY|UNIVERSITY|GOVERNMENT|BUMN|NGO"
-        string country
-        string city
-        string contactPerson
-        string email
-        string status "ACTIVE|INACTIVE"
-    }
+    DOCUMENT_REGISTRY ||--o{ SIGNATORY : "memiliki tanda tangan"
+    DOCUMENT_REGISTRY ||--o{ REVIEW : "memiliki catatan review"
 
-    DOCUMENT {
-        string id PK
-        string documentNumber UK
-        string title
-        string type "MOU_LOI|PKS_MOA|IA|PROPOSAL|FINAL_REPORT|OTHER"
-        string partnerId FK
-        string parentId FK "Ref to Parent Document"
-        string signedDate
-        string effectiveStartDate
-        string effectiveEndDate
-        string partnerSignatoryName
-        string itDelSignatoryName
-        string facultyId FK
-        string studyProgramId FK
-        string internalUnitId FK
-        string triDharma "EDUCATION|RESEARCH|COMMUNITY_SERVICE|INSTITUTIONAL"
-        decimal budget
-        string status "AI_EXTRACTED|NEEDS_REVIEW|VALIDATED|CORRECTED|REJECTED"
-        float confidenceScore
-        string qualityFlags
-        boolean officialDataConfirmed
-    }
+    IA ||--o{ ACTIVITY : "melahirkan"
+    ACTIVITY ||--o{ OUTPUT : "menghasilkan"
+    ACTIVITY ||--o{ OUTCOME : "mencapai"
+    ACTIVITY ||--o{ IMPACT : "berdampak pada"
+    ACTIVITY ||--o{ EVIDENCE : "dibuktikan oleh"
 
-    ACTIVITY {
-        string id PK
-        string documentId FK
-        string title
-        string triDharma
-        date startDate
-        date endDate
-        string pic
-        int participantCount
-        decimal budget
-        string status "ONGOING|COMPLETED"
-    }
+    FACULTY ||--o{ STUDY_PROGRAM : "menaungi"
+    STUDY_PROGRAM ||--o{ PKS : "pelaksana"
+    INTERNAL_UNIT ||--o{ PKS : "pengelola"
 
-    EVIDENCE {
-        string id PK
-        string title
-        string type "CERTIFICATE|PHOTO_ATTENDANCE|REPORT_LETTER|PUBLICATION"
-        string documentId FK
-        string activityId FK
-        string fileUrl
-        boolean verified
-        string verifiedBy
-        string mappedCriteria
-    }
+    ACCREDITATION_FRAMEWORK ||--o{ ACCREDITATION_INDICATOR : "memiliki kriteria"
+    ACCREDITATION_INDICATOR ||--o{ INDICATOR_MAPPING : "memetakan"
+    EVIDENCE ||--o{ INDICATOR_MAPPING : "bukti dukung"
+    DOCUMENT_REGISTRY ||--o{ INDICATOR_MAPPING : "naskah acuan"
 
-    ACCREDITATION_INDICATOR {
-        string id PK
-        string frameworkId FK
-        string code
-        string criterion
-        string name
-        string requiredEvidence
-        string complianceStatus "MET|PARTIALLY_MET|NOT_MET"
-    }
-
-    AUDIT_LOG {
-        string id PK
-        datetime timestamp
-        string userRole
-        string action
-        string documentNumber
-        string details
-    }
+    USER_ACCOUNT ||--o{ AUDIT_LOG : "mencatat aktivitas"
 ```
 
 ---
 
-## 5. Batasan Antarmuka Produksi (API Boundary for Production)
+## 5. BATASAN ANTARMUKA PRODUKSI (REST / OPENAPI SPECIFICATION)
 
-Ketika SDI/TSI memindahkan aplikasi ini ke server produksi institusi IT Del, antarmuka REST API berikut direkomendasikan untuk menggantikan `KSDASStore`:
+Ketika tim SDI / TSI mengimplementasikan backend produksi, kontrak REST API berikut dirancang untuk menggantikan modul penyimpanan lokal:
 
-| Endpoint | Metode | Peran Otorisasi | Keterangan |
-| :--- | :---: | :---: | :--- |
-| `/api/v1/auth/sso/login` | POST | Publik | Autentikasi terintegrasi SSO IT Del |
-| `/api/v1/documents` | GET | Semua Role | Pengambilan daftar dokumen dengan pagination & query params |
-| `/api/v1/documents` | POST | Staff, Biro, WR3 | Pembuatan dokumen baru atau penyimpanan manual |
-| `/api/v1/documents/{id}` | GET | Semua Role | Rincian metadata dan salinan bukti dokumen |
-| `/api/v1/documents/{id}/validate` | PUT | Staff, Biro, WR3 | Persetujuan validasi manusia (AI_EXTRACTED &rarr; VALIDATED) |
-| `/api/v1/documents/batch-upload` | POST | Staff | Unggah multipart file berkas ke MinIO/S3 + antrean worker |
-| `/api/v1/ai/extract` | POST | Worker/Service | Service backend OCR (Tesseract / Gemini Document AI) |
-| `/api/v1/partners` | GET, POST, PUT | Staff, Viewer | Pengelolaan data master mitra kerja sama |
-| `/api/v1/analytics/kpis` | GET | Semua Role | Agregasi KPI eksekutif teroptimasi database |
-| `/api/v1/accreditation/mapping`| GET, POST | SPM, Staff | Pemetaan indikator akreditasi ke evidence |
-| `/api/v1/audit-trail` | GET | Biro, WR3, Auditor | Pengambilan rekam jejak sistem |
+| HTTP Verb | Path Endpoint | Peran Otorisasi | Deskripsi & Payload |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/v1/auth/login-sso` | Publik | Pertukaran token SSO IT Del dengan sesi JWT |
+| `GET` | `/api/v1/documents` | Semua Role | Pengambilan daftar naskah dengan filter multidimensi & pagination |
+| `POST` | `/api/v1/documents/batch` | Staf Kerja Sama | Unggah multipart berkas naskah ke antrean pemrosesan worker |
+| `GET` | `/api/v1/documents/{id}` | Semua Role | Rincian lengkap 26 metadata field, silsilah relasi, dan berkas fisik |
+| `PUT` | `/api/v1/documents/{id}/validate` | Staf, Biro, WR3 | Transisi status validasi manusia (`AI_EXTRACTED` &rarr; `VALIDATED`) |
+| `PUT` | `/api/v1/documents/{id}/correct` | Staf, Biro | Menyimpan koreksi manual tanpa menghapus metadata provenance AI |
+| `PUT` | `/api/v1/documents/{id}/link-parent` | Staf, Biro | Menautkan dokumen *orphan* ke ID dokumen induk |
+| `GET` | `/api/v1/partners` | Semua Role | Mengambil direktori mitra kerja sama |
+| `POST` | `/api/v1/partners` | Staf Kerja Sama | Mendaftarkan profil mitra baru |
+| `GET` | `/api/v1/analytics/kpis` | Semua Role | Menghitung metrik KPI eksekutif, *funnel*, dan sebaran Tri Dharma |
+| `GET` | `/api/v1/analytics/expiry` | Semua Role | Mengambil *expiry monitoring timeline* dan *follow-up gap analysis* |
+| `POST` | `/api/v1/ai/nlp-query` | Semua Role | Mesin penerjemah bahasa alami ke query filter terstruktur |
+| `GET` | `/api/v1/accreditation/matrix`| SPM, Pimpinan | Mengambil rekapitulasi keterpenuhan bukti instrumen akreditasi |
+| `GET` | `/api/v1/audit-trail` | Biro, WR3, SPM | Pengambilan log rekam jejak transaksi institusi |
 
 ---
 
-## 6. Rencana Transisi Menuju Produksi (SDI / TSI Roadmap)
+## 6. PEMISAHAN FITUR MOCK DAN REAL PRODUKSI
 
-1. **Database:** Migrasi skema JSON ke tabel relasional **PostgreSQL 16** dengan indexing pada `document_number`, `partner_id`, dan `status`.
-2. **Penyimpanan Berkas:** Ganti referensi file simulasi dengan penyimpanan objek privat **MinIO / AWS S3** dengan presigned URLs dan antivirus scanning.
-3. **Autentikasi:** Integrasikan sistem masuk tunggal (SSO) IT Del berbasis **OAuth2 / OpenID Connect**.
-4. **Ekstraksi AI Produksi:** Gunakan service microservice Python FastAPI yang menggabungkan OCR (Tesseract / PDFPlumber) dan LLM API terotorisasi institusi (Vertex AI / Google Gemini) untuk ekstraksi dokumen naskah asli berbahasa Indonesia.
-5. **Hosting:** Deploy frontend containerized (Nginx) di jaringan intranet kampus Del.
+Untuk transparansi dan tata kelola sistem, tabel berikut memetakan batasan antara fungsionalitas prototype GitHub Pages saat ini dan target implementasi produksi oleh SDI/TSI:
+
+| Komponen Fungsional | Implementasi Prototype v0.2 (Saat Ini) | Target Sistem Produksi (SDI / TSI) |
+| :--- | :--- | :--- |
+| **Penyimpanan Data** | Browser `localStorage` + JSON Import/Export | Basis Data Relasional PostgreSQL 16 Terkelola |
+| **Penyimpanan Berkas** | Simulasi referensi file lokal & mock viewer | Server Penyimpanan Objek Terenkripsi (MinIO / S3) |
+| **Autentikasi Pengguna**| Pengalih peran instan di header (8 peran demo) | Single Sign-On (SSO) Kampus Del (OAuth2 / SAML) |
+| **Mesin Ekstraksi AI** | Heuristic NLP & Regex Deterministik Client-Side | Python FastAPI Worker + OCR Tesseract + LLM API Resmi |
+| **Logika Analitik** | Komputasi client-side JavaScript + Chart.js | Query View / Agregasi SQL Database + Chart.js |
+| **Generator Laporan** | Cetak CSS responsif peramban (`window.print()`) | Mesin Rendering PDF Server-Side (WeasyPrint / Puppeteer) |
+| **Hosting Aplikasi** | GitHub Pages (Frontend Statis) | Intranet Kampus IT Del (Nginx / Docker Container) |
+
+---
+
+## 7. FLEKSIBILITAS INSTRUMEN AKREDITASI (ANTI HARD-CODING)
+
+Sesuai instruksi architect nomor 6, indikator akreditasi **tidak boleh di-hardcode** dalam logika kode, karena instrumen akreditasi (BAN-PT, LAM-INFOKOM, LAM-TEKNIK, IABEE) berubah secara berkala.
+
+### Desain Solusi:
+1. Skema database menggunakan tabel terpisah: `AccreditationFramework`, `AccreditationIndicator`, dan `IndicatorMapping`.
+2. Penambahan instrumen akreditasi baru (misal: *Instrumen Akreditasi Baru 2027*) cukup dilakukan melalui pengisian data master atau impor file konfigurasi JSON tanpa perlu mengubah kode sumber aplikasi.
+3. Hubungan antara dokumen/evidence dan kriteria mutu menggunakan relasi banyak-ke-banyak (*many-to-many*).
+
+---
+
+## 8. INTEGRITAS KEPUTUSAN AI & PROVENANCE PELACAKAN DATA
+
+Setiap pengambilan keputusan oleh mesin AI tunduk pada 3 prinsip integritas data:
+1. **Status Saran (*Suggestion Status*):** Output AI selalu berstatus `AI_EXTRACTED` atau `NEEDS_REVIEW`.
+2. **Preservasi Nilai Sumber (*Source Provenance Preservation*):** Ketika staf mengoreksi nilai yang salah diekstrak, sistem mempertahankan objek `extractions[field]` asli (`source_text`, `source_page`, `confidence_score` awal) dan menyimpan nilai baru bersama penanda `source_type: MANUAL`.
+3. **Audit Trail Mutlak:** Perubahan nilai dicatat dalam entri `AuditLog` yang mencakup nilai lama (*old_value*), nilai baru (*new_value*), identitas staf, dan waktu transaksi.
+
+---
+
+## 9. MATRIKS RISIKO TEKNIS & TATA KELOLA (RISK MATRIX)
+
+| Kategori Risiko | Deskripsi Potensi Risiko | Tingkat Risiko | Strategi Mitigasi Arsitektural |
+| :--- | :--- | :---: | :--- |
+| **Teknis: Storage Limit** | Kapasitas `localStorage` peramban terbatas (~5 MB) | Sedang | Fitur ekspor/impor cadangan JSON otomatis dan pembatasan penyimpanan teks ringkasan |
+| **Teknis: Ekstraksi OCR** | Dokumen hasil scan berkualitas rendah / miring | Tinggi | Antarmuka validasi *side-by-side* wajib verifikasi staf sebelum data masuk laporan resmi |
+| **Governance: Kerahasiaan**| Naskah perjanjian memuat klausul rahasia (*NDA*) | Tinggi | Pada produksi, implementasi RBAC ketat dan penyimpanan berkas terenkripsi (*encryption at rest*) |
+| **Governance: Hak Cipta** | Klaim kepemilikan kode sumber perseorangan | Rendah | Penegasan kepemilikan institusional penuh atas nama **Institut Teknologi Del** pada berkas LICENSE |
+| **Operasional: Pasif MoU** | MoU ditandatangani tetapi tidak ada PKS/kegiatan | Sedang | Modul *Follow-up Gap Analysis* dan notifikasi peringatan proaktif kepada WR3 |
+
+---
+
+## 10. KRITERIA PENERIMAAN PENGUJIAN (ACCEPTANCE CRITERIA)
+
+Prototype dinyatakan memenuhi spesifikasi arsitektur apabila:
+1. **Scenario A:** Mampu memproses antrean 10 dokumen sekaligus, mengidentifikasi jenisnya, mengekstrak 26 field, menyarankan relasi parent, dan menyediakan antarmuka persetujuan staf.
+2. **Scenario B:** Mampu menyaring secara instan kombinasi filter *Industri + Riset + 2026*.
+3. **Scenario C:** SPM dapat memilih indikator akreditasi dan melihat dokumen naskah serta berkas bukti fisik pendukung yang terverifikasi.
+4. **Scenario D:** WR3 dapat memantau dokumen yang akan kedaluwarsa dalam 90 hari, mendeteksi naskah yatim (*orphan*), dan mengunduh laporan eksekutif resmi.
