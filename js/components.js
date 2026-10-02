@@ -1,5 +1,14 @@
 /**
- * KSDAS IT DEL - UI Components, Modals & Notifications
+ * ============================================================================
+ * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
+ * ============================================================================
+ * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
+ * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
+ * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+ * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
+ * Versi: 0.2.0
+ * Berkas: js/components.js (UI Components Library & HTML Sanitizer)
+ * ============================================================================
  */
 
 class KSDASUI {

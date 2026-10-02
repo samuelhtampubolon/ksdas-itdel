@@ -1,6 +1,14 @@
 /**
- * KSDAS IT DEL - Mock AI Document Processing & Analytics Engine
- * Version: 0.2
+ * ============================================================================
+ * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
+ * ============================================================================
+ * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
+ * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
+ * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+ * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
+ * Versi: 0.2.0
+ * Berkas: js/mock-ai.js (AI Document Processing & Natural Language Parser)
+ * ============================================================================
  *
  * Implements deterministic document classification, 26-field metadata extraction,
  * entity normalization, relationship suggestion, quality flags calculation,

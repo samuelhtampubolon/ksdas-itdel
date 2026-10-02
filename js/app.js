@@ -1,8 +1,14 @@
 /**
- * KSDAS IT DEL - Main Application Controller
- * Version: 0.2
- * Orchestrates views, reactive updates, batch uploads, validation,
- * analytics, reports, and search.
+ * ============================================================================
+ * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
+ * ============================================================================
+ * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
+ * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
+ * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+ * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
+ * Versi: 0.2.0
+ * Berkas: js/app.js (Main Application Controller & Workflow Orchestrator)
+ * ============================================================================
  */
 
 class KSDASApp {
@@ -96,14 +102,50 @@ class KSDASApp {
   }
 
   setupGlobalEventListeners() {
-    // Mobile menu toggle
+    // Mobile menu toggle & backdrop overlay
     const mobileBtn = document.getElementById("mobile-menu-btn");
     const sidebar = document.querySelector(".app-sidebar");
-    if (mobileBtn && sidebar) {
-      mobileBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("open");
-      });
+    const backdrop = document.getElementById("sidebar-backdrop");
+
+    const toggleSidebar = (forceClose = false) => {
+      if (!sidebar) return;
+      if (forceClose) {
+        sidebar.classList.remove("open");
+        backdrop?.classList.remove("active");
+      } else {
+        const isOpen = sidebar.classList.toggle("open");
+        if (isOpen) {
+          backdrop?.classList.add("active");
+        } else {
+          backdrop?.classList.remove("active");
+        }
+      }
+    };
+
+    if (mobileBtn) {
+      mobileBtn.addEventListener("click", () => toggleSidebar());
     }
+
+    if (backdrop) {
+      backdrop.addEventListener("click", () => toggleSidebar(true));
+      backdrop.addEventListener("touchstart", () => toggleSidebar(true), { passive: true });
+    }
+
+    // Auto-close sidebar on mobile when navigating
+    document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
+      item.addEventListener("click", () => {
+        if (window.innerWidth <= 1024) {
+          toggleSidebar(true);
+        }
+      });
+    });
+
+    // Close on Escape key
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sidebar?.classList.contains("open")) {
+        toggleSidebar(true);
+      }
+    });
 
     // Quick search trigger
     const searchTrigger = document.getElementById("header-search-trigger");

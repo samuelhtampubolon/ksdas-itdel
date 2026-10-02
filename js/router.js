@@ -106,7 +106,15 @@ class KSDASRouter {
       window.location.hash = hashStr;
     }
 
-    // 5. Notify view listeners
+    // 5. Auto-close mobile sidebar drawer on navigation
+    const sidebar = document.querySelector(".app-sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    if (sidebar && sidebar.classList.contains("open")) {
+      sidebar.classList.remove("open");
+      backdrop?.classList.remove("active");
+    }
+
+    // 6. Notify view listeners
     if (window.ksdasApp && typeof window.ksdasApp.onViewActivated === "function") {
       window.ksdasApp.onViewActivated(routeKey, params);
     }

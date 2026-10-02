@@ -1,7 +1,14 @@
 /**
- * KSDAS IT DEL - Analytics, Metrics & Visualization Engine
- * Handles metric calculations, funnel conversion, expiry monitoring,
- * cross-tabulation, and Chart.js rendering.
+ * ============================================================================
+ * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
+ * ============================================================================
+ * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
+ * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
+ * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+ * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
+ * Versi: 0.2.0
+ * Berkas: js/analytics.js (Analytics, Metrics & Chart.js Visualization Engine)
+ * ============================================================================
  */
 
 class KSDASAnalytics {

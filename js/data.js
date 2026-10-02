@@ -1,7 +1,14 @@
 /**
- * KSDAS IT DEL - Master Seed Data
- * Kerja Sama Data & Analytics System - Institut Teknologi Del
- * Version: 0.2
+ * ============================================================================
+ * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
+ * ============================================================================
+ * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
+ * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
+ * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+ * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
+ * Versi: 0.2.0
+ * Berkas: js/data.js (Master Seed Data & Initial Synthetic Institutional State)
+ * ============================================================================
  */
 
 window.KSDAS_SEED_DATA = {

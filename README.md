@@ -2,45 +2,53 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Demo-GitHub%20Pages-brightgreen?style=for-the-badge&logo=github" alt="Live Demo">
+  <img src="https://img.shields.io/badge/Delivery-Vercel%20Edge%20Ready-black?style=for-the-badge&logo=vercel" alt="Vercel Ready">
   <img src="https://img.shields.io/badge/Institusi-Institut%20Teknologi%20Del-0B2545?style=for-the-badge" alt="IT Del">
   <img src="https://img.shields.io/badge/Author%20%26%20Architect-Samuel%20Hasudungan%20Tampubolon-1D3557?style=for-the-badge" alt="Author">
   <img src="https://img.shields.io/badge/Copyright-%C2%A9%202026%20Samuel%20Hasudungan%20Tampubolon-E63946?style=for-the-badge" alt="Copyright">
-  <img src="https://img.shields.io/badge/Version-0.2.0%20(PoC)-0077B6?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/Status-Ready%20for%20Production%20Handoff-2A9D8F?style=for-the-badge" alt="Status">
+  <img src="https://img.shields.io/badge/Hak%20Cipta-DJKI%20Kemenkumham%20Ready-8338EC?style=for-the-badge" alt="DJKI Ready">
+  <img src="https://img.shields.io/badge/Mobile-Responsive%20%26%20Touch%20Ready-3A86FF?style=for-the-badge" alt="Mobile Ready">
+  <img src="https://img.shields.io/badge/Security-Audit%20Passed%20(Zero%20Harm)-2A9D8F?style=for-the-badge" alt="Security Passed">
 </p>
 
 <p align="center">
   <strong>Platform Terpadu Tata Kelola Kemitraan Strategis, Repositori Naskah Perjanjian, Ekstraksi Metadata AI, Pemantauan Masa Berlaku, dan Pemetaan Instrumen Akreditasi Institut Teknologi Del (IT Del), Laguboti, Kabupaten Toba.</strong><br>
-  <em>Dirancang untuk transisi mulus dan integrasi mudah ke infrastruktur server Direktorat SDI / TSI / DukTek IT Del.</em>
+  <em>Dirancang untuk transisi mulus dan integrasi mudah ke infrastruktur server Direktorat SDI / TSI / DukTek IT Del, baik pada jaringan lokal (intranet/LAN) maupun jaringan internet publik.</em>
 </p>
 
 <p align="center">
-  🔗 <strong>Tautan Demo Publik:</strong> <a href="https://samuelhtampubolon.github.io/ksdas-itdel/">https://samuelhtampubolon.github.io/ksdas-itdel/</a> &bull;
-  📖 <strong>Panduan Integrasi Server:</strong> <a href="docs/PANDUAN_INTEGRASI_SDI_TSI.md">docs/PANDUAN_INTEGRASI_SDI_TSI.md</a>
+  🌐 <strong>Live Demo GitHub Pages:</strong> <a href="https://samuelhtampubolon.github.io/ksdas-itdel/">https://samuelhtampubolon.github.io/ksdas-itdel/</a> &bull;
+  ⚡ <strong>Panduan Delivery & Deployment:</strong> <a href="docs/PANDUAN_DELIVERY_DEPLOYMENT.md">docs/PANDUAN_DELIVERY_DEPLOYMENT.md</a> &bull;
+  🏛️ <strong>Panduan Integrasi SDI/TSI:</strong> <a href="docs/PANDUAN_INTEGRASI_SDI_TSI.md">docs/PANDUAN_INTEGRASI_SDI_TSI.md</a> &bull;
+  ⚖️ <strong>Berkas Pendaftaran Hak Cipta DJKI:</strong> <a href="docs/HAK_CIPTA_LEGAL_DJKI.md">docs/HAK_CIPTA_LEGAL_DJKI.md</a>
 </p>
 
 ---
 
-## 📢 Berita & Pembaruan Terkini (News)
+## 📢 Berita & Pembaruan Terkini (News & Release Highlights)
 
-- **[2026-10-03] 🚀 Kesiapan Handoff Server Kampus (SDI/TSI/DukTek):** Paket integrasi server resmi telah rampung, mencakup panduan integrasi teknis ([`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md)), skrip migrasi DDL PostgreSQL 18 tabel ([`docs/schema_production_postgres.sql`](docs/schema_production_postgres.sql)), konfigurasi lingkungan ([`.env.example`](.env.example)), dan stack kontainer ([`docker-compose.yml`](docker-compose.yml)).
-- **[2026-10-03] 🛡️ Hardening Keamanan Data & Anti-Bahaya:** Penguatan menyeluruh terhadap potensi kerentanan keamanan; pembersihan 100% token/kredensial, pengetatan sanitasi XSS pada seluruh modal antarmuka, kebijakan CSP aktif, proteksi impor JSON anti-*prototype pollution*, dan kepatuhan UU PDP No. 27/2022 atas seluruh data simulasi sintetis.
-- **[2026-10-03] ⚖️ Penyematan Hak Cipta Resmi:** Hak Cipta rancangan arsitektur dan prototipe disematkan secara resmi atas nama **Samuel Hasudungan Tampubolon** (`Copyright © 2026 Samuel Hasudungan Tampubolon`).
+- **[2026-10-03] 📱 Mobile Optimization & Smartphone Native Experience:** Antarmuka disempurnakan secara menyeluruh untuk perangkat ponsel pintar (*smartphone*): laci navigasi *off-canvas* dengan efek *backdrop blur*, penutupan otomatis laci saat bernavigasi, *touch target* 44px, kartu KPI adaptif, serta tabel dengan pengguliran horizontal lancar (*smooth touch momentum*).
+- **[2026-10-03] 🌐 Multi-Channel Delivery Ready (Bukan Localhost):** Selain GitHub Pages, sistem kini mendukung opsi delivery serverless instan melalui **Vercel / Cloudflare Pages** ([`vercel.json`](vercel.json)) dan penerapan server on-premise kampus IT Del via **Docker Compose** ([`docker-compose.yml`](docker-compose.yml)).
+- **[2026-10-03] ⚖️ Kesiapan Berkas Pengajuan Hak Cipta Resmi DJKI:** Telah disusun berkas legal formal pengajuan Hak Cipta Program Komputer ke Ditjen KI Kemenkumham RI ([`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md)) atas nama **Samuel Hasudungan Tampubolon**.
+- **[2026-10-03] 🛡️ Laporan Audit Keamanan Siber & Bebas Bahaya:** Diterbitkan sertifikasi evaluasi keamanan ([`docs/CYBERSECURITY_AUDIT.md`](docs/CYBERSECURITY_AUDIT.md)) yang menjamin sistem *zero harm to local environment*, 100% bebas malware/trojan, bebas jejak berbahaya, aman pada jaringan lokal maupun internet, dan patuh UU PDP No. 27/2022.
+- **[2026-10-03] 🚀 Kesiapan Handoff Server Kampus (SDI/TSI/DukTek):** Paket integrasi server resmi telah siap pakai, mencakup skrip migrasi DDL PostgreSQL 18 tabel ([`docs/schema_production_postgres.sql`](docs/schema_production_postgres.sql)), konfigurasi lingkungan ([`.env.example`](.env.example)), dan reverse proxy ([`nginx.conf`](nginx.conf)).
 
 ---
 
 ## 📑 Daftar Isi
 
 1. [Mulai Cepat (Quick Start dalam 1 Menit)](#-mulai-cepat-quick-start-dalam-1-menit)
-2. [Latar Belakang & Nilai Tambah Sistem](#-latar-belakang--nilai-tambah-sistem)
-3. [Arsitektur Solusi & Alur Data](#-arsitektur-solusi--alur-data)
-4. [23 Fitur Wajib yang Telah Terimplementasi](#-23-fitur-wajib-yang-telah-terimplementasi)
-5. [Panduan Integrasi untuk Tim SDI / TSI / DukTek](#-panduan-integrasi-untuk-tim-sdi--tsi--duktek)
-6. [Kesiapan & Keandalan Antarmuka (UI/UX)](#-kesiapan--keandalan-antarmuka-uiux)
-7. [Keamanan Data, Privasi & Kepatuhan Regulasi](#-keamanan-data-privasi--kepatuhan-regulasi)
-8. [Skenario Pengujian Penerimaan (Acceptance Demo)](#-skenario-pengujian-penerimaan-acceptance-demo)
-9. [Dokumentasi Lengkap Repositori](#-dokumentasi-lengkap-repositori)
-10. [Tata Kelola, Hak Cipta & Lisensi](#-tata-kelola-hak-cipta--lisensi)
+2. [Pilihan Jalur Delivery (GitHub Pages, Cloud Edge, & Server Kampus)](#-pilihan-jalur-delivery-sistem)
+3. [Latar Belakang & Nilai Tambah Sistem](#-latar-belakang--nilai-tambah-sistem)
+4. [Arsitektur Solusi & Alur Data](#-arsitektur-solusi--alur-data)
+5. [23 Fitur Wajib yang Telah Terimplementasi](#-23-fitur-wajib-yang-telah-terimplementasi)
+6. [Panduan Integrasi untuk Tim SDI / TSI / DukTek IT Del](#-panduan-integrasi-untuk-tim-sdi--tsi--duktek)
+7. [Kesiapan & Keindahan Antarmuka Mobile (UI/UX Smartphone)](#-kesiapan--keindahan-antarmuka-mobile-uiux-smartphone)
+8. [Keamanan Siber & Perlindungan Data (Cybersecurity & Safety Clearance)](#-keamanan-siber--perlindungan-data)
+9. [Skenario Pengujian Penerimaan (Acceptance Demo)](#-skenario-pengujian-penerimaan-acceptance-demo)
+10. [Dokumen Legal Pengajuan Hak Cipta (DJKI Kemenkumham)](#-dokumen-legal-pengajuan-hak-cipta-djki-kemenkumham)
+11. [Daftar Dokumentasi Lengkap Repositori](#-daftar-dokumentasi-lengkap-repositori)
+12. [Tata Kelola, Hak Cipta & Lisensi](#-tata-kelola-hak-cipta--lisensi)
 
 ---
 
@@ -69,9 +77,36 @@ python -m http.server 8080      # Menggunakan Python 3
 
 ---
 
+## 🌐 Pilihan Jalur Delivery Sistem
+
+Sistem mendukung 3 metode pengiriman (*delivery*) produksi selain localhost:
+
+```mermaid
+graph TD
+    Repo["Source Code Repositori (samuelhtampubolon/ksdas-itdel)"]
+
+    Repo --> J1["Jalur 1: GitHub Pages (Live CDN)"]
+    Repo --> J2["Jalur 2: Vercel / Cloudflare Pages (Serverless Edge)"]
+    Repo --> J3["Jalur 3: Server On-Premise Kampus IT Del (Docker)"]
+
+    J1 --> U1["https://samuelhtampubolon.github.io/ksdas-itdel/"]
+    J2 --> U2["https://ksdas-itdel.vercel.app / Custom Domain"]
+    J3 --> U3["https://kerjasama.del.ac.id (LAN / Intranet / Internet DMZ)"]
+```
+
+| Metode Delivery | Tipe Infrastruktur | Kesiapan | URL Akses |
+| :--- | :--- | :---: | :--- |
+| **1. GitHub Pages** | Global CDN Edge (Static) | ✅ **Aktif Langsung** | [samuelhtampubolon.github.io/ksdas-itdel/](https://samuelhtampubolon.github.io/ksdas-itdel/) |
+| **2. Vercel Edge** | Serverless Edge (Bukan Localhost) | ✅ **Siap 1-Click (`vercel.json`)** | Otomatis di `https://[nama-proyek].vercel.app` |
+| **3. Server Kampus IT Del** | Docker Compose On-Premise (LAN & DMZ) | ⚙️ **Siap Deploy (`docker-compose.yml`)** | `https://kerjasama.del.ac.id` |
+
+*Panduan teknis konfigurasi lengkap tersedia di [docs/PANDUAN_DELIVERY_DEPLOYMENT.md](docs/PANDUAN_DELIVERY_DEPLOYMENT.md).*
+
+---
+
 ## 📌 Latar Belakang & Nilai Tambah Sistem
 
-Unit Kerja Sama Institut Teknologi Del mengelola portofolio kemitraan aktif dengan mitra industri multinasional/nasional (Huawei, Microsoft, PT Astra International, Bank Mandiri), perguruan tinggi mitra (ITB, UI, National University of Singapore), serta instansi pemerintah (Pemkab Toba, Pemprov Sumut).
+Unit Kerja Sama Institut Teknologi Del mengelola portofolio kemitraan aktif dengan mitra industri terkemuka (Huawei, Microsoft, PT Astra International, Bank Mandiri), perguruan tinggi mitra (ITB, UI, National University of Singapore), serta instansi pemerintah (Pemkab Toba, Pemprov Sumut).
 
 Sebelum adanya KSDAS, pengelolaan naskah kerja sama menghadapi kendala berkas yang tersebar, proses rekapitulasi data akreditasi SPM/Prodi yang memakan waktu berhari-hari, serta sulitnya mendeteksi naskah yang mendekati masa kedaluwarsa. KSDAS mentransformasikan proses manual tersebut menjadi alur data cerdas:
 
@@ -150,7 +185,9 @@ flowchart TD
 
 ## 🔌 Panduan Integrasi untuk Tim SDI / TSI / DukTek
 
-Dokumen ini disusun agar tim teknis kampus dapat **dengan sangat mudah menjelaskan, memahami, dan mengeksekusi integrasi sistem** ke server kampus IT Del. Panduan langkah per langkah yang komprehensif tersedia pada [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md).
+Dokumen ini disusun agar tim teknis kampus dapat **dengan sangat mudah menjelaskan, memahami, dan mengeksekusi integrasi sistem** ke server kampus IT Del, baik untuk **jaringan lokal (intranet/LAN)** maupun **jaringan internet publik**.
+
+Panduan langkah per langkah yang komprehensif tersedia pada [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md).
 
 ### 4 Pilar Kemudahan Integrasi:
 
@@ -172,21 +209,20 @@ graph LR
 
 ### Langkah Cepat Penerapan di Server Kampus:
 
-#### 1. Eksekusi Skrip Database PostgreSQL
-Tidak perlu membuat tabel secara manual. Cukup jalankan skrip migrasi resmi:
+#### 1. Eksekusi Skrip Database PostgreSQL (1 Perintah)
 ```bash
 psql -U ksdas_app -d ksdas_db -f docs/schema_production_postgres.sql
 ```
 
 #### 2. Konfigurasi Lingkungan (`.env`)
-Salin template konfigurasi yang telah disediakan:
+Salin template konfigurasi resmi:
 ```bash
 cp .env.example .env
-# Edit kredensial database kampus, MinIO storage, dan SSO IT Del
+# Sesuaikan kredensial database kampus, MinIO storage, dan SSO IT Del
 ```
 
 #### 3. Jalankan Kontainer Produksi (Docker Compose)
-Seluruh stack server (Nginx Web Server, PostgreSQL 16, dan MinIO S3) dapat dijalankan dalam satu perintah:
+Seluruh stack server (Nginx Web Server, PostgreSQL 16, dan MinIO S3) aktif dalam satu perintah:
 ```bash
 docker compose up -d
 ```
@@ -194,7 +230,7 @@ docker compose up -d
 #### 4. Menghubungkan Antarmuka ke REST API Kampus
 Buka [`js/store.js`](js/store.js), ubah satu baris konfigurasi:
 ```javascript
-const CONFIG = {
+const KSDAS_API_CONFIG = {
   USE_BACKEND_API: true, // Diaktifkan saat terhubung ke backend kampus
   API_BASE_URL: "/api/v1"
 };
@@ -203,29 +239,42 @@ Antarmuka UI, grafik analitik, formulir koreksi, dan tampilan laporan langsung t
 
 ---
 
-## 🎨 Kesiapan & Keandalan Antarmuka (UI/UX)
+## 📱 Kesiapan & Keindahan Antarmuka Mobile (UI/UX Smartphone)
 
-Antarmuka KSDAS IT Del telah diuji dan dirancang memenuhi standar aplikasi institusional modern:
-1. **Hierarki Visual Jelas:** Tipografi formal menggunakan *Plus Jakarta Sans* (antarmuka), *Outfit* (judul & kartu metrik), serta *JetBrains Mono* (nomor naskah perjanjian dan kode dokumen).
-2. **Skema Warna Institusional:** Palet warna biru Del yang elegan (`#0B2545`, `#134074`, `#0077B6`) dipadukan dengan aksen hijau toska (`#2A9D8F`) dan merah peringatan (`#E63946`).
-3. **Responsif & Adaptif:** Tata letak fleksibel yang bekerja optimal pada monitor desktop resolusi tinggi, tablet, hingga smartphone layar sentuh.
-4. **Kejelasan Status & Umpan Balik (*Feedback States*):** Setiap tindakan pengguna dilengkapi notifikasi toast instan, badge status berwarna, indikator persentase keyakinan AI, dan status verifikasi berkas bukti fisik.
-5. **Siap Cetak Resmi (*Print-Ready Layout*):** Generator laporan dilengkapi aturan stylesheet `@media print` sehingga dokumen eksekutif dapat langsung dicetak atau disimpan ke PDF dengan tata letak kop surat institusi yang rapi.
+Antarmuka KSDAS IT Del telah diuji dan dirancang khusus memenuhi kenyamanan penggunaan pada perangkat ponsel pintar (*mobile phone*):
+
+```
+┌──────────────────────────────────────┐
+│  ☰ DEL  [Cari...]  [Staf Kerjasama▼] │  <- Header ringkas & hemat ruang
+├──────────────────────────────────────┤
+│  Peringatan: 2 Kontrak Expiring      │  <- Bilah alert kontras tinggi
+├──────────────────────────────────────┤
+│  ┌───────────────┐ ┌───────────────┐ │
+│  │ 8 Mitra Aktif │ │ 30 Perjanjian │ │  <- KPI Grid 2 kolom responsif
+│  └───────────────┘ └───────────────┘ │
+│  ┌─────────────────────────────────┐ │
+│  │ Tabel Dokumen (Scroll Horizontal│ │  <- Tabel dengan touch-momentum
+│  └─────────────────────────────────┘ │
+└──────────────────────────────────────┘
+```
+
+1. **Laci Navigasi Geser (*Off-Canvas Drawer*):** Menekan tombol hamburger (☰) memunculkan sidebar navigasi dari kiri dengan latar belakang gelap (*backdrop blur overlay*). Mengetuk tautan menu atau mengetuk area luar otomatis menutup laci navigasi secara halus.
+2. **Kartu KPI Adaptif:** Berubah otomatis dari 4 kolom di desktop menjadi 2 kolom di tablet/ponsel sedang, dan 1 kolom di ponsel layar kecil.
+3. **Pengguliran Tabel Sentuh (*Touch-Friendly Horizontal Scroll*):** Wadah tabel dilengkapi aturan `-webkit-overflow-scrolling: touch` sehingga pengguna ponsel dapat menggeser tabel data yang lebar tanpa merusak lebar layar ponsel.
+4. **Modal Validasi Vertikal (*Stacked Responsive Modal*):** Tampilan validasi *side-by-side* secara otomatis ditata vertikal di ponsel (teks OCR di atas, formulir isian di bawah) dengan tinggi fleksibel agar mudah diisi dengan jempol.
+5. **Ukuran Sentuh Ergonomis (*Ergonomic Touch Targets*):** Semua tombol dan kontrol seleksi memiliki tinggi minimal 40-44px untuk mencegah salah tekan saat menggunakan ponsel layar sentuh.
 
 ---
 
-## 🛡️ Keamanan Data, Privasi & Kepatuhan Regulasi
+## 🛡️ Keamanan Siber & Perlindungan Data
 
-Keamanan dan keselamatan data menjadi prioritas mutlak dalam perancangan KSDAS:
+Keamanan sistem dan keselamatan perangkat pengguna diverifikasi secara formal dalam [`docs/CYBERSECURITY_AUDIT.md`](docs/CYBERSECURITY_AUDIT.md):
 
-- **Bebas Bahaya Data Nyata (Data Sintetis):** Seluruh entitas mitra, nama penandatangan, nomor kontrak, dan dokumen lampiran pada prototipe publik ini merupakan **data simulasi sintetis**. Tidak ada informasi rahasia (*Non-Disclosure Agreement*), nomor kontak pribadi, atau data perbankan riil yang diunggah ke repositori publik ini.
-- **Pencegahan Injeksi Kode (XSS):** Seluruh masukan pengguna dan luaran teks dinamis disanitasi secara ketat melalui fungsi `this.ui.escapeHtml()`.
-- **Content Security Policy (CSP):** Membatasi eksekusi sumber skrip dan aset hanya dari domain yang terverifikasi aman.
-- **Pencegahan Kelebihan Beban Penyimpanan (*Storage Quota Protection*):** Penanganan eksepsi `QuotaExceededError` pada `localStorage` untuk mencegah korupsi data sesi pengguna.
-- **Validasi Berkas Ketat:** Membatasi unggahan hanya pada berkas `.pdf`, `.docx`, dan `.doc` dengan batas ukuran berkas maksimum 25 MB.
-- **Kepatuhan Regulasi:** Memenuhi prinsip akuntabilitas dan kerahasiaan data sesuai amanat **Undang-Undang Republik Indonesia Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP)**.
-
-Dokumentasi kebijakan keamanan lengkap dapat ditinjau pada [`docs/SECURITY.md`](docs/SECURITY.md).
+- **Nol Kerusakan pada Perangkat Lokal (*Zero Harm to Host*):** Tidak ada manipulasi registry, tidak ada kode berisiko trojan/miner, tidak ada pembacaan berkas lokal di luar direktori, dan tidak memerlukan akses administrator/root.
+- **Pembersihan Jejak Berbahaya (*Erase Dangerous Tracks*):** Berkas `.gitignore` aktif mencegah log debug, berkas `.env`, kredensial privat, dan file temporer masuk ke git.
+- **Perlindungan Terhadap Serangan XSS & Injeksi:** Seluruh luaran teks dinamis disanitasi menggunakan `escapeHtml()`.
+- **Content Security Policy (CSP):** Membatasi eksekusi skrip hanya dari `'self'` dan CDN resmi yang terverifikasi.
+- **Kepatuhan UU PDP No. 27/2022:** Repositori publik hanya menggunakan **data simulasi sintetis** institusi Del tanpa memuat NIK, data keuangan riil, atau klausul rahasia.
 
 ---
 
@@ -260,16 +309,28 @@ Panduan pengujian langkah per langkah terperinci tersedia di [`docs/DEMO_SCRIPTS
 
 ---
 
-## 📚 Dokumentasi Lengkap Repositori
+## ⚖️ Dokumen Legal Pengajuan Hak Cipta (DJKI Kemenkumham)
 
-Folder `docs/` memuat dokumentasi teknis menyeluruh yang siap diserahkan kepada tim kampus:
+Untuk keperluan **pencatatan Hak Cipta resmi secara legal dan formal** ke Direktorat Jenderal Kekayaan Intelektual (DJKI) Kementerian Hukum dan HAM RI:
+
+- **Dokumen Spesifikasi Permohonan Ciptaan:** Tersedia pada berkas [`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md).
+- **Jenis Ciptaan:** Program Komputer (Pasal 40 ayat (1) huruf s UU No. 28 Tahun 2014 tentang Hak Cipta).
+- **Judul Ciptaan:** *Kerja Sama Data & Analytics System (KSDAS) Institut Teknologi Del*.
+- **Pencipta & Pemegang Hak Cipta:** **Samuel Hasudungan Tampubolon**.
+- **Tanggal & Tempat Diumumkan Pertama Kali:** 3 Oktober 2026 di Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara.
+
+---
+
+## 📚 Daftar Dokumentasi Lengkap Repositori
 
 | Berkas Dokumentasi | Peruntukan Utama | Deskripsi Isi |
 | :--- | :--- | :--- |
-| 🚀 [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md) | Tim SDI / TSI / DukTek | Panduan teknis integrasi database, MinIO, SSO IT Del, dan REST API |
-| 📄 [`docs/HANDOFF_SPEC_SDI_TSI.md`](docs/HANDOFF_SPEC_SDI_TSI.md) | Manajemen & Tim Teknis | Spesifikasi formal serah terima kebutuhan dari Unit Kerja Sama (19 Bab) |
+| 🚀 [`docs/PANDUAN_DELIVERY_DEPLOYMENT.md`](docs/PANDUAN_DELIVERY_DEPLOYMENT.md) | Tim Teknis / DevOps | Panduan penerapan di GitHub Pages, Vercel Edge, dan Server Kampus IT Del |
+| 🏛️ [`docs/PANDUAN_INTEGRASI_SDI_TSI.md`](docs/PANDUAN_INTEGRASI_SDI_TSI.md) | Tim SDI / TSI / DukTek | Panduan teknis integrasi database, MinIO, SSO IT Del, dan REST API |
+| ⚖️ [`docs/HAK_CIPTA_LEGAL_DJKI.md`](docs/HAK_CIPTA_LEGAL_DJKI.md) | Legal / Kemenkumham | Naskah resmi pengajuan pencatatan Hak Cipta Program Komputer ke DJKI |
+| 🛡️ [`docs/CYBERSECURITY_AUDIT.md`](docs/CYBERSECURITY_AUDIT.md) | Tim Keamanan Siber | Laporan audit keamanan siber, no-harm certificate, dan kepatuhan UU PDP |
+| 📄 [`docs/HANDOFF_SPEC_SDI_TSI.md`](docs/HANDOFF_SPEC_SDI_TSI.md) | Manajemen & Tim Kampus | Spesifikasi formal serah terima kebutuhan dari Unit Kerja Sama (19 Bab) |
 | 📐 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Solution Architect | Arsitektur modul, diagram alur data, ERD Mermaid, dan batasan REST API |
-| 🛡️ [`docs/SECURITY.md`](docs/SECURITY.md) | Tim Keamanan Siber & DPO | Kebijakan keamanan data, kepatuhan UU PDP No. 27/2022, dan mitigasi risiko |
 | 📚 [`docs/DATA_DICTIONARY.md`](docs/DATA_DICTIONARY.md) | Database Administrator | Kamus data lengkap dan definisi tipe kolom untuk 18 entitas relasional |
 | 💾 [`docs/schema_production_postgres.sql`](docs/schema_production_postgres.sql) | Database Administrator | Skrip DDL resmi PostgreSQL 14/16 (Tabel, Index, Trigger, dan Views) |
 | 🤖 [`docs/AI_PROCESSING_SPEC.md`](docs/AI_PROCESSING_SPEC.md) | Pengembang Backend / AI | Spesifikasi mesin ekstraksi 26 field, confidence score, dan parser NLP |

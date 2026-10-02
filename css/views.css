@@ -393,3 +393,49 @@
     max-width: 100% !important;
   }
 }
+
+/* ========================================================
+   RESPONSIVE VIEW LAYOUTS (SMARTPHONE)
+   ======================================================== */
+@media (max-width: 768px) {
+  .validation-split-screen {
+    grid-template-columns: 1fr;
+    height: auto;
+    max-height: 75vh;
+    overflow-y: auto;
+    gap: 16px;
+  }
+
+  .validation-doc-pane {
+    max-height: 260px;
+  }
+
+  .nl-input-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nl-input-group .btn {
+    width: 100%;
+  }
+
+  .report-paper {
+    padding: 20px 16px;
+  }
+
+  .report-header-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .report-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .tree-branch {
+    padding-left: 12px;
+    margin-left: 6px;
+  }
+}

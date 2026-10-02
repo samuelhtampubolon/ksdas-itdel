@@ -370,12 +370,40 @@ body {
   flex-wrap: wrap;
 }
 
-/* Responsive Breakpoints */
+/* Sidebar Backdrop for Mobile Screens */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 37, 69, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 95;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.sidebar-backdrop.active {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ========================================================
+   RESPONSIVE BREAKPOINTS (TABLET & SMARTPHONE)
+   ======================================================== */
+
+/* Tablet & Smaller Laptops (<= 1024px) */
 @media (max-width: 1024px) {
   .app-sidebar {
     position: fixed;
     transform: translateX(-100%);
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+    z-index: 100;
   }
 
   .app-sidebar.open {
@@ -383,14 +411,119 @@ body {
   }
 
   .mobile-menu-toggle {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .content-wrapper {
-    padding: 20px;
+    padding: 20px 20px 48px 20px;
   }
 
   .app-header {
     padding: 0 20px;
+  }
+}
+
+/* Mobile Smartphones (<= 768px) */
+@media (max-width: 768px) {
+  .app-header {
+    height: auto;
+    min-height: 58px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 160px;
+    gap: 8px;
+  }
+
+  .quick-search-trigger {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    max-width: 200px;
+  }
+
+  .search-shortcut {
+    display: none;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .role-switcher-label {
+    display: none;
+  }
+
+  .role-select {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    max-width: 145px;
+  }
+
+  .content-wrapper {
+    padding: 16px 12px 64px 12px;
+  }
+
+  .view-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .view-title-group h2 {
+    font-size: 1.35rem;
+  }
+
+  .view-title-group p {
+    font-size: 0.82rem;
+  }
+
+  .view-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .view-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* Small Smartphone Displays (<= 480px) */
+@media (max-width: 480px) {
+  .brand-text h1 {
+    font-size: 1.05rem;
+  }
+
+  .view-title-group h2 {
+    font-size: 1.2rem;
+  }
+
+  .app-header {
+    padding: 8px 10px;
+  }
+
+  .content-wrapper {
+    padding: 12px 8px 56px 8px;
+  }
+
+  .quick-search-trigger span:nth-child(2) {
+    display: inline-block;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .role-select {
+    max-width: 125px;
   }
 }
