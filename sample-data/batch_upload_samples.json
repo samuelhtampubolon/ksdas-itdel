@@ -6,7 +6,6 @@
     "expectedPartner": "PT Bank Mandiri (Persero) Tbk",
     "expectedDocNumber": "014/ITDel/MoU/II/2026",
     "suggestedParent": null,
-    "confidence": 0.98,
     "triDharma": "EDUCATION",
     "triDharmaList": [
       "EDUCATION",
@@ -53,7 +52,6 @@
     "expectedPartner": "Pemerintah Provinsi Sumatera Utara",
     "expectedDocNumber": "018/ITDel/MoU/III/2026",
     "suggestedParent": null,
-    "confidence": 0.97,
     "triDharma": "COMMUNITY_SERVICE",
     "triDharmaList": [
       "COMMUNITY_SERVICE",
@@ -100,7 +98,6 @@
     "expectedPartner": "Universiti Teknologi Malaysia (UTM)",
     "expectedDocNumber": "021/ITDel/MoU/IV/2026",
     "suggestedParent": null,
-    "confidence": 0.96,
     "triDharma": "RESEARCH",
     "triDharmaList": [
       "RESEARCH",
@@ -146,7 +143,6 @@
     "expectedPartner": "PT Bank Mandiri (Persero) Tbk",
     "expectedDocNumber": "031/ITDel/PKS/FTI/IV/2026",
     "suggestedParent": "014/ITDel/MoU/II/2026",
-    "confidence": 0.95,
     "triDharma": "EDUCATION",
     "triDharmaList": [
       "EDUCATION"
@@ -190,7 +186,6 @@
     "expectedPartner": "PT Huawei Tech Investment",
     "expectedDocNumber": "035/ITDel/PKS/FITE/V/2026",
     "suggestedParent": "012/ITDel/MoU/IV/2024",
-    "confidence": 0.98,
     "triDharma": "EDUCATION",
     "triDharmaList": [
       "EDUCATION",
@@ -237,7 +232,6 @@
     "expectedPartner": "PT Astra International Tbk",
     "expectedDocNumber": "042/ITDel/PKS/FTI/VI/2026",
     "suggestedParent": "002/ITDel/MoU/III/2026",
-    "confidence": 0.94,
     "triDharma": "RESEARCH",
     "triDharmaList": [
       "RESEARCH"
@@ -280,7 +274,6 @@
     "expectedPartner": "Pemerintah Provinsi Sumatera Utara",
     "expectedDocNumber": "048/ITDel/PKS/LPPM/VII/2026",
     "suggestedParent": "018/ITDel/MoU/III/2026",
-    "confidence": 0.96,
     "triDharma": "COMMUNITY_SERVICE",
     "triDharmaList": [
       "COMMUNITY_SERVICE",
@@ -325,7 +318,6 @@
     "expectedPartner": "PT Huawei Tech Investment",
     "expectedDocNumber": "IA/022/FITE-IF/VIII/2026",
     "suggestedParent": "035/ITDel/PKS/FITE/V/2026",
-    "confidence": 0.95,
     "triDharma": "EDUCATION",
     "triDharmaList": [
       "EDUCATION"

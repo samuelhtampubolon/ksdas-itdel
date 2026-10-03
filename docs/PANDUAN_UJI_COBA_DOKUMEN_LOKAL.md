@@ -1,38 +1,117 @@
-# Panduan uji coba dokumen sendiri
+# Panduan Uji Coba Dokumen Sendiri — KSDAS IT Del
 
-Demo ini publik. Jangan memakai naskah asli yang memuat data pribadi, anggaran rahasia, atau klausul terbatas.
+Dokumen ini memandu staf, Dekan, Kaprodi, dan pimpinan dalam menguji coba alur operasional Sistem Informasi Kerja Sama (KSDAS) Institut Teknologi Del, baik pada versi Web (GitHub Pages / Lokal) maupun versi Desktop Standalone (`.EXE`).
 
-## Yang diuji
+> **Pemberitahuan Keamanan**: Demo peramban publik GitHub Pages bersifat publik untuk pengujian alur antarmuka. Jangan mengunggah naskah asli yang memuat data pribadi sensitif atau klausul rahasia ke demo publik. Untuk naskah dinas, gunakan server lokal intranet kampus atau aplikasi desktop portabel (`KSDAS_ITDel.exe`).
 
-1. Pilih peran **Staf Unit Kerja Sama**.
-2. Buka **Catat**.
-3. Unggah satu atau beberapa berkas PDF atau Word.
-4. Periksa formulir. Hanya jenis, nomor, atau mitra yang bisa terisi dari **nama berkas**. Isi halaman PDF tidak dibaca.
-5. Isi nomor, judul, mitra, tanggal, fakultas, dan penandatangan. Simpan sebagai draf bila masih ada yang kosong.
-6. Coba tanggal berakhir yang lebih awal dari tanggal mulai. Sistem menolak dengan kalimat yang menyebut apa yang harus diperbaiki.
-7. Tandai aktif hanya setelah kolom wajib terisi.
+---
 
-## Impor tabel, bukan ketik ulang
+## 1. Alur Kerja Staf Unit Kerja Sama
 
-1. Di Google Sheets atau Excel, susun baris dengan judul kolom seperti pada template. Unduh template dari menu **Impor tabel**.
-2. Salin tabel, tempel di kotak impor, lalu baca tempelan.
-3. Periksa kolom yang dikenali dan yang diabaikan.
-4. Masukkan ke pencatatan. Nomor yang sudah ada dilewati.
-5. Buka naskah yang masih kosong dan lengkapi.
+Alur operasional staf dirancang efisien dan deterministik (tanpa AI/ML/OCR) untuk menggantikan kebiasaan pencatatan tersebar di Google Sheets, Google Drive, OneDrive, dan Notion.
 
-Word dapat disalin sebagai tabel yang sama. Berkas `.docx` langsung dibaca pada aplikasi pratinjau yang lebih lengkap. Di demo Pages ini, jalan yang paling pasti adalah menempelkan tabel.
+```
+[Unggah Berkas Naskah] 
+       ↓ 
+[Tercatat di Basis Data] 
+       ↓ 
+[Formulir Terbuka dengan Default Sistem] 
+  (Rektor Dr. Arnaldo Sinaga, Tanggal Hari Ini, Lokasi Laguboti)
+       ↓
+[Pilihan Isian Staf]:
+  ├─ A. Input / Lengkapi Manual Sebagian Besar Kolom
+  └─ B. Pintasan Otomatisasi: Pilih Berkas / Tempel Ringkasan (.csv/.txt)
+       ↓
+[Validasi Aturan & Simpan ke Basis Data]
+```
 
-## Dekan dan kaprodi
+### Langkah Pengujian Staf:
+1. Masuk ke aplikasi dan pilih peran **Staf Unit Kerja Sama**.
+2. Klik menu **Catat**.
+3. **Unggah Berkas Lampiran**: Klik *Unggah Berkas Naskah* (PDF/Word/Scan). Berkas tercatat di sistem sebagai lampiran dosir.
+4. **Periksa Nilai Awal Sistem**: Formulir terbuka dan kolom-kolom yang sudah dipastikan institusi terisi otomatis:
+   - Penandatangan IT Del: `Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.`
+   - Jabatan IT Del: `Rektor Institut Teknologi Del`
+   - Tanggal Mulai: Tanggal hari ini
+   - Lokasi: `Laguboti`
+   - Unit Pengelola: `Unit Kerja Sama`
+5. **Pintasan Otomatisasi Staf (Autofill dari Ringkasan)**:
+   - Jika staf memiliki berkas ringkasan naskah dari Excel/Word/CSV, klik tombol **"📄 Isi otomatis dari berkas (.csv / .txt)"** ATAU klik **"📋 Tempel ringkasan naskah"**.
+   - Sistem secara deterministik memetakan puluhan field formulir (Nomor dokumen, judul, mitra, masa berlaku, kegiatan, PIC, nama & jabatan mitra, anggaran, ruang lingkup) secara otomatis.
+   - Staf tidak perlu mengetik puluhan kolom dari nol!
+6. **Validasi & Simpan**:
+   - Jika tanggal berakhir lebih awal dari tanggal mulai, sistem menolak dan menampilkan pesan koreksi.
+   - Status dapat disimpan sebagai **Draf** kapan saja, atau ditandai **Aktif** setelah field wajib lengkap.
 
-1. Ganti peran menjadi Dekan FITE atau Kaprodi S1 Informatika.
-2. Buka **Naskah**. Data di luar fakultas atau prodi itu tidak muncul.
-3. Saring, urutkan lewat judul kolom, lalu unduh CSV.
-4. Buka **Analisis**. Angka mengikuti saringan yang aktif.
+---
 
-## WR3
+## 2. Alur Migrasi Data (Google Sheets, OneDrive, Notion)
 
-Di beranda, lihat naskah yang akan berakhir, yang sudah berakhir, dan tindak lanjut yang belum punya turunan. Itu pengingat kerja, bukan nilai mutu.
+Bagi Unit Kerja Sama yang sebelumnya mengelola data di cloud pihak ketiga:
 
-## Mengembalikan contoh
+1. Buka menu **Impor & Migrasi Data Kemitraan**.
+2. **Cara Migrasi dari Google Sheets**:
+   - Buka Google Sheets naskah kerja sama &rarr; *File* &rarr; *Download* &rarr; *Comma-separated values (.csv)*.
+   - Klik tombol **"📂 Pilih berkas Spreadsheet (CSV / TSV / TXT)"** di KSDAS untuk langsung membaca berkas.
+   - *Alternatif*: Blok tabel di Google Sheets &rarr; Tekan Ctrl+C &rarr; Tempel di kotak teks KSDAS &rarr; Klik **"Baca tempelan"**.
+3. **Cara Migrasi dari Microsoft OneDrive / Office 365**:
+   - Buka lembar kerja di OneDrive &rarr; *File* &rarr; *Save As / Export* &rarr; *Download a copy (.csv)* &rarr; Unggah ke KSDAS.
+4. **Cara Migrasi dari Notion**:
+   - Buka database Notion &rarr; Menu titik tiga (...) &rarr; *Export* &rarr; *Markdown & CSV* &rarr; Masukkan ke KSDAS.
+5. Sistem memetakan 28 alias nama kolom Indonesia, mendeteksi mitra yang sudah ada, mencegah duplikasi nomor naskah, dan memasukkan data ke basis data lokal.
 
-Menu **Panduan** punya tombol untuk mengembalikan sepuluh data contoh. Perubahan hanya tersimpan di peramban Anda.
+---
+
+## 3. Alur Kerja Dekan & Kaprodi
+
+Dekan dan Kaprodi difasilitasi untuk melakukan pemantauan, penyaringan, seleksi, unduhan, dan pelaporan eksekutif:
+
+```
+[Search & Filter Naskah] → [Sort Kolom] → [Select Checkbox] → [Download / Generate Analisis]
+```
+
+### Langkah Pengujian Dekan / Kaprodi:
+1. Ganti peran tampilan menjadi **Dekan FITE**, **Dekan FB**, atau **Kaprodi S1 Informatika**.
+2. Buka menu **Naskah**:
+   - Data otomatis terfilter sesuai lingkup fakultas/prodi yang berwenang.
+3. **Pencarian & Penyaringan (Filter)**:
+   - Gunakan kotak **Cari** untuk mencari nomor dokumen, judul, mitra, atau nama PIC.
+   - Gunakan dropdown **Tahun** untuk menyaring naskah tahun tertentu.
+   - Gunakan dropdown **Jenis** untuk menyaring MoU, PKS, IA, Proposal, atau Laporan.
+   - Gunakan dropdown **Status** untuk menyaring naskah *Aktif*, *Akan Berakhir (\u2264 180 hari)*, *Berakhir*, atau *Draf*.
+4. **Pengurutan (Sort)**:
+   - Klik kepala kolom tabel (**Nomor**, **Judul**, **Mitra**, **Status**, atau **Berakhir**) untuk mengurutkan data naik (*ascending*) atau turun (*descending*).
+5. **Seleksi Multi-Naskah (Checkboxes)**:
+   - Centang kotak di samping nomor naskah untuk memilih satu atau beberapa dokumen tertentu.
+   - Centang kotak di header tabel untuk memilih seluruh naskah di layar.
+   - Bilah aksi **"X naskah terpilih"** akan muncul otomatis dengan opsi aksi terfokus.
+6. **Unduh Naskah (Download)**:
+   - **Unduh CSV**: Untuk olah data lanjut di lembar kerja.
+   - **Unduh Excel (.xls)**: Tabel berformat rapi dengan warna institusional IT Del, siap dibuka langsung di Microsoft Excel.
+   - **Unduh Word (.doc)**: Dosir resmi naskah kerja sama ber-kop surat Yayasan Del - Institut Teknologi Del dan tanda tangan Rektor.
+7. **Generate Analisis Kemitraan**:
+   - Klik tombol **"Generate Analisis Terpilih"** (atau **"Generate Analisis"** untuk seluruh hasil saringan).
+   - Sistem menampilkan rekapitulasi status masa berlaku, sebaran jenis naskah, dan peringatan kesenjangan tindak lanjut (MoU yang belum memiliki PKS turunan, dsb).
+   - Klik **"Unduh Laporan Analisis Resmi (.doc)"** untuk mencetak laporan analisis eksekutif siap serah ke Rektorat / SPM.
+
+---
+
+## 4. Alur Kerja Wakil Rektor 3 (WR3)
+
+1. Pilih peran **Wakil Rektor 3**.
+2. Di **Beranda**, pantau kartu statistik:
+   - Total naskah terlihat
+   - Naskah aktif
+   - Naskah perlu perhatian (akan berakhir dalam 180 hari atau telah lewat masa berlaku)
+   - Kesenjangan tindak lanjut implementasi
+3. Buka menu **Relasi** untuk melihat pohon silsilah naskah per mitra (MoU &rarr; PKS &rarr; IA &rarr; Proposal &rarr; Laporan).
+
+---
+
+## 5. Pengujian Versi Desktop Standalone (.EXE)
+
+1. Pada komputer bersistem operasi Windows, buka folder repository.
+2. Klik ganda berkas **`KSDAS_ITDel.exe`**.
+3. Aplikasi desktop terbuka seketika tanpa memerlukan instalasi Node.js, Python, ataupun koneksi internet.
+4. Data tersimpan secara persisten di file **`ksdas_desktop_database.json`** pada folder yang sama.
+5. Coba tambahkan naskah baru, tutup aplikasi, dan buka kembali: data yang baru ditambahkan tetap tersimpan rapi di disk lokal komputer.

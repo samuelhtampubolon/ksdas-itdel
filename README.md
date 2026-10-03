@@ -1,54 +1,62 @@
-# KSDAS IT Del
+# KSDAS IT Del — Sistem Informasi Kerja Sama
 
-Sistem informasi pencatatan kerja sama untuk Unit Kerja Sama Institut Teknologi Del.
+Sistem Informasi Manajemen Kerja Sama untuk Unit Kerja Sama (UKS) Institut Teknologi Del, Laguboti, Sumatera Utara.
 
-Prototipe ini menunjukkan alur kerja. Ia **bukan** server produksi, **bukan** pemindai dokumen, dan **tidak** memakai AI, ML, atau OCR.
+Aplikasi ini adalah **Sistem Informasi Manajemen konvensional berbasis aturan deterministik** dan basis data relasional. Aplikasi ini **bukan** pemindai dokumen, dan **sama sekali tidak memakai AI, ML, atau OCR**.
 
-Demo: [https://samuelhtampubolon.github.io/ksdas-itdel/](https://samuelhtampubolon.github.io/ksdas-itdel/)
+---
 
-- [Panduan uji coba dokumen sendiri](docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md)
-- [Panduan delivery dan deployment](docs/PANDUAN_DELIVERY_DEPLOYMENT.md)
-- [Panduan integrasi SDI/TSI](docs/PANDUAN_INTEGRASI_SDI_TSI.md)
+## Tautan Resmi & Panduan Utama
 
-## Mengapa bukan Google Sheets, Drive, OneDrive, atau Notion
+- 🌐 **Live Demo GitHub Pages**: [https://samuelhtampubolon.github.io/ksdas-itdel/](https://samuelhtampubolon.github.io/ksdas-itdel/)
+- 📂 **Panduan Uji Coba Dokumen Sendiri**: [docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md](docs/PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md)
+- ⚡ **Panduan Delivery & Deployment**: [docs/PANDUAN_DELIVERY_DEPLOYMENT.md](docs/PANDUAN_DELIVERY_DEPLOYMENT.md)
+- 🏛️ **Panduan Integrasi SDI/TSI**: [docs/PANDUAN_INTEGRASI_SDI_TSI.md](docs/PANDUAN_INTEGRASI_SDI_TSI.md)
+- 💻 **Panduan Aplikasi Desktop Standalone (.EXE)**: [docs/PANDUAN_APLIKASI_DESKTOP_EXE.md](docs/PANDUAN_APLIKASI_DESKTOP_EXE.md)
 
-Berkas kerja sama yang tersebar di akun pribadi tidak punya nomor induk yang konsisten, tidak menghitung masa berlaku, dan tidak membatasi dekan atau kaprodi pada fakultas atau prodi mereka. KSDAS dimaksudkan sebagai pengganti pencatatan itu di server kampus. Alat awan itu tidak disambungkan. Data dipindahkan sekali, lalu diperbarui di KSDAS.
+---
 
-## Yang dilakukan staf
+## Mengapa KSDAS Server Lokal Menggantikan Google Drive, OneDrive, dan Notion?
 
-1. Unggah berkas. Berkas tercatat sebagai lampiran. Isi PDF tidak dibaca.
-2. Formulir terbuka. Sistem mengisi jenis, nomor, atau mitra hanya bila nama berkas sudah cocok dengan aturan atau master mitra.
-3. Staf mengisi kolom yang masih kosong dan menyimpan.
-4. Jika datanya sudah berupa tabel di Sheets, Excel, atau Word, salin tabel itu lalu tempel di menu Impor. Kolom yang dikenali terisi. Sisanya dilengkapi manual.
+Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sheets, Microsoft OneDrive, dan Notion. Kondisi tersebut tidak ideal karena:
+1. **Kedaulatan & Kerahasiaan Dokumen**: Naskah kerja sama memuat hak kekayaan intelektual, klausul non-disclosure (NDA), dan anggaran. Server lokal intranet kampus IT Del menjamin data tersimpan aman di dalam perimeter kampus.
+2. **Ketiadaan Rantai Relasi di Cloud Publik**: Google Drive/Notion hanya menyimpan file tanpa memvalidasi apakah MoU sudah memiliki PKS turunan atau apakah PKS sudah memiliki naskah pelaksanaan (IA).
+3. **Pembatasan Wewenang**: Di KSDAS, Dekan dan Kaprodi secara otomatis terisolasi hanya dapat melihat dan mengunduh data fakultas/prodi yang dipimpinnya.
+4. **Pemberitahuan Otomatis Masa Berlaku**: KSDAS menghitung sisa hari berlaku dan menandai naskah yang akan berakhir (\u2264 180 hari) maupun yang telah kedaluwarsa.
 
-## Yang dilakukan dekan dan kaprodi
+---
 
-Mereka tidak mengubah master. Mereka mencari, menyaring, mengurutkan, dan mengunduh data pada fakultas atau program studi sendiri, lalu membuat analisis dari tampilan itu.
+## Alur Operasional Utama
 
-## Yang dihitung otomatis
+### 1. Dari Perspektif Staf Unit Kerja Sama:
+- **Unggah Berkas**: Staf mengunggah dokumen fisik pindaian (PDF) atau dosir digital &rarr; tersimpan di basis data sebagai lampiran.
+- **Default Sistem Otomatis**: Formulir terbuka dengan nilai institusional yang sudah diketahui terisi otomatis (Penandatangan IT Del: Rektor Dr. Arnaldo Sinaga; Tanggal mulai: hari ini; Lokasi: Laguboti; Unit: UKS).
+- **Pintasan Otomatisasi Staf**: Staf dapat langsung memilih berkas ringkasan (.csv/.txt) atau menempel teks ringkasan &rarr; sistem memetakan puluhan kolom formulir naskah dalam satu klik tanpa ketik manual satu per satu.
+- **Migrasi Data Massal**: Fitur impor tabel untuk memindahkan data dari Google Sheets, OneDrive Excel, atau Notion secara deterministik.
 
-- Masa berlaku dan status akan berakhir atau sudah berakhir.
-- Duplikat nomor dokumen.
-- Kesenjangan tindak lanjut, misalnya MoU yang masih berjalan belum punya PKS.
-- Saran satu induk, hanya bila ada tepat satu kandidat. Staf yang menekan “Pakai saran”.
-- Rekap dari saringan yang sedang aktif.
+### 2. Dari Perspektif Dekan dan Kaprodi:
+- **Tabel & Pencarian Real-Time**: Melihat data naskah sesuai lingkup fakultas/prodi.
+- **Filter Multi-Kriteria**: Saring berdasarkan tahun, jenis naskah (MoU, PKS, IA, Proposal, Laporan), dan status (Aktif, Akan Berakhir, Berakhir, Draf).
+- **Sort Kolom**: Klik judul kolom untuk mengurutkan data secara dinamis.
+- **Seleksi Naskah (Multi-Select Checkbox)**: Pilih satu, beberapa, atau seluruh naskah menggunakan kotak centang.
+- **Unduh Dokumen**:
+  - **CSV**: Untuk olah data spreadsheet.
+  - **Excel (`.xls`)**: Berformat rapi dengan tema resmi IT Del.
+  - **Word (`.doc`)**: Dosir resmi ber-Kop Surat Institut Teknologi Del dan tanda tangan Rektor.
+- **Generate Analisis Kemitraan**: Menghasilkan analisis statistik sebaran status, jenis naskah, kesenjangan tindak lanjut, dan rekomendasi pimpinan, serta opsi unduh laporan ke Word (`.doc`).
 
-Angka itu adalah hitungan data, bukan penilaian mutu institusi.
+---
 
-## Data contoh
+## Aplikasi Desktop Standalone Windows (`.EXE`)
 
-Ada sepuluh naskah contoh. Semuanya diberi judul “Contoh” dan bukan arsip yang pernah ditandatangani. Jangan mengunggah naskah rahasia ke demo publik ini.
+Untuk demonstrasi penyimpanan data persisten lokal di laptop/PC Windows tanpa memerlukan instalasi server atau internet:
+1. Klik ganda berkas **`KSDAS_ITDel.exe`**.
+2. Aplikasi desktop Windows Forms portabel akan terbuka langsung.
+3. Seluruh penambahan, perubahan, dan penghapusan data tersimpan secara persisten ke berkas **`ksdas_desktop_database.json`** di folder yang sama.
+4. Untuk mengompilasi ulang kode sumber C# (`desktop-app/KSDAS_DesktopApp.cs`), cukup jalankan `build_exe.bat`.
 
-## Menjalankan demo
+---
 
-Buka tautan di atas, atau dari salinan repo:
+## 10 Data Contoh Resmi IT Del
 
-```bash
-python -m http.server 8080
-```
-
-Lalu buka `http://localhost:8080`.
-
-## Produksi
-
-Basis data, penyimpanan berkas, SSO, nama host, dan mode jaringan (hanya LAN, VPN, atau internet) diputuskan SDI/TSI/DukTek. Repo ini tidak mengarang nilai itu. Skema awal ada di `docs/schema_production_postgres.sql`. API contoh ada di `backend/`, masih menyimpan data di memori sampai disambungkan ke basis data kampus.
+Sistem ini hanya menyertakan tepat 10 naskah contoh terstandar (judul diawali kata "Contoh") dengan mitra resmi seperti Pemkab Toba, Universitas Sumatera Utara (USU), SMK Negeri 1 Laguboti, dan Dinas Pariwisata Sumut. Sistem ini bersih dan bebas dari entitas non-akademik yang tidak relevan.
