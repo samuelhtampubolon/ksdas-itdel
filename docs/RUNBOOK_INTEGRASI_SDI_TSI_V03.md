@@ -240,7 +240,7 @@ Semua endpoint backend menggunakan awalan `/api/v1/`:
 | `GET` | `/api/v1/documents` | Mengambil daftar dokumen dengan parameter filter | Semua Peran |
 | `GET` | `/api/v1/documents/:id` | Mengambil detail naskah, teks OCR, dan metadata | Semua Peran |
 | `POST` | `/api/v1/documents/batch` | Menerima batch upload banyak berkas | `ADMIN_STAFF` |
-| `POST` | `/api/v1/documents/:id/validate` | Menyimpan keputusan validasi manusia | `ADMIN_STAFF`, `BUREAU_HEAD` |
+| `POST` | `/api/v1/documents/:id/validate` | Menyimpan keputusan validasi manual | `ADMIN_STAFF`, `BUREAU_HEAD` |
 | `PUT` | `/api/v1/documents/:id/link-parent` | Menautkan dokumen turunan ke induk MoU/PKS | `ADMIN_STAFF` |
 | `GET` | `/api/v1/partners` | Mengambil direktori seluruh mitra kerja sama | Semua Peran |
 | `POST` | `/api/v1/partners` | Menambahkan data mitra kerja sama baru | `ADMIN_STAFF` |
@@ -281,7 +281,7 @@ Status siklus pemrosesan naskah:
 - `QUEUED`: Berkas diterima di antrean.
 - `PROCESSING`: Berkas sedang diekstrak teks OCR dan polanya.
 - `PARTIAL_SUCCESS`: Ekstraksi berhasil sebagian dengan skor keyakinan rendah.
-- `COMPLETED`: Ekstraksi 26 field selesai, siap divalidasi manusia.
+- `COMPLETED`: Ekstraksi 26 field selesai, siap divalidasi manual.
 - `FAILED`: Berkas rusak atau tidak dapat dibaca.
 
 ---
@@ -387,7 +387,7 @@ Metrik yang dipantau melalui Prometheus & Grafana kampus IT Del:
 | :---: | :--- | :--- | :---: |
 | **UAT-01** | Unggah 10 berkas dokumen sekaligus | Semua naskah masuk antrean dan diproses tanpa galat | [ ] |
 | **UAT-02** | Ekstraksi 26 metadata field & confidence | Nilai terisi lengkap disertai skor keyakinan dan sumber | [ ] |
-| **UAT-03** | Validasi manusia berdampingan (*split-view*) | Koreksi staf tersimpan dan tercatat di `audit_logs` | [ ] |
+| **UAT-03** | Validasi manual berdampingan (*split-view*) | Koreksi staf tersimpan dan tercatat di `audit_logs` | [ ] |
 | **UAT-04** | Penautan relasi hierarki (PKS &rarr; MoU) | Status orphan hilang dan pohon relasi terhubung valid | [ ] |
 | **UAT-05** | Penyaringan dinamis multi-kategori | Filter merespon instan dalam < 300 ms | [ ] |
 | **UAT-06** | Peninjauan bukti fisik oleh SPM | Satuan Penjaminan Mutu berhasil memverifikasi evidence | [ ] |

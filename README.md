@@ -285,11 +285,12 @@ Keamanan sistem dan keselamatan perangkat pengguna diverifikasi secara formal da
 Pengujian fungsional sistem dapat dilakukan mengikuti 4 skenario standar berikut:
 
 ```
-[Skenario A: Batch Processing & Validasi Staf]
+[Skenario A: Batch Processing & Validasi Manual Staf]
   1. Pilih peran: "Staff Unit Kerja Sama"
-  2. Buka menu "Batch Upload AI" -> Klik "Muat 10 Dokumen Sampel Demo"
-  3. Klik "Mulai Ekstraksi AI & Deteksi Relasi"
-  4. Buka "Validasi Manusia" -> Setujui naskah -> Data masuk ke Dashboard Eksekutif
+  2. Buka menu "Batch Upload Dokumen" -> Tarik file dari komputer lokal atau klik "Muat 10 Dokumen Sampel Demo"
+  3. Klik "Mulai Ekstraksi & Deteksi Relasi"
+  4. Buka "Validasi Manual" -> Periksa akurasi penandatangan & naskah -> Setujui sebagai data resmi
+  5. Unduh berkas resmi dalam format Word (.doc), Spreadsheet Excel (.xls), atau Cetak/Simpan PDF (.pdf)
 
 [Skenario B: Filter Dinamis Multidimensi]
   1. Buka menu "Repositori Dokumen"

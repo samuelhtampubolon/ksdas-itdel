@@ -40,8 +40,8 @@ Karya cipta program komputer ini memiliki orisinalitas rancangan arsitektur, alg
    Tidak seperti sistem arsip berkas biasa yang memperlakukan berkas sebagai rekaman terpisah (*flat record*), KSDAS mengimplementasikan struktur pohon relasi `Mitra` &rarr; `MoU` &rarr; `PKS` &rarr; `IA` &rarr; `Proposal` &rarr; `Laporan Akhir`, dilengkapi deteksi dokumen yatim (*orphan agreement detection*) dan mekanisme penautan induk otomatis.
 2. **Mesin Ekstraksi Metadata 26 Field dengan Transparansi Sumber (*Explainable Extraction Engine*):**
    Setiap luaran ekstraksi naskah menghasilkan nilai terstandarisasi, skor keyakinan (*confidence score* 0.00-1.00), nomor halaman berkas, dan kalimat kutipan teks asli (*source citation*) sehingga keputusan otomasi dapat diaudit secara transparan.
-3. **Antarmuka Validasi Manusia Berdampingan (*Human-in-the-Loop Validation Workspace*):**
-   Sistem memisahkan status data hasil otomasi (`AI_EXTRACTED` / `NEEDS_REVIEW`) dan data resmi yang telah disetujui (`VALIDATED`). Antarmuka menyajikan teks naskah pada panel kiri dan formulir koreksi pada panel kanan secara sinkron.
+3. **Antarmuka Validasi Manual Berdampingan (*Interactive Side-by-Side Validation Workspace*):**
+   Sistem memisahkan status data hasil otomasi (`TEREKSTRAKSI` / `NEEDS_REVIEW`) dan data resmi yang telah disetujui (`VALIDATED` / `TERVALIDASI RESMI`). Antarmuka menyajikan teks naskah pada panel kiri dan formulir verifikasi pada panel kanan secara sinkron.
 4. **Matriks Tabulasi Silang Analitik (*Cross-Tabulation Matrix*) & *Follow-up Gap Analysis*:**
    Perhitungan otomatis sebaran naskah kerja sama aktif berdasarkan Fakultas/Unit versus Bidang Tri Dharma, garis waktu kedaluwarsa naskah (*expiry bucket timeline*), dan pendeteksian Nota Kesepahaman (MoU) pasif yang belum ditindaklanjuti dengan PKS.
 5. **Konfigurasi Fleksibel Standar Mutu & Akreditasi (*Configurable Accreditation Framework*):**

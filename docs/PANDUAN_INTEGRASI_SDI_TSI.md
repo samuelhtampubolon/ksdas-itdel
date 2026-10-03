@@ -194,7 +194,7 @@ class KSDASStore {
     }
   }
 
-  // Method untuk menyimpan persetujuan validasi manusia ke database kampus
+  // Method untuk menyimpan persetujuan validasi manual ke database kampus
   async validateDocument(docId, validatedData) {
     if (CONFIG.USE_BACKEND_API) {
       const response = await fetch(`${CONFIG.API_BASE_URL}/documents/${docId}/validate`, {
@@ -283,7 +283,7 @@ Gunakan checklist ini saat melakukan *User Acceptance Testing (UAT)* bersama tim
 | 1 | **Koneksi Database** | Seluruh 18 tabel terbuat dan relasi foreign key berfungsi tanpa circular dependency. | [ ] |
 | 2 | **Login SSO IT Del** | Pengguna dapat masuk menggunakan akun resmi IT Del dan mendapatkan peran institusional yang tepat. | [ ] |
 | 3 | **Batch Upload Berkas** | Mengunggah 10 file PDF sekaligus berhasil diproses tanpa timeout dan tersimpan di MinIO. | [ ] |
-| 4 | **Validasi Manusia** | Koreksi metadata oleh staf tersimpan ke database kampus dan tercatat pada `audit_logs`. | [ ] |
+| 4 | **Validasi Manual** | Koreksi metadata oleh staf tersimpan ke database kampus dan tercatat pada `audit_logs`. | [ ] |
 | 5 | **Integritas Relasi** | Menautkan PKS ke MoU induk berhasil mengupdate status orphan menjadi valid. | [ ] |
 | 6 | **Penyaringan Data** | Filter multi-kategori (Tahun, Mitra, Tri Dharma, Status) merespons dalam < 300 ms. | [ ] |
 | 7 | **Verifikasi Bukti SPM** | Satuan Penjaminan Mutu dapat memverifikasi berkas evidence dan mengekspor indeks akreditasi. | [ ] |

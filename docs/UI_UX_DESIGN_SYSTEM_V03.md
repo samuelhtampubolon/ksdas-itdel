@@ -16,7 +16,7 @@
 5. [Pengalaman Penyaringan Dinamis & Preset Tersimpan (Filter UX)](#5-pengalaman-penyaringan-dinamis--preset-tersimpan-filter-ux)
 6. [Pengalaman Tabel Data & Progresifitas Informasi (Table UX)](#6-pengalaman-tabel-data--progresifitas-informasi-table-ux)
 7. [Alur Pemrosesan Berkas Tumpukan (Batch Upload 8-Step Flow)](#7-alur-pemrosesan-berkas-tumpukan-batch-upload-8-step-flow)
-8. [Antarmuka Validasi Manusia Berdampingan (Split-Screen Validation)](#8-antarmuka-validasi-manusia-berdampingan-split-screen-validation)
+8. [Antarmuka Validasi Manual Berdampingan (Split-Screen Validation)](#8-antarmuka-validasi-manual-berdampingan-split-screen-validation)
 9. [Transparansi Kecerdasan Buatan (Explainable AI Suggestions)](#9-transparansi-kecerdasan-buatan-explainable-ai-suggestions)
 10. [Visualisasi Pohon Relasi & Garis Keturunan Dokumen (Relationship UX)](#10-visualisasi-pohon-relasi--garis-keturunan-dokumen-relationship-ux)
 11. [Pencegahan Kesalahan Masukan Pengguna (Error Prevention & Guardrails)](#11-pencegahan-kesalahan-masukan-pengguna-error-prevention--guardrails)
@@ -78,8 +78,8 @@ KSDAS IT Del (Sidebar Navigation)
 ├── 1. MENU UTAMA
 │   ├── Dashboard                (Ringkasan Eksekutif, KPI, Funnel Implementasi, Peringatan)
 │   ├── Repositori Dokumen       (Tabel Multi-Filter, Pencarian Naskah, Rincian Metadata)
-│   ├── Batch Upload AI          (Pengunggahan Tumpukan Berkas, Ekstraksi 26 Field, Progress)
-│   ├── Validasi Manusia         (Workspace Side-by-Side Review, Persetujuan Data Resmi)
+│   ├── Batch Upload Dokumen     (Pengunggahan Tumpukan Berkas, Ekstraksi 26 Field, Progress)
+│   ├── Validasi Manual          (Workspace Side-by-Side Review, Persetujuan Data Resmi)
 │   └── Hierarki & Relasi        (Pohon Relasi Mitra -> MoU -> PKS -> IA -> LPJ, Deteksi Orphan)
 ├── 2. DATA MASTER & KEMITRAAN
 │   ├── Master Mitra             (Direktori Industri, BUMN, Universitas, Pemda, Kontak PIC)
@@ -148,7 +148,7 @@ Indikator visual kemajuan pemrosesan:
 
 ---
 
-## 8. ANTARMUKA VALIDASI MANUSIA BERDAMPINGAN (SPLIT-SCREEN VALIDATION)
+## 8. ANTARMUKA VALIDASI MANUAL BERDAMPINGAN (SPLIT-SCREEN VALIDATION)
 
 - **Panel Kiri (Salinan Berkas Asli):** Menyajikan teks hasil pemindaian OCR secara utuh untuk verifikasi kebenaran isi perjanjian.
 - **Panel Kanan (Formulir Koreksi Metadata):** Menampilkan nilai ekstraksi 26 field yang dapat diedit langsung oleh staf.

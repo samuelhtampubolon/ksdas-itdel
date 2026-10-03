@@ -17,7 +17,7 @@ KSDAS IT Del dirancang sebagai platform holistik untuk mengelola seluruh daur hi
 1. **Pemisahan Peran Bisnis & Teknis:**
    - *Unit Kerja Sama:* Menentukan **WHAT + WHY + WORKFLOW**.
    - *Direktorat SDI / TSI:* Menentukan **HOW + INFRASTRUCTURE + DEPLOYMENT**.
-2. **Human-in-the-Loop:** AI tidak menetapkan data resmi institusi secara otonom. Output AI berstatus `SUGGESTION` hingga divalidasi manusia.
+2. **Human-in-the-Loop:** Sistem ekstraksi tidak menetapkan data resmi institusi secara otonom. Output awal berstatus `SUGGESTION` hingga divalidasi manual.
 3. **Penyimpanan Bertahap:** GitHub Pages + `localStorage` adalah **Prototype / Bukti Konsep**, bukan basis data produksi permanen.
 4. **Integritas Provenance:** Koreksi manusia tidak pernah menghapus riwayat teks dan metadata sumber ekstraksi.
 
@@ -165,7 +165,7 @@ Ketika tim SDI / TSI mengimplementasikan backend produksi, kontrak REST API beri
 | `GET` | `/api/v1/documents` | Semua Role | Pengambilan daftar naskah dengan filter multidimensi & pagination |
 | `POST` | `/api/v1/documents/batch` | Staf Kerja Sama | Unggah multipart berkas naskah ke antrean pemrosesan worker |
 | `GET` | `/api/v1/documents/{id}` | Semua Role | Rincian lengkap 26 metadata field, silsilah relasi, dan berkas fisik |
-| `PUT` | `/api/v1/documents/{id}/validate` | Staf, Biro, WR3 | Transisi status validasi manusia (`AI_EXTRACTED` &rarr; `VALIDATED`) |
+| `PUT` | `/api/v1/documents/{id}/validate` | Staf, Biro, WR3 | Transisi status validasi manual (`AI_EXTRACTED` &rarr; `VALIDATED`) |
 | `PUT` | `/api/v1/documents/{id}/correct` | Staf, Biro | Menyimpan koreksi manual tanpa menghapus metadata provenance AI |
 | `PUT` | `/api/v1/documents/{id}/link-parent` | Staf, Biro | Menautkan dokumen *orphan* ke ID dokumen induk |
 | `GET` | `/api/v1/partners` | Semua Role | Mengambil direktori mitra kerja sama |

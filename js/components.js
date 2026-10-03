@@ -144,15 +144,15 @@ class KSDASUI {
   renderStatusBadge(status) {
     switch (status) {
       case "AI_EXTRACTED":
-        return `<span class="badge badge-ai-extracted">AI EXTRACTED</span>`;
+        return `<span class="badge badge-ai-extracted">TEREKSTRAKSI</span>`;
       case "NEEDS_REVIEW":
-        return `<span class="badge badge-needs-review">NEEDS REVIEW</span>`;
+        return `<span class="badge badge-needs-review">PERLU REVIEW</span>`;
       case "VALIDATED":
-        return `<span class="badge badge-validated">VALIDATED</span>`;
+        return `<span class="badge badge-validated">TERVALIDASI RESMI</span>`;
       case "CORRECTED":
-        return `<span class="badge badge-corrected">CORRECTED</span>`;
+        return `<span class="badge badge-corrected">DIKOREKSI</span>`;
       case "REJECTED":
-        return `<span class="badge badge-rejected">REJECTED</span>`;
+        return `<span class="badge badge-rejected">DITOLAK</span>`;
       default:
         return `<span class="badge">${status || "DRAFT"}</span>`;
     }

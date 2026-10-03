@@ -77,7 +77,7 @@ Sistem secara otomatis:
 - Mengekstrak 26 metadata field;
 - Mencari pasangan relasi (MoU payung);
 - Menetapkan skor keyakinan (*confidence score*);
-- Memasukkan ke antrean validasi manusia.
+- Memasukkan ke antrean validasi manual.
 
 *Contoh kombinasi:* 10 file &rarr; 3 MoU, 4 PKS, 1 IA, 1 Proposal, 1 Laporan Akhir.
 
@@ -199,10 +199,10 @@ Integrasi yang diharapkan pada fase produksi resmi:
 
 ### Skenario A (Batch Processing & Validasi Staf):
 1. Pengguna masuk sebagai Staf Unit Kerja Sama.
-2. Membuka menu **Batch Upload AI**.
-3. Menekan tombol simulasi "Muat 10 Dokumen Sampel Demo".
+2. Membuka menu **Batch Upload Dokumen**.
+3. Menekan tombol simulasi "Muat 10 Dokumen Sampel Demo" atau menarik berkas nyata.
 4. Sistem memproses klasifikasi, ekstraksi 26 field, dan pencarian relasi induk.
-5. Staf meninjau pada **Workspace Validasi Manusia** dan menyetujui dokumen.
+5. Staf meninjau pada **Workspace Validasi Manual** dan menyetujui dokumen.
 6. Data otomatis bertambah dan tercermin pada **Dashboard Eksekutif**.
 
 ### Skenario B (Penyaringan Dinamis Multidimensi):

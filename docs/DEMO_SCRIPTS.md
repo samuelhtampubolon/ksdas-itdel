@@ -10,17 +10,17 @@ Dokumen ini memandu pengujian fungsional dan demonstrasi langsung KSDAS IT Del s
 
 ### Langkah Pengujian:
 1. Pastikan peran di header atas terpilih sebagai: **`Staff Unit Kerja Sama`**.
-2. Klik menu **Batch Upload AI** di sidebar kiri (atau rute `#batch-upload`).
+2. Klik menu **Batch Upload Dokumen** di sidebar kiri (atau rute `#batch-upload`).
 3. Klik tombol biru: **"🧪 Muat 10 Dokumen Sampel Demo (Scenario A)"**.
    - Sistem akan memuat antrean 10 berkas simulasi (3 MoU, 4 PKS, 1 IA, 1 Proposal, 1 Laporan Akhir).
-4. Klik tombol: **"⚡ Mulai Ekstraksi AI & Deteksi Relasi"**.
+4. Klik tombol: **"⚡ Mulai Ekstraksi & Deteksi Relasi"**.
    - Amati bilah progres (*progress bar*) yang berjalan dinamis dan indikator tahapan:
      - Deteksi format berkas & tipe dokumen;
      - Ekstraksi 26 field metadata;
      - Pencarian relasi dokumen induk;
-     - Perhitungan skor *confidence* dan *quality flags*.
-   - Dokumen tersimpan ke database dengan status awal: `AI_EXTRACTED`.
-5. Klik tombol: **"Buka Workspace Validasi Manusia (10 dokumen) &rarr;"**.
+     - Perhitungan tingkat akurasi dan *quality flags*.
+   - Dokumen tersimpan dengan status awal: `TEREKSTRAKSI`.
+5. Klik tombol: **"Buka Workspace Validasi Manual (10 dokumen) &rarr;"**.
    - Sistem berpindah ke `#validation`.
    - Amati daftar dokumen yang menunggu tinjauan staf.
 6. Pada salah satu dokumen berkeyakinan tinggi, klik **"Review & Validasi Side-by-Side"**:

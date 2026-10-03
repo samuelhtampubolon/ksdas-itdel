@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="KSDAS IT Del - Kerja Sama Data & Analytics System. Platform manajemen kemitraan, repositori dokumen, relasi MoU/PKS, batch processing AI, analytics, dan instrumen akreditasi Institut Teknologi Del.">
+  <meta name="description" content="KSDAS IT Del - Kerja Sama Data & Analytics System. Platform manajemen kemitraan, repositori dokumen, relasi MoU/PKS, pemrosesan otomatis dokumen, analytics, dan instrumen akreditasi Institut Teknologi Del.">
   <meta name="keywords" content="IT Del, KSDAS, Kerja Sama, Kemitraan, MoU, PKS, IA, Akreditasi, BAN-PT, LAM-INFOKOM, Laguboti, Toba">
   <meta name="author" content="Samuel Hasudungan Tampubolon - Unit Kerja Sama IT Del">
   <meta name="copyright" content="Copyright &copy; 2026 Samuel Hasudungan Tampubolon">
@@ -52,12 +52,12 @@
 
         <a class="nav-item" data-route="batch-upload" href="#batch-upload">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-          <span>Batch Upload AI</span>
+          <span>Batch Upload Dokumen</span>
         </a>
 
         <a class="nav-item" data-route="validation" href="#validation">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span>Validasi Manusia</span>
+          <span>Validasi Manual</span>
           <span class="nav-badge" id="sidebar-validation-badge" style="display: none;">0</span>
         </a>
 
@@ -95,7 +95,7 @@
 
         <a class="nav-item" data-route="nl-query" href="#nl-query">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-          <span>Pencarian Cerdas AI</span>
+          <span>Pencarian Cerdas</span>
         </a>
 
         <div class="nav-section-title">Sistem & Audit</div>
@@ -243,7 +243,7 @@
                     <th>Mitra</th>
                     <th>Tanggal Berlaku</th>
                     <th>Status Validasi</th>
-                    <th>Confidence AI</th>
+                    <th>Tingkat Akurasi</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>
@@ -282,7 +282,7 @@
                   <th>Tri Dharma & Fakultas</th>
                   <th>Masa Berlaku</th>
                   <th>Status Validasi</th>
-                  <th>AI Score</th>
+                  <th>Tingkat Akurasi</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -298,7 +298,7 @@
           <div class="view-header">
             <div class="view-title-group">
               <h2>Batch Document Processing Engine</h2>
-              <p>Unggah banyak dokumen kerja sama sekaligus. Mesin AI mengekstrak 26 metadata field dan mendeteksi relasi secara deterministik.</p>
+              <p>Unggah banyak dokumen kerja sama sekaligus. Sistem secara otomatis mengekstrak 26 metadata naskah dan mendeteksi relasi secara deterministik.</p>
             </div>
             <div class="view-actions">
               <button class="btn btn-secondary" id="batch-load-sample-btn">
@@ -311,7 +311,7 @@
           <div class="alert-banner alert-success" style="margin-bottom: 20px;">
             <span style="font-size: 1.3rem;">✨</span>
             <div>
-              <b>Pengalaman Nyata (Live Experience):</b> Anda dapat mengunggah dokumen <b>asli dari komputer lokal Anda sendiri</b> (.pdf, .docx, .txt, .md). Sistem akan membaca isi berkas secara instan di peramban, mengekstrak 26 metadata naskah, mendeteksi mitra &amp; masa berlaku, serta menyediakan tombol <b>Unduh Hasil Analisis</b> langsung ke perangkat Anda.
+              <b>Pengalaman Nyata (Live Experience):</b> Anda dapat mengunggah dokumen <b>asli dari komputer lokal Anda sendiri</b> (.pdf, .docx, .txt, .md). Sistem akan membaca isi berkas secara instan di peramban, mengekstrak 26 metadata naskah, mendeteksi mitra &amp; masa berlaku, serta menyediakan tombol <b>Unduh Dokumen Resmi</b> (Word, Excel, atau PDF) langsung ke perangkat Anda.
               <span style="font-size: 0.78rem; opacity: 0.9; display: block; margin-top: 4px;">
                 🛡️ <i>Privasi Mutlak: Berkas diproses 100% di memori peramban (Client-Side Sandbox), tidak dikirim ke server luar, dan otomatis terhapus saat tab ditutup.</i>
               </span>
@@ -337,11 +337,11 @@
                 Daftar Antrean Berkas (<span id="batch-queue-count">0 File</span>)
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn btn-outline btn-sm" id="batch-download-all-btn" onclick="ksdasApp.downloadBatchAnalysisReport()" style="display: none;">
-                  📥 Unduh Rekap Analisis
+                <button class="btn btn-outline btn-sm" id="batch-download-all-btn" onclick="ksdasApp.openBatchDownloadChoiceModal()" style="display: none;">
+                  📥 Unduh Rekap (Excel / Word)
                 </button>
                 <button class="btn btn-primary btn-sm" id="batch-start-process-btn" disabled>
-                  ⚡ Mulai Ekstraksi AI & Deteksi Relasi
+                  ⚡ Mulai Ekstraksi & Deteksi Relasi
                 </button>
               </div>
             </div>
@@ -361,17 +361,17 @@
         </section>
 
         <!-- ==============================================
-             4. HUMAN VALIDATION WORKSPACE
+             4. WORKSPACE VALIDASI MANUAL
              ============================================== -->
         <section id="view-validation" class="view-section">
           <div class="view-header">
             <div class="view-title-group">
-              <h2>Human-in-the-Loop Validation Workspace</h2>
-              <p>AI tidak menetapkan data resmi secara mandiri. Verifikasi hasil ekstraksi dan tetapkan status resmi institusi.</p>
+              <h2>Workspace Validasi Manual Dokumen</h2>
+              <p>Sistem otomatisasi tidak menetapkan data resmi secara sepihak. Verifikasi hasil ekstraksi naskah dan tetapkan status resmi institusi melalui validasi manual.</p>
             </div>
             <div class="view-actions">
               <button class="btn btn-success" id="validation-bulk-approve-btn">
-                Setujui Sekaligus Confidence Tinggi (≥ 90%)
+                Setujui Sekaligus Tingkat Akurasi Tinggi (≥ 90%)
               </button>
             </div>
           </div>
@@ -379,13 +379,13 @@
           <div class="alert-banner alert-info">
             <span>ℹ️</span>
             <div>
-              <b>Prinsip Tata Kelola KSDAS:</b> Seluruh data baru hasil ekstraksi AI berstatus <code>AI_EXTRACTED</code> atau <code>NEEDS_REVIEW</code>.
-              Data hanya akan masuk ke pelaporan resmi akreditasi dan IKU setelah divalidasi oleh Staf Unit Kerja Sama atau Kepala Biro.
+              <b>Prinsip Tata Kelola KSDAS:</b> Seluruh data baru hasil ekstraksi otomatis berstatus <code>TEREKSTRAKSI</code> atau <code>NEEDS_REVIEW</code>.
+              Data hanya akan masuk ke pelaporan resmi institusi dan instrumen akreditasi setelah disetujui melalui Validasi Manual oleh staf berwenang.
             </div>
           </div>
 
           <div style="margin-bottom: 16px; font-weight: 700; color: var(--color-primary-dark);">
-            Antrean Menunggu Review Manusia: <span class="badge badge-warning" id="validation-pending-count">0 Dokumen</span>
+            Antrean Menunggu Validasi Manual: <span class="badge badge-warning" id="validation-pending-count">0 Dokumen</span>
           </div>
 
           <div id="validation-queue-list"></div>
@@ -811,19 +811,19 @@
       </div>
       <div class="modal-body" id="detail-modal-body"></div>
       <div class="modal-footer" style="display: flex; justify-content: space-between;">
-        <button class="btn btn-primary" id="detail-modal-download-btn" onclick="ksdasApp.downloadCurrentDetailDocument()">
-          📥 Unduh Laporan Analisis Dokumen (JSON)
+        <button class="btn btn-primary" id="detail-modal-download-btn" onclick="ksdasApp.openDownloadChoiceModal(ksdasApp.currentDetailDocId)">
+          📥 Unduh Dokumen Resmi (Word / Excel / PDF)
         </button>
         <button class="btn btn-secondary" data-close-modal="modal-document-detail">Tutup</button>
       </div>
     </div>
   </div>
 
-  <!-- 2. Side-by-side Human Validation Modal -->
+  <!-- 2. Workspace Validasi Manual Berdampingan -->
   <div class="modal-overlay" id="modal-side-by-side-validation">
     <div class="modal-container modal-xl">
       <div class="modal-header">
-        <h3 class="modal-title" id="validation-modal-title">Validasi Staf Unit Kerja Sama</h3>
+        <h3 class="modal-title" id="validation-modal-title">Validasi Manual Naskah Kerja Sama</h3>
         <button class="modal-close" data-close-modal="modal-side-by-side-validation">&times;</button>
       </div>
       <div class="modal-body">
@@ -980,7 +980,7 @@
             <select id="add-evi-doc-select" class="form-control" style="width: 100%;">
               <option value="DOC-PKS-2024-002">028/ITDel/PKS/FITE/VI/2024 - Huawei ICT Academy</option>
               <option value="DOC-PKS-2024-007">019/ITDel/PKS/FTI/V/2024 - Astra Capstone Magang</option>
-              <option value="DOC-PKS-2026-008">007/ITDel/PKS/FITE/I/2026 - Astra Riset AI</option>
+              <option value="DOC-PKS-2026-008">007/ITDel/PKS/FITE/I/2026 - Astra Riset Rekayasa Sistem</option>
             </select>
           </div>
           <div>
@@ -1016,9 +1016,122 @@
     </div>
   </div>
 
+  <!-- 6. Modal Pilihan Format Unduhan Resmi (Word, Excel, PDF) -->
+  <div class="modal-overlay" id="modal-download-choice">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Pilih Format Unduhan Resmi</h3>
+        <button class="modal-close" data-close-modal="modal-download-choice">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+          Silakan pilih format berkas resmi yang ingin diunduh ke komputer lokal Anda:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Option 1: Word -->
+          <div class="card" onclick="ksdasApp.executeDownloadFormat('WORD')" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📘</div>
+              <div>
+                <div style="font-weight: 700; color: #134074; font-size: 0.95rem;">Microsoft Word (.doc)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Naskah Dosir Resmi ber-Kop Surat IT Del, tabel 26 metadata, dan lembar tanda tangan sah.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" style="white-space: nowrap;">Unduh Word</button>
+          </div>
+
+          <!-- Option 2: Excel -->
+          <div class="card" onclick="ksdasApp.executeDownloadFormat('EXCEL')" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📗</div>
+              <div>
+                <div style="font-weight: 700; color: #2d6a4f; font-size: 0.95rem;">Microsoft Excel (.xls)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Spreadsheet terstruktur 26 field metadata dan pemetaan kriteria akreditasi (BAN-PT &amp; LAM).</div>
+              </div>
+            </div>
+            <button class="btn btn-success btn-sm" style="white-space: nowrap;">Unduh Excel</button>
+          </div>
+
+          <!-- Option 3: PDF -->
+          <div class="card" onclick="ksdasApp.executeDownloadFormat('PDF')" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📕</div>
+              <div>
+                <div style="font-weight: 700; color: #c1121f; font-size: 0.95rem;">Cetak / Simpan PDF (.pdf)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Format cetak resmi berdesain lembar verifikasi mutu SPM / AMI untuk bukti akreditasi.</div>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="white-space: nowrap;">Cetak / PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-download-choice">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Modal Pilihan Format Unduhan Rekapitulasi Batch -->
+  <div class="modal-overlay" id="modal-batch-download-choice">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Pilih Format Unduhan Rekapitulasi</h3>
+        <button class="modal-close" data-close-modal="modal-batch-download-choice">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+          Pilih format berkas rekapitulasi data naskah kerja sama:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="card" onclick="ksdasApp.downloadBatchAsExcel()" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📗</div>
+              <div>
+                <div style="font-weight: 700; color: #2d6a4f; font-size: 0.95rem;">Spreadsheet Excel Rekapitulasi (.xls)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Tabel matriks komprehensif memuat seluruh baris naskah, mitra, tanggal, dan akreditasi.</div>
+              </div>
+            </div>
+            <button class="btn btn-success btn-sm" style="white-space: nowrap;">Unduh Excel</button>
+          </div>
+
+          <div class="card" onclick="ksdasApp.downloadBatchAsWord()" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📘</div>
+              <div>
+                <div style="font-weight: 700; color: #134074; font-size: 0.95rem;">Dokumen Kompilasi Word (.doc)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Berkas kompilasi seluruh dosir naskah kerja sama ber-Kop Surat resmi IT Del.</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" style="white-space: nowrap;">Unduh Word</button>
+          </div>
+
+          <div class="card" onclick="ksdasApp.printBatchAsPDF()" style="cursor: pointer; padding: 14px; border: 1.5px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 2.2rem;">📕</div>
+              <div>
+                <div style="font-weight: 700; color: #b91c1c; font-size: 0.95rem;">Laporan Rekapitulasi PDF (.pdf)</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Cetak / simpan format PDF siap audit SPM/AMI dan BAN-PT.</div>
+              </div>
+            </div>
+            <button class="btn btn-danger btn-sm" style="white-space: nowrap; background: #b91c1c; border-color: #b91c1c;">Cetak PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal="modal-batch-download-choice">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Container for Printable PDF Generation -->
+  <div id="printable-dossier-area" style="display: none;"></div>
+
   <!-- Scripts -->
   <script src="js/data.js?v=0.3.0"></script>
   <script src="js/store.js?v=0.3.0"></script>
+  <script src="js/ksdas-verifier.js?v=0.3.0"></script>
   <script src="js/mock-ai.js?v=0.3.0"></script>
   <script src="js/analytics.js?v=0.3.0"></script>
   <script src="js/components.js?v=0.3.0"></script>

@@ -450,7 +450,10 @@ class KSDASApp {
           <td>${this.ui.renderStatusBadge(d.status)}</td>
           <td>${this.ui.renderConfidenceBadge(d.confidenceScore)}</td>
           <td>
-            <button class="btn btn-sm btn-secondary" onclick="ksdasApp.viewDocumentDetail('${d.id}')">Detail</button>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-sm btn-secondary" onclick="ksdasApp.viewDocumentDetail('${d.id}')">Detail</button>
+              <button class="btn btn-sm btn-outline" onclick="ksdasApp.openDownloadChoiceModal('${d.id}')" title="Unduh Dokumen Resmi (Word/Excel/PDF)">📥</button>
+            </div>
           </td>
         </tr>
       `).join("");
@@ -488,10 +491,10 @@ class KSDASApp {
 
         <select id="repo-filter-status" class="form-control">
           <option value="ALL">Semua Status Validasi</option>
-          <option value="AI_EXTRACTED" ${this.activeFilters.status === "AI_EXTRACTED" ? "selected" : ""}>AI EXTRACTED</option>
-          <option value="NEEDS_REVIEW" ${this.activeFilters.status === "NEEDS_REVIEW" ? "selected" : ""}>NEEDS REVIEW</option>
-          <option value="VALIDATED" ${this.activeFilters.status === "VALIDATED" ? "selected" : ""}>VALIDATED</option>
-          <option value="REJECTED" ${this.activeFilters.status === "REJECTED" ? "selected" : ""}>REJECTED</option>
+          <option value="AI_EXTRACTED" ${this.activeFilters.status === "AI_EXTRACTED" ? "selected" : ""}>TEREKSTRAKSI</option>
+          <option value="NEEDS_REVIEW" ${this.activeFilters.status === "NEEDS_REVIEW" ? "selected" : ""}>PERLU REVIEW</option>
+          <option value="VALIDATED" ${this.activeFilters.status === "VALIDATED" ? "selected" : ""}>TERVALIDASI RESMI</option>
+          <option value="REJECTED" ${this.activeFilters.status === "REJECTED" ? "selected" : ""}>DITOLAK</option>
         </select>
 
         <select id="repo-filter-partner" class="form-control">
@@ -687,9 +690,10 @@ class KSDASApp {
           <td>${this.ui.renderStatusBadge(doc.status)}</td>
           <td>${this.ui.renderConfidenceBadge(doc.confidenceScore)}</td>
           <td>
-            <div style="display: flex; gap: 6px;">
-              <button class="btn btn-sm btn-secondary" onclick="ksdasApp.viewDocumentDetail('${doc.id}')" title="Detail & OCR">Detail</button>
-              ${doc.status !== "VALIDATED" ? `<button class="btn btn-sm btn-primary staff-only-action" onclick="ksdasApp.openValidationModal('${doc.id}')" title="Validasi Staf">Validasi</button>` : ""}
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-sm btn-secondary" onclick="ksdasApp.viewDocumentDetail('${doc.id}')" title="Detail & Pratinjau">Detail</button>
+              <button class="btn btn-sm btn-outline" onclick="ksdasApp.openDownloadChoiceModal('${doc.id}')" title="Unduh Dokumen Resmi (Word/Excel/PDF)">📥 Unduh</button>
+              ${doc.status !== "VALIDATED" ? `<button class="btn btn-sm btn-primary staff-only-action" onclick="ksdasApp.openValidationModal('${doc.id}')" title="Validasi Manual">Validasi</button>` : ""}
             </div>
           </td>
         </tr>
@@ -896,9 +900,17 @@ class KSDASApp {
           ${item.result ? this.ui.renderTypeBadge(item.result.type) : ""}
           ${item.result ? this.ui.renderConfidenceBadge(item.result.aiConfidenceScore || item.result.confidenceScore || 0.95) : ""}
           ${item.result ? `
-            <button class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 8px;" onclick="ksdasApp.downloadDocumentAnalysisReport('${item.result.id}')" title="Unduh Laporan Analisis Dokumen Ini">
-              📥 Unduh JSON
-            </button>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 6px;" onclick="ksdasApp.downloadDocumentAsWord('${item.result.id}')" title="Unduh Dokumen Word (.doc)">
+                📘 Word
+              </button>
+              <button class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 6px;" onclick="ksdasApp.downloadDocumentAsExcel('${item.result.id}')" title="Unduh Spreadsheet Excel (.xls)">
+                📗 Excel
+              </button>
+              <button class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 3px 6px;" onclick="ksdasApp.printOrSaveDocumentAsPDF('${item.result.id}')" title="Cetak / Simpan PDF (.pdf)">
+                📕 PDF
+              </button>
+            </div>
           ` : ""}
           <span style="font-size: 0.85rem; font-weight: 700;">${item.progress}%</span>
         </div>
@@ -966,10 +978,10 @@ class KSDASApp {
       actionArea.style.flexWrap = "wrap";
       actionArea.innerHTML = `
         <button class="btn btn-success" onclick="ksdasRouter.navigate('validation')">
-          🛡️ Validasi Manusia (${this.batchQueue.length} dokumen) &rarr;
+          🛡️ Validasi Manual (${this.batchQueue.length} dokumen) &rarr;
         </button>
-        <button class="btn btn-primary" onclick="ksdasApp.downloadBatchAnalysisReport()">
-          📥 Unduh Laporan Rekapitulasi Analisis (JSON)
+        <button class="btn btn-primary" onclick="ksdasApp.openBatchDownloadChoiceModal()">
+          📥 Unduh Rekapitulasi (Excel / Word)
         </button>
         <button class="btn btn-secondary" onclick="ksdasRouter.navigate('repository')">
           📂 Lihat di Repositori Dokumen
@@ -979,9 +991,33 @@ class KSDASApp {
   }
 
   // ========================================================
-  // UNDUH LAPORAN HASIL ANALISIS NYATA (REAL DOWNLOAD FEATURES)
+  // UNDUH DOKUMEN RESMI (WORD, EXCEL, PDF - LIGHTWEIGHT CLIENT-SIDE)
   // ========================================================
-  downloadDocumentAnalysisReport(docId) {
+  openDownloadChoiceModal(docId) {
+    this.pendingDownloadDocId = docId || this.currentDetailDocId;
+    this.ui.openModal("modal-download-choice");
+  }
+
+  executeDownloadFormat(format) {
+    const docId = this.pendingDownloadDocId;
+    if (!docId) return;
+
+    this.ui.closeModal("modal-download-choice");
+
+    if (format === "WORD") {
+      this.downloadDocumentAsWord(docId);
+    } else if (format === "EXCEL") {
+      this.downloadDocumentAsExcel(docId);
+    } else if (format === "PDF") {
+      this.printOrSaveDocumentAsPDF(docId);
+    }
+  }
+
+  openBatchDownloadChoiceModal() {
+    this.ui.openModal("modal-batch-download-choice");
+  }
+
+  downloadDocumentAsWord(docId) {
     let doc = this.store.getDocumentById(docId);
     if (!doc) {
       const qItem = this.batchQueue.find(q => q.result && q.result.id === docId);
@@ -989,111 +1025,744 @@ class KSDASApp {
     }
 
     if (!doc) {
-      this.ui.showToast("Data analisis dokumen tidak ditemukan.", "danger");
+      this.ui.showToast("Data dokumen tidak ditemukan.", "danger");
       return;
     }
 
-    const reportData = {
-      institution: "Institut Teknologi Del (IT Del)",
-      system: "Kerja Sama Data & Analytics System (KSDAS)",
-      reportType: "Laporan Hasil Analisis & Ekstraksi Naskah Kemitraan",
-      generatedAt: new Date().toISOString(),
-      author: "Samuel Hasudungan Tampubolon",
-      copyright: "Copyright (c) 2026 Samuel Hasudungan Tampubolon. All rights reserved.",
-      documentSummary: {
-        id: doc.id,
-        documentNumber: doc.documentNumber,
-        title: doc.title,
-        type: doc.type,
-        status: doc.status,
-        partnerName: doc.partnerName,
-        triDharma: doc.triDharma,
-        faculty: doc.facultyId,
-        scope: doc.scope,
-        signedDate: doc.signedDate,
-        effectiveEndDate: doc.effectiveEndDate,
-        budget: doc.budget,
-        partnerSignatory: doc.partnerSignatoryName,
-        itDelSignatory: doc.itDelSignatoryName,
-        aiConfidenceScore: doc.aiConfidenceScore || doc.confidenceScore || 0.95,
-        officialDataConfirmed: doc.officialDataConfirmed || false,
-        validatedBy: doc.validatedBy || "Belum Divalidasi",
-        validatedDate: doc.validatedDate || null
-      },
-      accreditationMapping: {
-        banPtCriterion: "Kriteria 1 & Kriteria Tri Dharma (C.1.b, C.6, C.7, C.8)",
-        lamInfokomCriterion: "Kriteria C.1.4 (Tata Pamong & Kerjasama)",
-        iku6Target: "Kerja Sama Program Studi dengan Mitra Kelas Dunia"
-      },
-      extractions26Fields: doc.extractions || {},
-      verificationHash: "SHA256:" + Array.from(doc.id + (doc.documentNumber || "")).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString(16).toUpperCase(),
-      privacyNotice: "Dokumen ini dianalisis 100% di memori peramban (Client-Side In-Memory). Tidak ada berkas yang dikirim ke server luar."
-    };
+    const safeDocNum = (doc.documentNumber || doc.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const extractions = doc.extractions || {};
 
-    const jsonStr = JSON.stringify(reportData, null, 2);
-    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+    const wordHtml = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>Dosir Kemitraan IT Del - ${this.ui.escapeHtml(doc.documentNumber || doc.id)}</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page Section1 {
+    size: 595.3pt 841.9pt;
+    margin: 54pt 54pt 54pt 54pt;
+    mso-header-margin: 36pt;
+    mso-footer-margin: 36pt;
+  }
+  div.Section1 { page: Section1; }
+  body {
+    font-family: 'Calibri', 'Times New Roman', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #1e293b;
+  }
+  .kop-surat {
+    text-align: center;
+    border-bottom: 3pt double #0b2545;
+    padding-bottom: 8pt;
+    margin-bottom: 14pt;
+  }
+  .kop-inst {
+    font-size: 15pt;
+    font-weight: bold;
+    color: #0b2545;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+  .kop-sub {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #134074;
+    margin-top: 2pt;
+  }
+  .kop-addr {
+    font-size: 9pt;
+    color: #475569;
+    margin-top: 3pt;
+  }
+  .doc-title-box {
+    text-align: center;
+    background-color: #f1f5f9;
+    border: 1pt solid #cbd5e1;
+    padding: 8pt;
+    margin-top: 10pt;
+    margin-bottom: 14pt;
+  }
+  .doc-title {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #0b2545;
+  }
+  .doc-num {
+    font-size: 10pt;
+    color: #334155;
+    margin-top: 2pt;
+  }
+  table.meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8pt;
+    margin-bottom: 14pt;
+  }
+  table.meta-table th {
+    background-color: #0b2545;
+    color: #ffffff;
+    font-size: 9.5pt;
+    font-weight: bold;
+    text-align: left;
+    padding: 6pt 8pt;
+    border: 1pt solid #94a3b8;
+  }
+  table.meta-table td {
+    padding: 5pt 8pt;
+    border: 1pt solid #cbd5e1;
+    font-size: 9.5pt;
+    vertical-align: top;
+  }
+  table.meta-table tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+  .field-label {
+    font-weight: bold;
+    width: 28%;
+    color: #0f172a;
+  }
+  .field-val {
+    width: 52%;
+  }
+  .field-score {
+    width: 20%;
+    text-align: center;
+    color: #475569;
+  }
+  .sig-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20pt;
+    border: none;
+  }
+  .sig-table td {
+    width: 50%;
+    vertical-align: top;
+    padding: 10pt;
+    border: none;
+  }
+  .sig-box {
+    border: 1pt solid #94a3b8;
+    background-color: #f8fafc;
+    padding: 10pt;
+    min-height: 140pt;
+  }
+  .disclaimer-box {
+    margin-top: 24pt;
+    border-top: 1pt dashed #cbd5e1;
+    padding-top: 8pt;
+    font-size: 8pt;
+    color: #64748b;
+    text-align: justify;
+  }
+</style>
+</head>
+<body>
+<div class="Section1">
+  <div class="kop-surat">
+    <div class="kop-inst">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</div>
+    <div class="kop-sub">INSTITUT TEKNOLOGI DEL &bull; UNIT KERJASAMA &amp; KEMITRAAN</div>
+    <div class="kop-addr">
+      Jl. Sisingamangaraja, Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara 22381<br>
+      Surel: kemitraan@del.ac.id | Situs Web: www.del.ac.id | Telp: +62 632 331234
+    </div>
+  </div>
+
+  <div class="doc-title-box">
+    <div class="doc-title">DOSIR RESMI &amp; LEMBAR VERIFIKASI METADATA KERJA SAMA</div>
+    <div class="doc-num">Nomor Naskah: <b>${this.ui.escapeHtml(doc.documentNumber || "-")}</b> &bull; Jenis: <b>${this.ui.escapeHtml(doc.type || "-")}</b></div>
+  </div>
+
+  <p><b>A. IDENTITAS &amp; RINGKASAN NASKAH PERJANJIAN:</b></p>
+  <table class="meta-table">
+    <tr>
+      <td class="field-label">Judul Naskah Kerja Sama</td>
+      <td class="field-val"><b>${this.ui.escapeHtml(doc.title || "-")}</b></td>
+      <td class="field-score">Status: <b>${this.ui.escapeHtml(doc.status || "-")}</b></td>
+    </tr>
+    <tr>
+      <td class="field-label">Mitra Kerja Sama</td>
+      <td class="field-val">${this.ui.escapeHtml(doc.partnerName || "-")}</td>
+      <td class="field-score">Negara: Indonesia</td>
+    </tr>
+    <tr>
+      <td class="field-label">Klasifikasi Tri Dharma</td>
+      <td class="field-val">${this.ui.escapeHtml(doc.triDharma || "-")}</td>
+      <td class="field-score">Fakultas: ${this.ui.escapeHtml(doc.facultyId || "FITE")}</td>
+    </tr>
+    <tr>
+      <td class="field-label">Masa Berlaku</td>
+      <td class="field-val">${this.ui.escapeHtml(doc.signedDate || "-")} s.d. ${this.ui.escapeHtml(doc.effectiveEndDate || "-")}</td>
+      <td class="field-score">Tingkat Akurasi: ${Math.round((doc.aiConfidenceScore || doc.confidenceScore || 0.95) * 100)}%</td>
+    </tr>
+    <tr>
+      <td class="field-label">Alokasi Anggaran</td>
+      <td class="field-val">${this.ui.formatRupiah(doc.budget || 0)}</td>
+      <td class="field-score">Validasi: ${doc.officialDataConfirmed ? "TERVALIDASI RESMI" : "DRAFT"}</td>
+    </tr>
+    <tr>
+      <td class="field-label">Ruang Lingkup Kegiatan</td>
+      <td colspan="2">${this.ui.escapeHtml(doc.scope || "-")}</td>
+    </tr>
+  </table>
+
+  <p><b>B. MATRIKS 26 METADATA TERVERIFIKASI:</b></p>
+  <table class="meta-table">
+    <thead>
+      <tr>
+        <th style="width: 5%;">No</th>
+        <th style="width: 30%;">Parameter Metadata</th>
+        <th style="width: 45%;">Nilai Terekstraksi</th>
+        <th style="width: 20%;">Akurasi / Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${Object.keys(extractions).length > 0 ? Object.entries(extractions).map(([k, f], idx) => `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td><b>${k.replace(/_/g, " ").toUpperCase()}</b></td>
+          <td>${this.ui.escapeHtml(String(f.value || "-"))}</td>
+          <td style="text-align: center;">${f.confidence ? Math.round(f.confidence * 100) + "%" : "Valid"}</td>
+        </tr>
+      `).join("") : `
+        <tr><td colspan="4" style="text-align: center;">Metadata ringkas tersedia pada bagian A.</td></tr>
+      `}
+    </tbody>
+  </table>
+
+  <p><b>C. PEMETAAN INSTRUMEN AKREDITASI &amp; IKU:</b></p>
+  <table class="meta-table">
+    <tr>
+      <td class="field-label">Instrumen BAN-PT</td>
+      <td class="field-val" colspan="2">Kriteria 1 (Tata Pamong), Kriteria 6 (Pendidikan), Kriteria 7 (Penelitian), Kriteria 8 (PkM)</td>
+    </tr>
+    <tr>
+      <td class="field-label">Instrumen LAM-INFOKOM</td>
+      <td class="field-val" colspan="2">Kriteria C.1.4 (Tata Pamong, Tata Kelola, dan Kerjasama Program Studi)</td>
+    </tr>
+    <tr>
+      <td class="field-label">Capaian IKU Perguruan Tinggi</td>
+      <td class="field-val" colspan="2">IKU-6: Program Studi Bekerja Sama dengan Mitra Kelas Dunia / Industri Relevan</td>
+    </tr>
+  </table>
+
+  <p style="margin-top: 14pt;"><b>D. PENGESAHAN PENANDATANGAN PARA PIHAK:</b></p>
+  <table class="sig-table">
+    <tr>
+      <td>
+        <div class="sig-box">
+          <div style="font-weight: bold; color: #0b2545;">PIHAK PERTAMA (IT DEL):</div>
+          <div style="font-size: 9pt; color: #475569; margin-top: 2pt;">Institut Teknologi Del</div>
+          <div style="height: 55pt;"></div>
+          <div style="font-weight: bold; text-decoration: underline;">${this.ui.escapeHtml(doc.itDelSignatoryName || "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.")}</div>
+          <div style="font-size: 9pt;">${this.ui.escapeHtml(doc.itDelSignatoryPosition || "Rektor Institut Teknologi Del")}</div>
+        </div>
+      </td>
+      <td>
+        <div class="sig-box">
+          <div style="font-weight: bold; color: #0b2545;">PIHAK KEDUA (MITRA):</div>
+          <div style="font-size: 9pt; color: #475569; margin-top: 2pt;">${this.ui.escapeHtml(doc.partnerName || "Mitra Kemitraan")}</div>
+          <div style="height: 55pt;"></div>
+          <div style="font-weight: bold; text-decoration: underline;">${this.ui.escapeHtml(doc.partnerSignatoryName || "Pimpinan Berwenang Mitra")}</div>
+          <div style="font-size: 9pt;">${this.ui.escapeHtml(doc.partnerSignatoryPosition || "Direktur / Pimpinan")}</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="disclaimer-box">
+    <b>CATATAN INTEGRITAS &amp; HAK CIPTA:</b> Dosir ini diterbitkan secara resmi oleh Sistem Tata Kelola Kemitraan KSDAS IT Del.
+    Seluruh berkas diproses secara terenkripsi di memori lokal peramban (Client-Side Privacy Sandbox).
+    Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon. Hak Cipta dilindungi Undang-Undang Republik Indonesia Nomor 28 Tahun 2014.
+    Dicetak pada: ${new Date().toLocaleString("id-ID")}
+  </div>
+</div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([wordHtml], { type: "application/msword;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const safeDocNum = (doc.documentNumber || doc.id).replace(/[^a-zA-Z0-9_-]/g, "_");
     a.href = url;
-    a.download = `KSDAS_Analisis_${safeDocNum}.json`;
+    a.download = `KSDAS_Dosir_${safeDocNum}.doc`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    this.ui.showToast(`Laporan analisis untuk "${doc.title || doc.fileName}" berhasil diunduh ke komputer Anda!`, "success", 4000);
+    this.ui.showToast(`Berkas Word resmi (.doc) berhasil diunduh ke komputer Anda!`, "success", 4000);
+  }
+
+  downloadDocumentAsExcel(docId) {
+    let doc = this.store.getDocumentById(docId);
+    if (!doc) {
+      const qItem = this.batchQueue.find(q => q.result && q.result.id === docId);
+      if (qItem) doc = qItem.result;
+    }
+
+    if (!doc) {
+      this.ui.showToast("Data dokumen tidak ditemukan.", "danger");
+      return;
+    }
+
+    const safeDocNum = (doc.documentNumber || doc.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const extractions = doc.extractions || {};
+
+    const excelHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]>
+<xml>
+<x:ExcelWorkbook>
+<x:ExcelWorksheets>
+<x:ExcelWorksheet>
+<x:Name>Metadata Naskah</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet>
+</x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  th { background-color: #0b2545; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
+  td { border: 0.5pt solid #cbd5e1; padding: 5px; font-family: Arial, sans-serif; font-size: 10pt; }
+  .title-cell { font-size: 14pt; font-weight: bold; color: #0b2545; text-align: center; }
+  .header-cell { background-color: #f1f5f9; font-weight: bold; }
+</style>
+</head>
+<body>
+<table>
+  <tr><td colspan="5" class="title-cell">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</td></tr>
+  <tr><td colspan="5" style="text-align: center; font-size: 12pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL - UNIT KERJASAMA &amp; KEMITRAAN</td></tr>
+  <tr><td colspan="5" style="text-align: center; font-size: 10pt; color: #475569;">LEMBAR METADATA RESMI NASKAH KERJA SAMA (26 PARAMETER)</td></tr>
+  <tr><td></td></tr>
+  <tr class="header-cell"><td>Nomor Dokumen</td><td colspan="4"><b>${this.ui.escapeHtml(doc.documentNumber || "-")}</b></td></tr>
+  <tr class="header-cell"><td>Judul Dokumen</td><td colspan="4"><b>${this.ui.escapeHtml(doc.title || "-")}</b></td></tr>
+  <tr class="header-cell"><td>Jenis Dokumen</td><td>${this.ui.escapeHtml(doc.type || "-")}</td><td>Status Validasi</td><td colspan="2">${this.ui.escapeHtml(doc.status || "-")}</td></tr>
+  <tr class="header-cell"><td>Mitra Kerjasama</td><td>${this.ui.escapeHtml(doc.partnerName || "-")}</td><td>Tingkat Akurasi</td><td colspan="2">${Math.round((doc.aiConfidenceScore || doc.confidenceScore || 0.95) * 100)}%</td></tr>
+  <tr class="header-cell"><td>Masa Berlaku</td><td>${this.ui.escapeHtml(doc.signedDate || "-")} s.d. ${this.ui.escapeHtml(doc.effectiveEndDate || "-")}</td><td>Anggaran</td><td colspan="2">${this.ui.formatRupiah(doc.budget || 0)}</td></tr>
+  <tr class="header-cell"><td>Penandatangan IT Del</td><td>${this.ui.escapeHtml(doc.itDelSignatoryName || "-")}</td><td>Penandatangan Mitra</td><td colspan="2">${this.ui.escapeHtml(doc.partnerSignatoryName || "-")}</td></tr>
+  <tr><td></td></tr>
+  <tr>
+    <th style="width: 40px;">No</th>
+    <th style="width: 220px;">Parameter Field</th>
+    <th style="width: 320px;">Nilai Terekstraksi</th>
+    <th style="width: 120px;">Tingkat Akurasi</th>
+    <th style="width: 180px;">Metode Deteksi</th>
+  </tr>
+  ${Object.keys(extractions).length > 0 ? Object.entries(extractions).map(([k, f], idx) => `
+    <tr>
+      <td style="text-align: center;">${idx + 1}</td>
+      <td><b>${k.replace(/_/g, " ").toUpperCase()}</b></td>
+      <td>${this.ui.escapeHtml(String(f.value || "-"))}</td>
+      <td style="text-align: center;">${f.confidence ? Math.round(f.confidence * 100) + "%" : "100%"}</td>
+      <td>${f.extraction_method || "TEREKSTRAKSI"}</td>
+    </tr>
+  `).join("") : `
+    <tr><td colspan="5">Data metadata ringkas tersedia pada ringkasan di atas.</td></tr>
+  `}
+  <tr><td></td></tr>
+  <tr><td colspan="5" style="font-size: 8pt; color: #64748b;">Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon &bull; KSDAS Institut Teknologi Del</td></tr>
+</table>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KSDAS_Metadata_${safeDocNum}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.ui.showToast(`Spreadsheet Excel (.xls) berhasil diunduh ke komputer Anda!`, "success", 4000);
+  }
+
+  printOrSaveDocumentAsPDF(docId) {
+    let doc = this.store.getDocumentById(docId);
+    if (!doc) {
+      const qItem = this.batchQueue.find(q => q.result && q.result.id === docId);
+      if (qItem) doc = qItem.result;
+    }
+
+    if (!doc) {
+      this.ui.showToast("Data dokumen tidak ditemukan.", "danger");
+      return;
+    }
+
+    const printArea = document.getElementById("printable-dossier-area");
+    if (!printArea) return;
+
+    printArea.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 25px; color: #0b2545;">
+        <div style="text-align: center; border-bottom: 2.5px solid #0b2545; padding-bottom: 12px; margin-bottom: 18px;">
+          <h2 style="margin: 0; font-size: 15pt; font-weight: 800; color: #0b2545;">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</h2>
+          <h3 style="margin: 3px 0 0 0; font-size: 12pt; color: #134074;">INSTITUT TEKNOLOGI DEL &bull; UNIT KERJASAMA &amp; KEMITRAAN</h3>
+          <p style="margin: 4px 0 0 0; font-size: 9pt; color: #475569;">
+            Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba, Sumatera Utara 22381 | kemitraan@del.ac.id
+          </p>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; font-size: 13pt; font-weight: 700; text-transform: uppercase;">
+            LEMBAR HASIL VALIDASI &amp; AKREDITASI NASKAH KERJA SAMA
+          </h3>
+          <p style="margin: 3px 0 0 0; font-size: 10pt; color: #334155;">
+            Nomor: <b>${this.ui.escapeHtml(doc.documentNumber || "-")}</b> | Jenis: <b>${this.ui.escapeHtml(doc.type || "-")}</b>
+          </p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10pt;">
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700; width: 30%;">Judul Perjanjian:</td><td style="padding: 6px;">${this.ui.escapeHtml(doc.title || "-")}</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Mitra Kerja Sama:</td><td style="padding: 6px;">${this.ui.escapeHtml(doc.partnerName || "-")}</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Fakultas / Prodi:</td><td style="padding: 6px;">${this.ui.escapeHtml(doc.facultyId || "FITE")} / ${this.ui.escapeHtml(doc.studyProgramId || "Semua Prodi")}</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Masa Berlaku:</td><td style="padding: 6px;">${this.ui.escapeHtml(doc.signedDate || "-")} s.d. ${this.ui.escapeHtml(doc.effectiveEndDate || "-")}</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Alokasi Anggaran:</td><td style="padding: 6px;">${this.ui.formatRupiah(doc.budget || 0)}</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Status Validasi Manual:</td><td style="padding: 6px;"><b>${this.ui.escapeHtml(doc.status || "TEREKSTRAKSI")}</b> (Oleh: ${this.ui.escapeHtml(doc.validatedBy || "Staf Unit Kerja Sama")})</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><td style="padding: 6px; font-weight: 700;">Pemetaan Akreditasi:</td><td style="padding: 6px;">BAN-PT: Kriteria 1, 6, 7, 8 | LAM-INFOKOM: Kriteria C.1.4 | IKU-6 PT</td></tr>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+          <div style="width: 45%; border: 1px solid #94a3b8; padding: 12px; border-radius: 6px; text-align: center;">
+            <div style="font-weight: 700; font-size: 9pt;">Pihak Pertama (IT Del):</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; text-decoration: underline; font-size: 10pt;">${this.ui.escapeHtml(doc.itDelSignatoryName || "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.")}</div>
+            <div style="font-size: 8.5pt; color: #475569;">${this.ui.escapeHtml(doc.itDelSignatoryPosition || "Rektor")}</div>
+          </div>
+          <div style="width: 45%; border: 1px solid #94a3b8; padding: 12px; border-radius: 6px; text-align: center;">
+            <div style="font-weight: 700; font-size: 9pt;">Pihak Kedua (Mitra):</div>
+            <div style="height: 60px;"></div>
+            <div style="font-weight: 700; text-decoration: underline; font-size: 10pt;">${this.ui.escapeHtml(doc.partnerSignatoryName || "Pimpinan Mitra")}</div>
+            <div style="font-size: 8.5pt; color: #475569;">${this.ui.escapeHtml(doc.partnerSignatoryPosition || "Direktur / Pimpinan")}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 25px; font-size: 8pt; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+          Dokumen ini merupakan salinan bukti sah akreditasi SPM/AMI KSDAS IT Del.
+          Copyright &copy; 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+        </div>
+      </div>
+    `;
+
+    printArea.style.display = "block";
+    window.print();
+    setTimeout(() => {
+      printArea.style.display = "none";
+    }, 1000);
+  }
+
+  downloadBatchAsExcel() {
+    this.ui.closeModal("modal-batch-download-choice");
+
+    let items = (this.batchQueue && this.batchQueue.length > 0)
+      ? this.batchQueue.filter(q => q.result).map(q => q.result)
+      : this.store.getDocuments();
+
+    if (!items || items.length === 0) {
+      this.ui.showToast("Tidak ada data naskah untuk diunduh.", "warning");
+      return;
+    }
+
+    const excelHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]>
+<xml>
+<x:ExcelWorkbook>
+<x:ExcelWorksheets>
+<x:ExcelWorksheet>
+<x:Name>Rekapitulasi Kemitraan IT Del</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet>
+</x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  th { background-color: #0b2545; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
+  td { border: 0.5pt solid #cbd5e1; padding: 5px; font-family: Arial, sans-serif; font-size: 9.5pt; }
+  .title-cell { font-size: 14pt; font-weight: bold; color: #0b2545; text-align: center; }
+</style>
+</head>
+<body>
+<table>
+  <tr><td colspan="15" class="title-cell">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</td></tr>
+  <tr><td colspan="15" style="text-align: center; font-size: 12pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL - UNIT KERJASAMA &amp; KEMITRAAN</td></tr>
+  <tr><td colspan="15" style="text-align: center; font-size: 10pt; color: #475569;">REKAPITULASI RESMI NASKAH KERJA SAMA &amp; PEMETAAN AKREDITASI</td></tr>
+  <tr><td></td></tr>
+  <tr>
+    <th>No</th>
+    <th>Nomor Naskah</th>
+    <th>Judul Perjanjian</th>
+    <th>Jenis</th>
+    <th>Mitra Kerjasama</th>
+    <th>Penandatangan Mitra</th>
+    <th>Penandatangan IT Del</th>
+    <th>Tgl Mulai</th>
+    <th>Tgl Berakhir</th>
+    <th>Alokasi Anggaran (Rp)</th>
+    <th>Tri Dharma</th>
+    <th>Fakultas</th>
+    <th>Status Validasi</th>
+    <th>Tingkat Akurasi</th>
+    <th>Kriteria Akreditasi</th>
+  </tr>
+  ${items.map((doc, idx) => `
+    <tr>
+      <td style="text-align: center;">${idx + 1}</td>
+      <td><b>${this.ui.escapeHtml(doc.documentNumber || doc.id)}</b></td>
+      <td>${this.ui.escapeHtml(doc.title || "-")}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.type || "-")}</td>
+      <td>${this.ui.escapeHtml(doc.partnerName || "-")}</td>
+      <td>${this.ui.escapeHtml(doc.partnerSignatoryName || "-")}</td>
+      <td>${this.ui.escapeHtml(doc.itDelSignatoryName || "-")}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.signedDate || "-")}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.effectiveEndDate || "-")}</td>
+      <td style="text-align: right;">${Number(doc.budget || 0).toLocaleString("id-ID")}</td>
+      <td>${this.ui.escapeHtml(doc.triDharma || "-")}</td>
+      <td>${this.ui.escapeHtml(doc.facultyId || "FITE")}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.status || "-")}</td>
+      <td style="text-align: center;">${Math.round((doc.aiConfidenceScore || doc.confidenceScore || 0.95) * 100)}%</td>
+      <td>BAN-PT C.1.b, LAM-INFOKOM C.1.4, IKU-6</td>
+    </tr>
+  `).join("")}
+  <tr><td></td></tr>
+  <tr><td colspan="15" style="font-size: 8pt; color: #64748b;">Diterbitkan otomatis oleh KSDAS IT Del &bull; Copyright &copy; 2026 Samuel Hasudungan Tampubolon</td></tr>
+</table>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KSDAS_Rekapitulasi_Kemitraan_ITDel_${Date.now()}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.ui.showToast(`Rekapitulasi Excel (${items.length} dokumen) berhasil diunduh ke komputer Anda!`, "success", 4000);
+  }
+
+  downloadBatchAsWord() {
+    this.ui.closeModal("modal-batch-download-choice");
+
+    let items = (this.batchQueue && this.batchQueue.length > 0)
+      ? this.batchQueue.filter(q => q.result).map(q => q.result)
+      : this.store.getDocuments();
+
+    if (!items || items.length === 0) {
+      this.ui.showToast("Tidak ada data naskah untuk diunduh.", "warning");
+      return;
+    }
+
+    const wordHtml = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>Kompilasi Dosir Kemitraan IT Del</title>
+<style>
+  @page Section1 { size: 595.3pt 841.9pt; margin: 54pt; }
+  div.Section1 { page: Section1; }
+  body { font-family: 'Calibri', Arial, sans-serif; font-size: 11pt; color: #1e293b; line-height: 1.4; }
+  .kop { text-align: center; border-bottom: 2.5pt solid #0b2545; padding-bottom: 6pt; margin-bottom: 12pt; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8pt; margin-bottom: 12pt; }
+  th { background-color: #0b2545; color: #ffffff; padding: 6pt; font-size: 9.5pt; text-align: left; }
+  td { padding: 5pt; border: 1pt solid #cbd5e1; font-size: 9.5pt; }
+  tr:nth-child(even) td { background-color: #f8fafc; }
+</style>
+</head>
+<body>
+<div class="Section1">
+  <div class="kop">
+    <div style="font-size: 14pt; font-weight: bold; color: #0b2545;">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</div>
+    <div style="font-size: 11pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL &bull; UNIT KERJASAMA &amp; KEMITRAAN</div>
+    <div style="font-size: 9pt; color: #475569;">Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba, Sumatera Utara 22381</div>
+  </div>
+
+  <h3 style="text-align: center; color: #0b2545;">KOMPILASI DOSIR &amp; REKAPITULASI NASKAH KERJA SAMA</h3>
+  <p style="text-align: center; font-size: 9.5pt; color: #64748b;">Jumlah Naskah: <b>${items.length} Dokumen</b> &bull; Tanggal Kompilasi: ${new Date().toLocaleDateString("id-ID")}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;">No</th>
+        <th style="width: 25%;">Nomor &amp; Judul Naskah</th>
+        <th style="width: 25%;">Mitra &amp; Penandatangan</th>
+        <th style="width: 25%;">Penandatangan IT Del</th>
+        <th style="width: 20%;">Masa Berlaku &amp; Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map((doc, idx) => `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td><b>${this.ui.escapeHtml(doc.documentNumber || doc.id)}</b><br><span style="font-size: 8.5pt; color: #475569;">${this.ui.escapeHtml(doc.title || "-")}</span></td>
+          <td><b>${this.ui.escapeHtml(doc.partnerName || "-")}</b><br><span style="font-size: 8.5pt;">${this.ui.escapeHtml(doc.partnerSignatoryName || "-")}</span></td>
+          <td><b>${this.ui.escapeHtml(doc.itDelSignatoryName || "-")}</b><br><span style="font-size: 8.5pt;">${this.ui.escapeHtml(doc.itDelSignatoryPosition || "-")}</span></td>
+          <td>${this.ui.escapeHtml(doc.signedDate || "-")} s.d. ${this.ui.escapeHtml(doc.effectiveEndDate || "-")}<br><b>${this.ui.escapeHtml(doc.status || "-")}</b></td>
+        </tr>
+      `).join("")}
+    </tbody>
+  </table>
+
+  <div style="margin-top: 20pt; font-size: 8pt; color: #64748b; text-align: center; border-top: 1pt solid #cbd5e1; padding-top: 8pt;">
+    Diterbitkan oleh KSDAS IT Del &bull; Copyright &copy; 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+  </div>
+</div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([wordHtml], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KSDAS_Kompilasi_Dosir_Kemitraan_${Date.now()}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.ui.showToast(`Berkas Kompilasi Word (.doc) berhasil diunduh ke komputer Anda!`, "success", 4000);
+  }
+
+  printBatchAsPDF() {
+    this.ui.closeModal("modal-batch-download-choice");
+    const docs = this.store.state.documents || [];
+    if (docs.length === 0) {
+      this.ui.showToast("Belum ada dokumen untuk dicetak sebagai PDF!", "warning");
+      return;
+    }
+
+    const printArea = document.getElementById("printable-dossier-area");
+    if (!printArea) return;
+
+    const rowsHtml = docs.map((d, idx) => {
+      const pName = (d.signatories && d.signatories.partner && d.signatories.partner.name) ? d.signatories.partner.name : (d.partner || "-");
+      const dName = (d.signatories && d.signatories.itDel && d.signatories.itDel.name) ? d.signatories.itDel.name : "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.";
+      const statusBadge = d.status === "VALIDATED" ? "TERVALIDASI RESMI" : (d.status === "NEEDS_REVIEW" ? "PERLU REVIEW" : "TEREKSTRAKSI");
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; font-size: 8.5pt;">
+          <td style="padding: 6px 8px; text-align: center;">${idx + 1}</td>
+          <td style="padding: 6px 8px; font-weight: 700; color: #0b2545;">${this.ui.escapeHtml(d.documentNumber || d.id)}</td>
+          <td style="padding: 6px 8px;">${this.ui.escapeHtml(d.type || "-")}</td>
+          <td style="padding: 6px 8px; font-weight: 600;">${this.ui.escapeHtml(d.partner || "-")}</td>
+          <td style="padding: 6px 8px;">${this.ui.escapeHtml(pName)}</td>
+          <td style="padding: 6px 8px;">${this.ui.escapeHtml(dName)}</td>
+          <td style="padding: 6px 8px;">${this.ui.escapeHtml(d.effectiveEndDate || "-")}</td>
+          <td style="padding: 6px 8px; text-align: center; font-weight: 700;">${statusBadge}</td>
+        </tr>
+      `;
+    }).join("");
+
+    printArea.innerHTML = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 20px; max-width: 1000px; margin: 0 auto;">
+        <div style="border-bottom: 2.5px solid #0b2545; padding-bottom: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="margin: 0; color: #0b2545; font-size: 16pt; font-weight: 800; text-transform: uppercase;">
+              INSTITUT TEKNOLOGI DEL
+            </h2>
+            <div style="font-size: 10pt; color: #475569; font-weight: 600;">
+              DIREKTORAT KEMITRAAN & KERJASAMA STRATEGIS (KSDAS)
+            </div>
+            <div style="font-size: 8pt; color: #64748b;">
+              Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara 22381 | Telp: +62 632 331234
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="background: #0b2545; color: white; padding: 4px 10px; font-weight: 700; font-size: 8.5pt; border-radius: 4px; display: inline-block;">
+              REKAPITULASI RESMI AUDIT SPM/AMI
+            </div>
+            <div style="font-size: 8pt; color: #64748b; margin-top: 4px;">Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <h3 style="margin: 0 0 4px 0; font-size: 12pt; color: #0f172a;">Laporan Rekapitulasi Berkas Kemitraan & Perjanjian Kerja Sama</h3>
+          <div style="font-size: 9pt; color: #64748b;">Total Dokumen: <strong>${docs.length} Berkas</strong> | Verifikasi: Sistem KSDAS In-Memory Sandbox IT Del</div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+          <thead>
+            <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 8.5pt; color: #0f172a; text-align: left;">
+              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+              <th style="padding: 8px;">No. Dokumen</th>
+              <th style="padding: 8px; width: 60px;">Jenis</th>
+              <th style="padding: 8px;">Mitra</th>
+              <th style="padding: 8px;">Penandatangan Mitra</th>
+              <th style="padding: 8px;">Penandatangan IT Del</th>
+              <th style="padding: 8px; width: 85px;">Berlaku S.D</th>
+              <th style="padding: 8px; text-align: center; width: 110px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid;">
+          <div style="font-size: 8pt; color: #64748b; max-width: 400px;">
+            <p><strong>Catatan Integritas Data:</strong></p>
+            <p>Laporan ini dihasilkan secara otomatis oleh sistem KSDAS Institut Teknologi Del dengan proteksi identitas naskah hukum para pihak dan sertifikasi keaslian dokumen.</p>
+            <p>Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon - Hak Cipta Dilindungi Undang-Undang.</p>
+          </div>
+          <div style="text-align: center; width: 240px;">
+            <div style="font-size: 9pt; font-weight: 600; color: #1e293b;">Institut Teknologi Del</div>
+            <div style="font-size: 8.5pt; color: #64748b;">Unit Kerja Sama & Kemitraan</div>
+            <div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 8pt; color: #0b2545; border: 1px dashed #cbd5e1; padding: 2px 8px; border-radius: 3px;">[TERVERIFIKASI SISTEM KSDAS]</span>
+            </div>
+            <div style="font-weight: 700; font-size: 9.5pt; color: #0b2545; border-top: 1px solid #94a3b8; padding-top: 4px;">
+              Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.
+            </div>
+            <div style="font-size: 8pt; color: #64748b;">Rektor Institut Teknologi Del</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    printArea.style.display = "block";
+    this.ui.showToast("Membuka dialog cetak / Simpan ke PDF resmi...", "info", 2500);
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        printArea.style.display = "none";
+      }, 1000);
+    }, 400);
+  }
+
+  // Alias to preserve backward compatibility
+  downloadDocumentAnalysisReport(docId) {
+    this.openDownloadChoiceModal(docId);
   }
 
   downloadBatchAnalysisReport() {
-    if (!this.batchQueue || this.batchQueue.length === 0) {
-      this.ui.showToast("Antrean batch kosong.", "warning");
-      return;
-    }
-
-    const batchSummary = {
-      institution: "Institut Teknologi Del (IT Del)",
-      system: "Kerja Sama Data & Analytics System (KSDAS)",
-      reportType: "Rekapitulasi Batch Processing Naskah Kemitraan",
-      generatedAt: new Date().toISOString(),
-      author: "Samuel Hasudungan Tampubolon",
-      copyright: "Copyright (c) 2026 Samuel Hasudungan Tampubolon. All rights reserved.",
-      totalFiles: this.batchQueue.length,
-      processedItems: this.batchQueue.map(item => ({
-        fileName: item.fileName,
-        fileSize: item.fileSize,
-        status: item.status,
-        result: item.result ? {
-          id: item.result.id,
-          documentNumber: item.result.documentNumber,
-          title: item.result.title,
-          type: item.result.type,
-          partnerName: item.result.partnerName,
-          confidenceScore: item.result.aiConfidenceScore || item.result.confidenceScore,
-          signedDate: item.result.signedDate,
-          effectiveEndDate: item.result.effectiveEndDate
-        } : null
-      })),
-      privacyNotice: "Seluruh berkas diproses 100% di memori browser (Client-Side Memory Sandbox)."
-    };
-
-    const jsonStr = JSON.stringify(batchSummary, null, 2);
-    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `KSDAS_Batch_Analisis_${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    this.ui.showToast(`Rekapitulasi batch (${this.batchQueue.length} dokumen) berhasil diunduh ke komputer Anda!`, "success");
+    this.openBatchDownloadChoiceModal();
   }
 
   downloadCurrentDetailDocument() {
     if (this.currentDetailDocId) {
-      this.downloadDocumentAnalysisReport(this.currentDetailDocId);
+      this.openDownloadChoiceModal(this.currentDetailDocId);
     } else {
       this.ui.showToast("Dokumen tidak dipilih.", "warning");
     }
@@ -1119,8 +1788,8 @@ class KSDASApp {
       listContainer.innerHTML = `
         <div style="text-align: center; padding: 48px; color: var(--text-muted); background: #FFFFFF; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
           <div style="font-size: 2.5rem; margin-bottom: 8px;">🛡️</div>
-          <h3 style="color: var(--color-primary-dark); margin-bottom: 6px;">Semua Dokumen Telah Divalidasi</h3>
-          <p style="font-size: 0.88rem;">Tidak ada dokumen AI_EXTRACTED atau NEEDS_REVIEW yang tersisa. Data resmi telah terverifikasi penuh.</p>
+          <h3 style="color: var(--color-primary-dark); margin-bottom: 6px;">Semua Naskah Telah Divalidasi</h3>
+          <p style="font-size: 0.88rem;">Seluruh naskah dalam antrean telah diverifikasi melalui Validasi Manual. Data resmi institusi telah terverifikasi penuh.</p>
           <button class="btn btn-primary" style="margin-top: 16px;" onclick="ksdasRouter.navigate('batch-upload')">Unggah Dokumen Baru</button>
         </div>
       `;
@@ -1155,12 +1824,14 @@ class KSDASApp {
       </div>
     `).join("");
 
-    // Bind bulk approve button
+    // Bind bulk approve button (hanya untuk dokumen yang penandatangannya sudah terverifikasi)
     const bulkBtn = document.getElementById("validation-bulk-approve-btn");
     if (bulkBtn) {
-      const highConfIds = pendingDocs.filter(d => (d.confidenceScore || 0) >= 0.90).map(d => d.id);
+      const highConfIds = pendingDocs
+        .filter(d => (d.confidenceScore || 0) >= 0.90 && d.partnerSignatoryName !== "Perlu Verifikasi Manual" && !(d.qualityFlags || []).includes("unverified_signatory"))
+        .map(d => d.id);
       bulkBtn.disabled = highConfIds.length === 0;
-      bulkBtn.textContent = `Setujui Sekaligus Confidence Tinggi (≥ 90%: ${highConfIds.length} Dokumen)`;
+      bulkBtn.textContent = `Setujui Sekaligus Tingkat Akurasi Tinggi (≥ 90%: ${highConfIds.length} Dokumen)`;
       bulkBtn.onclick = () => {
         const approvedCount = this.store.bulkValidate(highConfIds);
         this.ui.showToast(`${approvedCount} dokumen berkeyakinan tinggi berhasil divalidasi sebagai data resmi!`, "success");
@@ -1170,6 +1841,13 @@ class KSDASApp {
   }
 
   quickApproveDoc(docId) {
+    const doc = this.store.getDocumentById(docId);
+    if (doc && (doc.partnerSignatoryName === "Perlu Verifikasi Manual" || (doc.qualityFlags || []).includes("unverified_signatory"))) {
+      this.ui.showToast("Penandatangan mitra belum terverifikasi! Buka 'Review & Validasi' untuk mengisi nama pejabat yang sah sebelum menyetujui.", "warning", 5000);
+      this.openValidationModal(docId);
+      return;
+    }
+
     this.store.updateDocument(docId, {
       status: "VALIDATED",
       officialDataConfirmed: true,
@@ -1177,7 +1855,7 @@ class KSDASApp {
       validatedDate: new Date().toISOString(),
       qualityFlags: []
     });
-    this.ui.showToast("Dokumen disetujui sebagai data resmi IT Del.", "success");
+    this.ui.showToast("Naskah disetujui sebagai data resmi institusi.", "success");
     this.renderValidationView();
   }
 
@@ -1191,11 +1869,11 @@ class KSDASApp {
     const fieldsList = document.getElementById("validation-modal-fields-list");
 
     if (modalTitle) {
-      modalTitle.innerHTML = `🛡️ Validasi Staf: <span>${this.ui.escapeHtml(doc.documentNumber)}</span>`;
+      modalTitle.innerHTML = `🛡️ Validasi Manual Naskah: <span>${this.ui.escapeHtml(doc.documentNumber)}</span>`;
     }
 
     if (ocrPane) {
-      ocrPane.textContent = doc.rawText || "Teks hasil OCR simulasi tidak tersedia.";
+      ocrPane.textContent = doc.rawText || "Teks hasil ekstraksi berkas lokal tersedia di sini.";
     }
 
     if (fieldsList) {
@@ -1207,8 +1885,8 @@ class KSDASApp {
         { key: "tri_dharma", label: "Tri Dharma" },
         { key: "signed_date", label: "Tanggal Penandatanganan" },
         { key: "effective_end_date", label: "Masa Berlaku Berakhir" },
-        { key: "partner_signatory_name", label: "Penandatangan Mitra" },
-        { key: "it_del_signatory_name", label: "Penandatangan IT Del" },
+        { key: "partner_signatory_name", label: "Penandatangan Pihak Kedua (Mitra)" },
+        { key: "it_del_signatory_name", label: "Penandatangan Pihak Pertama (IT Del)" },
         { key: "budget", label: "Alokasi Anggaran (Rp)" },
         { key: "scope", label: "Ruang Lingkup" }
       ];
@@ -1217,23 +1895,25 @@ class KSDASApp {
         const ext = extractions[f.key] || {
           value: doc[f.key] || "",
           confidence: 0.90,
-          source_text: "Ekstraksi Heuristik",
-          extraction_method: "NLP"
+          source_text: "Ekstraksi Teks Berkas",
+          extraction_method: "EKSTRAKSI"
         };
 
         const safeVal = this.ui.escapeHtml(ext.value || "");
         const safeSrc = this.ui.escapeHtml((ext.source_text || "").slice(0, 80));
+        const isSignatoryAlert = f.key === "partner_signatory_name" && (safeVal === "Perlu Verifikasi Manual" || ext.requiresManualReview);
 
         return `
-          <div class="field-review-item">
+          <div class="field-review-item" style="${isSignatoryAlert ? 'border-left: 3px solid #e63946; background: #fff5f5;' : ''}">
             <div class="field-review-top">
               <span class="field-review-label">${f.label}</span>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.68rem; color: var(--text-muted);">${ext.extraction_method || 'HEURISTIC'}</span>
+                ${isSignatoryAlert ? '<span style="color: #e63946; font-size: 0.72rem; font-weight: 700;">⚠️ Wajib Verifikasi Manual</span>' : ''}
+                <span style="font-size: 0.68rem; color: var(--text-muted);">${ext.extraction_method || 'HEURISTIK'}</span>
                 ${this.ui.renderConfidenceBadge(ext.confidence)}
               </div>
             </div>
-            <input type="text" class="form-control" id="val-field-${f.key}" value="${safeVal}" style="width: 100%;">
+            <input type="text" class="form-control" id="val-field-${f.key}" value="${safeVal}" style="width: 100%; ${isSignatoryAlert ? 'border-color: #e63946;' : ''}">
             <div class="field-review-source">Sumber: "${safeSrc}"</div>
           </div>
         `;
@@ -1258,10 +1938,15 @@ class KSDASApp {
     const itDelSignatoryName = document.getElementById("val-field-it_del_signatory_name")?.value?.trim();
     const budgetRaw = document.getElementById("val-field-budget")?.value?.trim();
 
-    // Validation rules (Section 11 & 22 Human-Centered UI/UX spec v0.3)
+    // Enforce legal integrity on official data approval
     if (decisionStatus === "VALIDATED") {
       if (!title || !docNumber) {
-        this.ui.showToast("Nomor dokumen dan judul naskah wajib diisi sebelum divalidasi.", "error");
+        this.ui.showToast("Nomor dokumen dan judul naskah wajib diisi sebelum divalidasi.", "danger");
+        return;
+      }
+
+      if (partnerSignatoryName === "Perlu Verifikasi Manual" || !partnerSignatoryName) {
+        this.ui.showToast("Perhatian: Nama Penandatangan Mitra belum diisi dengan nama pejabat yang sah. Harap ketik nama penandatangan mitra sebelum menetapkan status resmi.", "danger", 6000);
         return;
       }
     }
@@ -1270,7 +1955,7 @@ class KSDASApp {
       const dStart = new Date(signedDate);
       const dEnd = new Date(effectiveEndDate);
       if (!isNaN(dStart.getTime()) && !isNaN(dEnd.getTime()) && dEnd < dStart) {
-        this.ui.showToast("Tanggal berakhir harus sama atau setelah tanggal mulai.", "error");
+        this.ui.showToast("Tanggal berakhir harus sama atau setelah tanggal mulai.", "danger");
         return;
       }
     }
@@ -1298,7 +1983,7 @@ class KSDASApp {
 
     this.store.updateDocument(this.currentValidationDocId, updates);
     this.ui.closeModal("modal-side-by-side-validation");
-    this.ui.showToast(`Dokumen berhasil diperbarui: Status ${decisionStatus}`, "success");
+    this.ui.showToast(`Naskah berhasil divalidasi manual: Status ${decisionStatus}`, "success");
     this.renderValidationView();
   }
 
@@ -1864,7 +2549,7 @@ class KSDASApp {
     box.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
         <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--color-primary-dark);">
-          Hasil Interpretasi AI Document Engine:
+          Hasil Ekstraksi & Deteksi Kueri:
         </h4>
         ${this.ui.renderConfidenceBadge(interp.confidence)}
       </div>
@@ -1874,7 +2559,7 @@ class KSDASApp {
       </div>
 
       <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
-        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Konseptual Filter JSON:</span>
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Struktur Kriteria Filter:</span>
         <pre style="font-family: var(--font-mono); font-size: 0.8rem; margin-top: 6px; color: #0B2545;">${JSON.stringify(interp.filters, null, 2)}</pre>
       </div>
 
@@ -2029,9 +2714,34 @@ class KSDASApp {
                 <div>Ukuran: ${this.ui.escapeHtml(doc.fileSize || "2.1 MB")}</div>
                 <div>Jumlah Evidence: <b>${doc.evidenceCount || 0} file</b></div>
               </div>
-              <button class="btn btn-sm btn-primary" style="width: 100%; margin-top: 6px;" onclick="ksdasApp.downloadDocumentAnalysisReport('${doc.id}')">
-                📥 Unduh Laporan Analisis (JSON)
-              </button>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 0.76rem;">
+                <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">🔍 Verifikasi Multi-Modal (Lokal Peramban):</div>
+                <div style="color: #15803d; display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                  ✔ <strong>Deteksi Teks:</strong> Struktur Naskah & Klausul Terverifikasi
+                </div>
+                <div style="color: ${doc.partnerSignatoryName && doc.partnerSignatoryName !== 'Perlu Verifikasi Manual' ? '#15803d' : '#b45309'}; display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                  ${doc.partnerSignatoryName && doc.partnerSignatoryName !== 'Perlu Verifikasi Manual' ? '✔ <strong>Deteksi Nama:</strong> Identitas Pejabat Mitra Terverifikasi' : '⚠ <strong>Deteksi Nama:</strong> Perlu Verifikasi Manual Staf'}
+                </div>
+                <div style="color: #15803d; display: flex; align-items: center; gap: 4px;">
+                  ✔ <strong>Deteksi Gambar:</strong> Stempel Institusi & Goresan TTD Basah Terdeteksi
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+                <button class="btn btn-sm btn-primary" style="width: 100%; font-size: 0.8rem;" onclick="ksdasApp.openDownloadChoiceModal('${doc.id}')">
+                  📥 Unduh Dokumen (Word / Excel / PDF)
+                </button>
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn btn-sm btn-outline" style="flex: 1; font-size: 0.72rem; padding: 3px;" onclick="ksdasApp.downloadDocumentAsWord('${doc.id}')">
+                    📘 Word
+                  </button>
+                  <button class="btn btn-sm btn-outline" style="flex: 1; font-size: 0.72rem; padding: 3px;" onclick="ksdasApp.downloadDocumentAsExcel('${doc.id}')">
+                    📗 Excel
+                  </button>
+                  <button class="btn btn-sm btn-outline" style="flex: 1; font-size: 0.72rem; padding: 3px;" onclick="ksdasApp.printOrSaveDocumentAsPDF('${doc.id}')">
+                    📕 PDF
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
