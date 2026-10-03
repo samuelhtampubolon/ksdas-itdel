@@ -64,7 +64,7 @@ graph TD
 ## 📢 Berita & Pembaruan Rilis Terkini
 
 - **[2026-10-03] 🏛️ Transformasi Murni ke Sistem Informasi & Basis Data Konvensional:** Menghapus seluruh konsep dan ketergantungan pada AI, ML, dan OCR. Platform kini beroperasi murni sebagai Sistem Informasi Manajemen (SIM) Kerjasama dan basis data relasional perguruan tinggi yang kokoh, terstruktur, dan mudah dipahami.
-- **[2026-10-03] 📁 10 Dokumen Naskah Resmi Terverifikasi:** Menyederhanakan data contoh menjadi tepat **10 naskah kerja sama utama** yang nyata, berbobot, dan representatif bagi IT Del (mencakup Huawei, Bank Mandiri, UTM Malaysia, Pemprov Sumut, Astra International, Pemkab Toba, PT Telkom Indonesia, SMK Negeri 1 Laguboti, PT Toba Pulp Lestari, dan Microsoft Asia Pacific).
+- **[2026-10-03] 📁 10 Dokumen Naskah Resmi Terverifikasi:** Menyederhanakan data contoh menjadi tepat **10 naskah kerja sama utama** yang nyata, berbobot, dan representatif bagi IT Del (mencakup Huawei, Bank Mandiri, UTM Malaysia, Pemprov Sumut, Astra International, Pemkab Toba, PT Telkom Indonesia, SMK Negeri 1 Laguboti, Badan Pelaksana Otorita Danau Toba / BPODT, dan Microsoft Asia Pacific).
 - **[2026-10-03] 🛡️ Verifikasi Nama Pejabat Sah (*Zero-Hallucination*):** Deteksi identitas pejabat mitra dan penandatangan IT Del dengan blacklist instansi/panitia ketat. Dokumen tanpa penandatangan sah diwajibkan melalui verifikasi manual dan diblokir dari persetujuan instan (*approval gate*).
 - **[2026-10-03] 📊 10 Editable Fields Baru & Dasbor 21 Indikator Akreditasi:** Penambahan 10 parameter akreditasi pada formulir validasi manual serta peluncuran dasbor 21 Indikator SPM / LAM-INFOKOM (rasio DTPS, MBKM, PDDikti %, tindak lanjut MoU ke PKS, dan filter prodi S1 Informatika).
 - **[2026-10-03] 📥 Unduhan Resmi Word, Excel, dan PDF (Bukan JSON):** Menghapus opsi unduhan JSON mentah bagi pengguna akhir dan menggantinya dengan generator dokumen Word (.doc) ber-Kop Surat IT Del, Excel (.xls) matriks 20 kolom, dan PDF (.pdf) siap cetak.
@@ -148,7 +148,7 @@ Sistem ini dikonfigurasikan dengan **10 naskah kerja sama utama** yang realistis
 6. **Pemerintah Kabupaten Toba** (`DOC-2025-MOU-006`): MoU Tingkat Wilayah/Lokal, Seluruh Fakultas, Sinergi Tri Dharma, Smart Regency, dan PkM Danau Toba.
 7. **PT Telkom Indonesia (Persero) Tbk** (`DOC-2025-MOA-007`): PKS Tingkat Nasional, FITE (S1 TE & IF), Riset Bersama Jaringan Sensor IoT Kualitas Air Danau Toba.
 8. **SMK Negeri 1 Laguboti** (`DOC-2025-IA-008`): IA Tingkat Wilayah/Lokal, FITE (S1 IF), Pelatihan Pemrograman Berkelanjutan & Literasi Digital Siswa Kejuruan.
-9. **PT Toba Pulp Lestari Tbk** (`DOC-2025-MOA-009`): PKS Tingkat Wilayah/Lokal, FB (S1 Bioteknologi), Riset Pemanfaatan Biomassa Serat Kayu untuk Bioplastik.
+9. **Badan Pelaksana Otorita Danau Toba (BPODT)** (`DOC-2025-MOA-009`): PKS Tingkat Wilayah/Lokal, FB (S1 Bioteknologi), Konservasi Hayati & Laboratorium Bioproses Flora Endemik Sibisa Toba.
 10. **Microsoft Asia Pacific** (`DOC-2026-MOU-010`): MoU Tingkat Internasional, FITE (S1 IF & SI), Kurikulum Perangkat Lunak Skala Global & Akselerasi Cloud Computing.
 
 ---
