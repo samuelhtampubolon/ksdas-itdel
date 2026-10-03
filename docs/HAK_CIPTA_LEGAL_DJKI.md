@@ -1,3 +1,5 @@
+> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
+
 # DOKUMEN PENGAJUAN PENCATATAN HAK CIPTA RESMI (DJKI KEMENKUMHAM RI)
 ## Ciptaan Program Komputer: Kerja Sama Data & Analytics System (KSDAS) IT Del
 

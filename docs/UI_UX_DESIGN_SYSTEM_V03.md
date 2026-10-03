@@ -1,3 +1,5 @@
+> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
+
 # KSDAS IT DEL - HUMAN-CENTERED UI/UX DESIGN SYSTEM & ACCESSIBILITY SPECIFICATION
 ## Versi 0.3 &bull; Spesifikasi Desain Antarmuka, Pengalaman Pengguna & Faktor Manusia
 

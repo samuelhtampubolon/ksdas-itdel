@@ -1,3 +1,5 @@
+> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
+
 # DOKUMEN ARSITEKTUR SISTEM (SYSTEM ARCHITECTURE SPECIFICATION)
 ## Kerja Sama Data & Analytics System (KSDAS) Institut Teknologi Del
 
