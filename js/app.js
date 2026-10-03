@@ -15,7 +15,6 @@ class KSDASApp {
   constructor() {
     this.store = window.ksdasStore;
     this.docParser = window.ksdasDocParser || window.ksdasAI;
-    this.ai = this.docParser; // Backward compatibility
     this.analytics = window.ksdasAnalytics;
     this.ui = window.ksdasUI;
     this.router = window.ksdasRouter;
@@ -1879,7 +1878,7 @@ class KSDASApp {
     if (!doc) return;
 
     const modalTitle = document.getElementById("validation-modal-title");
-    const ocrPane = document.getElementById("validation-modal-ocr-text");
+    const ocrPane = document.getElementById("validation-modal-document-text");
     const fieldsList = document.getElementById("validation-modal-fields-list");
 
     if (modalTitle) {

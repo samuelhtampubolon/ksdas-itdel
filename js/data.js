@@ -1,212 +1,398 @@
-/**
- * ============================================================================
- * KERJA SAMA DATA & ANALYTICS SYSTEM (KSDAS) INSTITUT TEKNOLOGI DEL
- * ============================================================================
- * Judul Ciptaan: KSDAS IT Del - Program Komputer Tata Kelola Kemitraan
- * Pencipta & Pemegang Hak Cipta: Samuel Hasudungan Tampubolon
- * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
- * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
- * Versi: 0.2.0
- * Berkas: js/data.js (Master Seed Data & Initial Synthetic Institutional State)
- * ============================================================================
- */
-
 window.KSDAS_SEED_DATA = {
-  version: "0.2.0",
-  lastUpdated: "2026-10-03T01:00:00Z",
-  institution: {
-    name: "Institut Teknologi Del",
-    shortName: "IT Del",
-    campus: "Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara",
-    website: "https://www.del.ac.id"
+  "version": "0.2.0",
+  "lastUpdated": "2026-10-03T01:00:00Z",
+  "institution": {
+    "name": "Institut Teknologi Del",
+    "shortName": "IT Del",
+    "campus": "Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara",
+    "website": "https://www.del.ac.id"
   },
-  roles: [
-    { id: "ADMIN_STAFF", name: "Staff Unit Kerja Sama", level: 1, permissions: ["create", "upload", "edit", "validate", "delete", "master_edit", "export"] },
-    { id: "BUREAU_HEAD", name: "Kepala Biro Kemitraan", level: 2, permissions: ["review", "validate", "edit_auth", "monitor", "export", "reports"] },
-    { id: "WR3", name: "Wakil Rektor III (Kemitraan)", level: 3, permissions: ["review", "validate", "monitor", "executive_analytics", "export", "reports"] },
-    { id: "EXECUTIVE_VIEWER", name: "Rektor / Dekan", level: 4, permissions: ["view", "download", "filter", "reports"] },
-    { id: "QUALITY_REVIEWER", name: "SPM (Satuan Penjaminan Mutu)", level: 4, permissions: ["view", "download", "filter", "accreditation_edit", "evidence_verify", "reports"] },
-    { id: "FACULTY_VIEWER", name: "Pengelola Fakultas", level: 5, permissions: ["view_faculty", "filter", "download", "add_activity"] },
-    { id: "PROGRAM_VIEWER", name: "Pengelola Program Studi", level: 5, permissions: ["view_program", "filter", "download", "add_evidence"] },
-    { id: "UNIT_VIEWER", name: "Pengelola Unit Internal", level: 5, permissions: ["view_unit", "filter", "download"] }
-  ],
-  faculties: [
-    { id: "FITE", code: "FITE", name: "Fakultas Informatika dan Teknik Elektro", dean: "Dr. Johannes Harungguan Sianipar, S.T., M.T." },
-    { id: "FTI", code: "FTI", name: "Fakultas Teknologi Industri", dean: "Dr. Rizal Sinaga, S.T., M.T." },
-    { id: "FB", code: "FB", name: "Fakultas Bioteknologi", dean: "Dr. Merry M. Sibarani, S.Si., M.Si." }
-  ],
-  studyPrograms: [
-    { id: "PRODI-IF", facultyId: "FITE", code: "S1-IF", name: "S1 Informatika", kaprodi: "Yusuf Kurniawan, S.T., M.Sc." },
-    { id: "PRODI-SI", facultyId: "FITE", code: "S1-SI", name: "S1 Sistem Informasi", kaprodi: "Tengku M. Khairil, S.Kom., M.Kom." },
-    { id: "PRODI-TE", facultyId: "FITE", code: "S1-TE", name: "S1 Teknik Elektro", kaprodi: "Indra H. M. Saragih, S.T., M.T." },
-    { id: "PRODI-TRPL", facultyId: "FITE", code: "D4-TRPL", name: "D4 Teknologi Rekayasa Perangkat Lunak", kaprodi: "Ronal M. Panjaitan, S.Kom., M.T." },
-    { id: "PRODI-TI", facultyId: "FITE", code: "D3-TI", name: "D3 Teknologi Informasi", kaprodi: "Nenni A. Tampubolon, S.Kom., M.Kom." },
-    { id: "PRODI-TK", facultyId: "FITE", code: "D3-TK", name: "D3 Teknologi Komputer", kaprodi: "Albertus S. Silalahi, S.T., M.T." },
-    { id: "PRODI-MR", facultyId: "FTI", code: "S1-MR", name: "S1 Manajemen Rekayasa", kaprodi: "Yanti N. Simamora, S.T., M.Sc." },
-    { id: "PRODI-MT", facultyId: "FTI", code: "S1-MT", name: "S1 Teknik Metalurgi", kaprodi: "David H. Marpaung, S.T., M.T." },
-    { id: "PRODI-BP", facultyId: "FB", code: "S1-BP", name: "S1 Teknik Bioproses", kaprodi: "Maria P. Hutapea, S.Si., M.Biotech." }
-  ],
-  internalUnits: [
-    { id: "UNIT-KERJASAMA", code: "UKS", name: "Unit Kerja Sama & Hubungan Alumni", head: "Humasak T. A. Simanjuntak, S.T., M.ISD." },
-    { id: "UNIT-SDI", code: "SDI", name: "Direktorat Sistem & Data Informasi (SDI/TSI)", head: "Gindo P. Sibuea, S.Kom., M.Kom." },
-    { id: "UNIT-SPM", code: "SPM", name: "Satuan Penjaminan Mutu", head: "Dr. Arnaldo Sinaga (Ex-officio)" },
-    { id: "UNIT-LPPM", code: "LPPM", name: "Lembaga Penelitian dan Pengabdian Masyarakat", head: "Dr. Fitriani Saragih, S.T., M.T." },
-    { id: "UNIT-CDC", code: "CDC", name: "Career Development Center & Kemahasiswaan", head: "Monika Siahaan, S.Sos." },
-    { id: "UNIT-BAAK", code: "BAAK", name: "Biro Administrasi Akademik & Kemahasiswaan", head: "Binsar Siregar, S.Si." }
-  ],
-  triDharmaTypes: [
-    { id: "EDUCATION", code: "PENDIDIKAN", name: "Pendidikan & Pengajaran", description: "Magang MBKM, Kuliah Tamu, Kurikulum Industri, Beasiswa" },
-    { id: "RESEARCH", code: "PENELITIAN", name: "Penelitian, Pengembangan & Inovasi", description: "Joint Research, Publikasi Ilmiah, Hibah Riset Bersama, Paten" },
-    { id: "COMMUNITY_SERVICE", code: "PENGMAS", name: "Pengabdian kepada Masyarakat", description: "Digitalisasi Desa Wisata, Pendampingan UMKM Toba, Pelatihan Guru" },
-    { id: "INSTITUTIONAL", code: "TATA_KELOLA", name: "Pengembangan Institusi & Fasilitas", description: "Donasi Laboratorium, Infrastruktur Jaringan, Benchmarking" }
-  ],
-  partners: [
+  "roles": [
     {
-      id: "PARTNER-001",
-      name: "PT Huawei Tech Investment",
-      code: "HUAWEI",
-      type: "INDUSTRY",
-      category: "MULTINATIONAL",
-      country: "Indonesia / China",
-      city: "Jakarta Selatan",
-      address: "Wisma Mulia 2 Lt. 28, Jl. Jend. Gatot Subroto No. 42",
-      contactPerson: "Budi Santoso, Ph.D. (Director of ICT Talent Ecosystem)",
-      email: "budi.santoso@huawei.com",
-      phone: "+62 21 5296 3888",
-      website: "https://www.huawei.com/id",
-      status: "ACTIVE",
-      totalAgreements: 3,
-      verifiedDate: "2024-01-15",
-      notes: "Mitra strategis pendirian Huawei ICT Academy dan Cloud Computing Lab di IT Del."
+      "id": "ADMIN_STAFF",
+      "name": "Staff Unit Kerja Sama",
+      "level": 1,
+      "permissions": [
+        "create",
+        "upload",
+        "edit",
+        "validate",
+        "delete",
+        "master_edit",
+        "export"
+      ]
     },
     {
-      id: "PARTNER-002",
-      name: "PT Astra International Tbk",
-      code: "ASTRA",
-      type: "INDUSTRY",
-      category: "CONGLOMERATE",
-      country: "Indonesia",
-      city: "Jakarta Utara",
-      address: "Menara Astra, Jl. Jend. Sudirman Kav. 5-6",
-      contactPerson: "Ratna Sari Dewi (Head of CSR & Education Support)",
-      email: "csr.edu@astra.co.id",
-      phone: "+62 21 6522 555",
-      website: "https://www.astra.co.id",
-      status: "ACTIVE",
-      totalAgreements: 4,
-      verifiedDate: "2023-08-10",
-      notes: "Sponsor beasiswa prestasi, hibah alat lab rekayasa, dan perekrutan lulusan."
+      "id": "BUREAU_HEAD",
+      "name": "Kepala Biro Kemitraan",
+      "level": 2,
+      "permissions": [
+        "review",
+        "validate",
+        "edit_auth",
+        "monitor",
+        "export",
+        "reports"
+      ]
     },
     {
-      id: "PARTNER-003",
-      name: "PT Microsoft Indonesia",
-      code: "MICROSOFT",
-      type: "INDUSTRY",
-      category: "MULTINATIONAL",
-      country: "Indonesia / USA",
-      city: "Jakarta Pusat",
-      address: "Indonesia Stock Exchange Building Tower II, 18th Floor",
-      contactPerson: "Dian Astuti (Education Industry Lead)",
-      email: "dian.astuti@microsoft.com",
-      phone: "+62 21 2551 8100",
-      website: "https://www.microsoft.com/id-id",
-      status: "ACTIVE",
-      totalAgreements: 2,
-      verifiedDate: "2025-02-14",
-      notes: "Kerja sama AI for Education, Azure Cloud Credits untuk riset mahasiswa, dan sertifikasi Microsoft Certified Associate."
+      "id": "WR3",
+      "name": "Wakil Rektor III (Kemitraan)",
+      "level": 3,
+      "permissions": [
+        "review",
+        "validate",
+        "monitor",
+        "executive_analytics",
+        "export",
+        "reports"
+      ]
     },
     {
-      id: "PARTNER-004",
-      name: "PT Bank Mandiri (Persero) Tbk",
-      code: "MANDIRI",
-      type: "BUMN",
-      category: "FINANCIAL_SERVICES",
-      country: "Indonesia",
-      city: "Jakarta Selatan",
-      address: "Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36-38",
-      contactPerson: "Hendra Wijaya (VP Corporate Secretary / TJSL)",
-      email: "tjsl@bankmandiri.co.id",
-      phone: "+62 21 526 5045",
-      website: "https://www.bankmandiri.co.id",
-      status: "ACTIVE",
-      totalAgreements: 3,
-      verifiedDate: "2024-05-19",
-      notes: "Digital banking student ecosystem, program magang bersertifikat, dan renovasi co-working space IT Del."
+      "id": "EXECUTIVE_VIEWER",
+      "name": "Rektor / Dekan",
+      "level": 4,
+      "permissions": [
+        "view",
+        "download",
+        "filter",
+        "reports"
+      ]
     },
     {
-      id: "PARTNER-005",
-      name: "Institut Teknologi Bandung",
-      code: "ITB",
-      type: "UNIVERSITY",
-      category: "STATE_UNIVERSITY",
-      country: "Indonesia",
-      city: "Bandung",
-      address: "Jl. Ganesa No. 10, Coblong",
-      contactPerson: "Prof. Ir. Taufiq Hidayat (Direktur Kemitraan)",
-      email: "kemitraan@itb.ac.id",
-      phone: "+62 22 250 0935",
-      website: "https://www.itb.ac.id",
-      status: "ACTIVE",
-      totalAgreements: 4,
-      verifiedDate: "2023-01-20",
-      notes: "Program bimbingan riset bersama, pertukaran dosen, dan fast-track program magister."
+      "id": "QUALITY_REVIEWER",
+      "name": "SPM (Satuan Penjaminan Mutu)",
+      "level": 4,
+      "permissions": [
+        "view",
+        "download",
+        "filter",
+        "accreditation_edit",
+        "evidence_verify",
+        "reports"
+      ]
     },
     {
-      id: "PARTNER-006",
-      name: "Pemerintah Kabupaten Toba",
-      code: "PEMKAB-TOBA",
-      type: "GOVERNMENT",
-      category: "REGIONAL_GOVERNMENT",
-      country: "Indonesia",
-      city: "Balige",
-      address: "Jl. Sutomo No. 1, Balige, Kabupaten Toba",
-      contactPerson: "Sekretaris Daerah Kab. Toba",
-      email: "diskominfo@tobakab.go.id",
-      phone: "+62 632 21100",
-      website: "https://tobakab.go.id",
-      status: "ACTIVE",
-      totalAgreements: 3,
-      verifiedDate: "2024-03-01",
-      notes: "Kolaborasi Smart City Toba, sistem informasi pariwisata Danau Toba, dan pelatihan UMKM kriya ulos."
+      "id": "FACULTY_VIEWER",
+      "name": "Pengelola Fakultas",
+      "level": 5,
+      "permissions": [
+        "view_faculty",
+        "filter",
+        "download",
+        "add_activity"
+      ]
     },
     {
-      id: "PARTNER-007",
-      name: "National University of Singapore",
-      code: "NUS",
-      type: "UNIVERSITY",
-      category: "INTERNATIONAL",
-      country: "Singapura",
-      city: "Singapore",
-      address: "21 Lower Kent Ridge Rd",
-      contactPerson: "Dr. Kevin Tan (Global Relations Officer)",
-      email: "gro@nus.edu.sg",
-      phone: "+65 6516 6666",
-      website: "https://www.nus.edu.sg",
-      status: "ACTIVE",
-      totalAgreements: 2,
-      verifiedDate: "2024-09-12",
-      notes: "Pertukaran mahasiswa skala internasional (STEER program) dan workshop riset bioinformatika."
+      "id": "PROGRAM_VIEWER",
+      "name": "Pengelola Program Studi",
+      "level": 5,
+      "permissions": [
+        "view_program",
+        "filter",
+        "download",
+        "add_evidence"
+      ]
     },
     {
-      id: "PARTNER-008",
-      name: "Yayasan Inovasi Teknologi Toba Lestari",
-      code: "YITTL",
-      type: "NGO",
-      category: "FOUNDATION",
-      country: "Indonesia",
-      city: "Laguboti",
-      address: "Jl. Pematang Siantar KM 11",
-      contactPerson: "Martua Simatupang",
-      email: "info@tobalestari.org",
-      phone: "+62 632 33120",
-      website: "https://tobalestari.org",
-      status: "INACTIVE",
-      totalAgreements: 1,
-      verifiedDate: "2023-04-10",
-      notes: "Perlu follow up tindak lanjut pembaruan MoU yang habis masa berlaku akhir 2025."
+      "id": "UNIT_VIEWER",
+      "name": "Pengelola Unit Internal",
+      "level": 5,
+      "permissions": [
+        "view_unit",
+        "filter",
+        "download"
+      ]
     }
   ],
-  documents: [
+  "faculties": [
+    {
+      "id": "FITE",
+      "code": "FITE",
+      "name": "Fakultas Informatika dan Teknik Elektro",
+      "dean": "Dr. Johannes Harungguan Sianipar, S.T., M.T."
+    },
+    {
+      "id": "FTI",
+      "code": "FTI",
+      "name": "Fakultas Teknologi Industri",
+      "dean": "Dr. Rizal Sinaga, S.T., M.T."
+    },
+    {
+      "id": "FB",
+      "code": "FB",
+      "name": "Fakultas Bioteknologi",
+      "dean": "Dr. Merry M. Sibarani, S.Si., M.Si."
+    }
+  ],
+  "studyPrograms": [
+    {
+      "id": "PRODI-IF",
+      "facultyId": "FITE",
+      "code": "S1-IF",
+      "name": "S1 Informatika",
+      "kaprodi": "Yusuf Kurniawan, S.T., M.Sc."
+    },
+    {
+      "id": "PRODI-SI",
+      "facultyId": "FITE",
+      "code": "S1-SI",
+      "name": "S1 Sistem Informasi",
+      "kaprodi": "Tengku M. Khairil, S.Kom., M.Kom."
+    },
+    {
+      "id": "PRODI-TE",
+      "facultyId": "FITE",
+      "code": "S1-TE",
+      "name": "S1 Teknik Elektro",
+      "kaprodi": "Indra H. M. Saragih, S.T., M.T."
+    },
+    {
+      "id": "PRODI-TRPL",
+      "facultyId": "FITE",
+      "code": "D4-TRPL",
+      "name": "D4 Teknologi Rekayasa Perangkat Lunak",
+      "kaprodi": "Ronal M. Panjaitan, S.Kom., M.T."
+    },
+    {
+      "id": "PRODI-TI",
+      "facultyId": "FITE",
+      "code": "D3-TI",
+      "name": "D3 Teknologi Informasi",
+      "kaprodi": "Nenni A. Tampubolon, S.Kom., M.Kom."
+    },
+    {
+      "id": "PRODI-TK",
+      "facultyId": "FITE",
+      "code": "D3-TK",
+      "name": "D3 Teknologi Komputer",
+      "kaprodi": "Albertus S. Silalahi, S.T., M.T."
+    },
+    {
+      "id": "PRODI-MR",
+      "facultyId": "FTI",
+      "code": "S1-MR",
+      "name": "S1 Manajemen Rekayasa",
+      "kaprodi": "Yanti N. Simamora, S.T., M.Sc."
+    },
+    {
+      "id": "PRODI-MT",
+      "facultyId": "FTI",
+      "code": "S1-MT",
+      "name": "S1 Teknik Metalurgi",
+      "kaprodi": "David H. Marpaung, S.T., M.T."
+    },
+    {
+      "id": "PRODI-BP",
+      "facultyId": "FB",
+      "code": "S1-BP",
+      "name": "S1 Teknik Bioproses",
+      "kaprodi": "Maria P. Hutapea, S.Si., M.Biotech."
+    }
+  ],
+  "internalUnits": [
+    {
+      "id": "UNIT-KERJASAMA",
+      "code": "UKS",
+      "name": "Unit Kerja Sama & Hubungan Alumni",
+      "head": "Humasak T. A. Simanjuntak, S.T., M.ISD."
+    },
+    {
+      "id": "UNIT-SDI",
+      "code": "SDI",
+      "name": "Direktorat Sistem & Data Informasi (SDI/TSI)",
+      "head": "Gindo P. Sibuea, S.Kom., M.Kom."
+    },
+    {
+      "id": "UNIT-SPM",
+      "code": "SPM",
+      "name": "Satuan Penjaminan Mutu",
+      "head": "Dr. Arnaldo Sinaga (Ex-officio)"
+    },
+    {
+      "id": "UNIT-LPPM",
+      "code": "LPPM",
+      "name": "Lembaga Penelitian dan Pengabdian Masyarakat",
+      "head": "Dr. Fitriani Saragih, S.T., M.T."
+    },
+    {
+      "id": "UNIT-CDC",
+      "code": "CDC",
+      "name": "Career Development Center & Kemahasiswaan",
+      "head": "Monika Siahaan, S.Sos."
+    },
+    {
+      "id": "UNIT-BAAK",
+      "code": "BAAK",
+      "name": "Biro Administrasi Akademik & Kemahasiswaan",
+      "head": "Binsar Siregar, S.Si."
+    }
+  ],
+  "triDharmaTypes": [
+    {
+      "id": "EDUCATION",
+      "code": "PENDIDIKAN",
+      "name": "Pendidikan & Pengajaran",
+      "description": "Magang MBKM, Kuliah Tamu, Kurikulum Industri, Beasiswa"
+    },
+    {
+      "id": "RESEARCH",
+      "code": "PENELITIAN",
+      "name": "Penelitian, Pengembangan & Inovasi",
+      "description": "Joint Research, Publikasi Ilmiah, Hibah Riset Bersama, Paten"
+    },
+    {
+      "id": "COMMUNITY_SERVICE",
+      "code": "PENGMAS",
+      "name": "Pengabdian kepada Masyarakat",
+      "description": "Digitalisasi Desa Wisata, Pendampingan UMKM Toba, Pelatihan Guru"
+    },
+    {
+      "id": "INSTITUTIONAL",
+      "code": "TATA_KELOLA",
+      "name": "Pengembangan Institusi & Fasilitas",
+      "description": "Donasi Laboratorium, Infrastruktur Jaringan, Benchmarking"
+    }
+  ],
+  "partners": [
+    {
+      "id": "PARTNER-001",
+      "name": "PT Huawei Tech Investment",
+      "code": "HUAWEI",
+      "type": "INDUSTRY",
+      "category": "MULTINATIONAL",
+      "country": "Indonesia / China",
+      "city": "Jakarta Selatan",
+      "address": "Wisma Mulia 2 Lt. 28, Jl. Jend. Gatot Subroto No. 42",
+      "contactPerson": "Budi Santoso, Ph.D. (Director of ICT Talent Ecosystem)",
+      "phone": "+62 21 5296 3888",
+      "website": "https://www.huawei.com/id",
+      "status": "ACTIVE",
+      "totalAgreements": 3,
+      "verifiedDate": "2024-01-15",
+      "notes": "Mitra strategis pendirian Huawei ICT Academy dan Cloud Computing Lab di IT Del."
+    },
+    {
+      "id": "PARTNER-002",
+      "name": "PT Astra International Tbk",
+      "code": "ASTRA",
+      "type": "INDUSTRY",
+      "category": "CONGLOMERATE",
+      "country": "Indonesia",
+      "city": "Jakarta Utara",
+      "address": "Menara Astra, Jl. Jend. Sudirman Kav. 5-6",
+      "contactPerson": "Ratna Sari Dewi (Head of CSR & Education Support)",
+      "phone": "+62 21 6522 555",
+      "website": "https://www.astra.co.id",
+      "status": "ACTIVE",
+      "totalAgreements": 4,
+      "verifiedDate": "2023-08-10",
+      "notes": "Sponsor beasiswa prestasi, hibah alat lab rekayasa, dan perekrutan lulusan."
+    },
+    {
+      "id": "PARTNER-003",
+      "name": "PT Microsoft Indonesia",
+      "code": "MICROSOFT",
+      "type": "INDUSTRY",
+      "category": "MULTINATIONAL",
+      "country": "Indonesia / USA",
+      "city": "Jakarta Pusat",
+      "address": "Indonesia Stock Exchange Building Tower II, 18th Floor",
+      "contactPerson": "Dian Astuti (Education Industry Lead)",
+      "phone": "+62 21 2551 8100",
+      "website": "https://www.microsoft.com/id-id",
+      "status": "ACTIVE",
+      "totalAgreements": 2,
+      "verifiedDate": "2025-02-14",
+      "notes": "Kerja sama digital for Education, Azure Cloud Credits untuk riset mahasiswa, dan sertifikasi Microsoft Certified Associate."
+    },
+    {
+      "id": "PARTNER-004",
+      "name": "PT Bank Mandiri (Persero) Tbk",
+      "code": "MANDIRI",
+      "type": "BUMN",
+      "category": "FINANCIAL_SERVICES",
+      "country": "Indonesia",
+      "city": "Jakarta Selatan",
+      "address": "Plaza Mandiri, Jl. Jend. Gatot Subroto Kav. 36-38",
+      "contactPerson": "Hendra Wijaya (VP Corporate Secretary / TJSL)",
+      "phone": "+62 21 526 5045",
+      "website": "https://www.bankmandiri.co.id",
+      "status": "ACTIVE",
+      "totalAgreements": 3,
+      "verifiedDate": "2024-05-19",
+      "notes": "Digital banking student ecosystem, program magang bersertifikat, dan renovasi co-working space IT Del."
+    },
+    {
+      "id": "PARTNER-005",
+      "name": "Institut Teknologi Bandung",
+      "code": "ITB",
+      "type": "UNIVERSITY",
+      "category": "STATE_UNIVERSITY",
+      "country": "Indonesia",
+      "city": "Bandung",
+      "address": "Jl. Ganesa No. 10, Coblong",
+      "contactPerson": "Prof. Ir. Taufiq Hidayat (Direktur Kemitraan)",
+      "phone": "+62 22 250 0935",
+      "website": "https://www.itb.ac.id",
+      "status": "ACTIVE",
+      "totalAgreements": 4,
+      "verifiedDate": "2023-01-20",
+      "notes": "Program bimbingan riset bersama, pertukaran dosen, dan fast-track program magister."
+    },
+    {
+      "id": "PARTNER-006",
+      "name": "Pemerintah Kabupaten Toba",
+      "code": "PEMKAB-TOBA",
+      "type": "GOVERNMENT",
+      "category": "REGIONAL_GOVERNMENT",
+      "country": "Indonesia",
+      "city": "Balige",
+      "address": "Jl. Sutomo No. 1, Balige, Kabupaten Toba",
+      "contactPerson": "Sekretaris Daerah Kab. Toba",
+      "phone": "+62 632 21100",
+      "website": "https://tobakab.go.id",
+      "status": "ACTIVE",
+      "totalAgreements": 3,
+      "verifiedDate": "2024-03-01",
+      "notes": "Kolaborasi Smart City Toba, sistem informasi pariwisata Danau Toba, dan pelatihan UMKM kriya ulos."
+    },
+    {
+      "id": "PARTNER-007",
+      "name": "National University of Singapore",
+      "code": "NUS",
+      "type": "UNIVERSITY",
+      "category": "INTERNATIONAL",
+      "country": "Singapura",
+      "city": "Singapore",
+      "address": "21 Lower Kent Ridge Rd",
+      "contactPerson": "Dr. Kevin Tan (Global Relations Officer)",
+      "phone": "+65 6516 6666",
+      "website": "https://www.nus.edu.sg",
+      "status": "ACTIVE",
+      "totalAgreements": 2,
+      "verifiedDate": "2024-09-12",
+      "notes": "Pertukaran mahasiswa skala internasional (STEER program) dan workshop riset bioinformatika."
+    },
+    {
+      "id": "PARTNER-008",
+      "name": "Yayasan Inovasi Teknologi Toba Lestari",
+      "code": "YITTL",
+      "type": "NGO",
+      "category": "FOUNDATION",
+      "country": "Indonesia",
+      "city": "Laguboti",
+      "address": "Jl. Pematang Siantar KM 11",
+      "contactPerson": "Martua Simatupang",
+      "phone": "+62 632 33120",
+      "website": "https://tobalestari.org",
+      "status": "INACTIVE",
+      "totalAgreements": 1,
+      "verifiedDate": "2023-04-10",
+      "notes": "Perlu follow up tindak lanjut pembaruan MoU yang habis masa berlaku akhir 2025."
+    }
+  ],
+  "documents": [
     {
       "id": "DOC-2024-MOU-001",
       "documentNumber": "012/ITDel/MoU/IV/2024",
@@ -667,475 +853,335 @@ window.KSDAS_SEED_DATA = {
       "budget": 35000000,
       "fundingSource": "Dana Pengabdian Internal IT Del",
       "status": "VALIDATED"
-    },
+    }
+  ],
+  "activities": [
     {
-      "id": "DOC-2025-MOA-009",
-      "documentNumber": "029/ITDel/PKS/VII/2025",
-      "title": "Perjanjian Kerja Sama Konservasi Hayati dan Pengembangan Laboratorium Bioproses Tanaman Endemik Danau Toba",
-      "type": "PKS_MOA",
-      "partnerId": "PARTNER-009",
-      "partnerName": "Badan Pelaksana Otorita Danau Toba (BPODT)",
-      "parentId": null,
-      "parentNumber": null,
-      "country": "Indonesia",
-      "partnerSignatoryName": "Jimmy Bernardo Panjaitan",
-      "partnerSignatoryPosition": "Direktur Utama BPODT",
-      "itDelSignatoryName": "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-      "itDelSignatoryPosition": "Rektor Institut Teknologi Del",
-      "signedDate": "2025-07-25",
-      "effectiveStartDate": "2025-07-25",
-      "effectiveEndDate": "2028-07-24",
-      "scope": "Kajian bioteknologi konservasi flora endemik Danau Toba, kultur jaringan tanaman bernilai ekonomi tinggi di Kawasan Sibisa, pengembangan taman biodiversitas, dan magang riset mahasiswa Bioteknologi.",
-      "facultyId": "FB",
-      "faculties": [
-        "FB"
-      ],
-      "studyProgramId": "PRODI-BP",
-      "studyPrograms": [
-        "PRODI-BP"
-      ],
-      "viceRectors": [
-        "WR1",
-        "WR3"
-      ],
-      "internalUnitId": "UNIT-LPPM",
-      "internalUnits": [
-        "UNIT-LPPM",
-        "UNIT-KERJASAMA"
-      ],
-      "triDharma": "RESEARCH",
-      "triDharmaList": [
-        "RESEARCH",
-        "COMMUNITY_SERVICE"
-      ],
-      "cooperationLevel": "Wilayah / Lokal",
-      "studyProgramRelevance": "Sangat Relevan (Keilmuan Inti)",
-      "mbkmSupport": true,
-      "mbkmActivityTypes": "Magang Riset Konservasi Hayati",
-      "dtpsInvolvedCount": 6,
-      "pddiktiReported": "Sudah Dilaporkan ke PDDikti",
-      "pddiktiNumber": "PDDIKTI/2025/PKS/029",
-      "publicationProof": "https://bpodt.id/kerjasama-konservasi-biodiversitas-itdel-2025/",
-      "followUpStatus": "Implementasi Kegiatan Aktif",
-      "iaDocType": "Implementation Arrangement (IA)",
-      "monevEvidence": "Ada Laporan Monev Tahunan",
-      "academicYear": "2025/2026",
-      "budget": 380000000,
-      "fundingSource": "DIPA BPODT & LPPM IT Del",
-      "status": "VALIDATED"
-    },
-    {
-      "id": "DOC-2026-MOU-010",
-      "documentNumber": "002/ITDel/MoU/I/2026",
-      "title": "Nota Kesepahaman Program Kemitraan Kurikulum Perangkat Lunak Skala Global dan Akselerasi Cloud Computing",
-      "type": "MOU_LOI",
-      "partnerId": "PARTNER-010",
-      "partnerName": "Microsoft Asia Pacific",
-      "parentId": null,
-      "parentNumber": null,
-      "country": "Singapura / Global",
-      "partnerSignatoryName": "Budi Santoso, Ph.D.",
-      "partnerSignatoryPosition": "Director of Higher Education Engagements Asia Pacific",
-      "itDelSignatoryName": "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-      "itDelSignatoryPosition": "Rektor Institut Teknologi Del",
-      "signedDate": "2026-01-20",
-      "effectiveStartDate": "2026-01-20",
-      "effectiveEndDate": "2031-01-19",
-      "scope": "Akses materi pembelajaran kurikulum cloud computing dan rekayasa perangkat lunak berskala internasional bagi seluruh dosen dan mahasiswa Program Studi S1 Informatika dan Sistem Informasi.",
-      "facultyId": "FITE",
-      "faculties": [
-        "FITE"
-      ],
-      "studyProgramId": "PRODI-IF",
-      "studyPrograms": [
-        "PRODI-IF",
-        "PRODI-SI"
-      ],
-      "viceRectors": [
-        "WR1",
-        "WR3"
-      ],
-      "internalUnitId": "UNIT-KERJASAMA",
-      "internalUnits": [
-        "UNIT-KERJASAMA"
-      ],
+      "id": "ACT-001",
+      "documentId": "DOC-PKS-2024-002",
+      "documentNumber": "028/ITDel/PKS/FITE/VI/2024",
+      "partnerName": "PT Huawei Tech Investment",
       "triDharma": "EDUCATION",
-      "triDharmaList": [
-        "EDUCATION",
-        "INSTITUTIONAL"
-      ],
-      "cooperationLevel": "Internasional",
-      "studyProgramRelevance": "Sangat Relevan (Keilmuan Inti)",
-      "mbkmSupport": true,
-      "mbkmActivityTypes": "Studi Independen Bersertifikat Global",
-      "dtpsInvolvedCount": 11,
-      "pddiktiReported": "Sudah Dilaporkan ke PDDikti",
-      "pddiktiNumber": "PDDIKTI/2026/MOU/002",
-      "publicationProof": "https://news.microsoft.com/apac/del-cloud-education-2026/",
-      "followUpStatus": "Sudah Ditindaklanjuti PKS",
-      "iaDocType": "PKS Turunan",
-      "monevEvidence": "Ada Laporan Monev Tahunan",
-      "academicYear": "2025/2026",
-      "budget": 920000000,
-      "fundingSource": "Microsoft Education Grant",
-      "status": "VALIDATED"
+      "title": "Bootcamp dan Ujian HCIA Datacom 2024",
+      "startDate": "2024-09-02",
+      "endDate": "2024-11-30",
+      "pic": "Ronal M. Panjaitan, S.Kom., M.T.",
+      "participantCount": 60,
+      "facultyId": "FITE",
+      "studyProgramId": "PRODI-IF",
+      "budget": 45000000,
+      "status": "COMPLETED",
+      "outputCount": 1,
+      "outcomeCount": 1,
+      "impactScore": "HIGH",
+      "evidenceIds": [
+        "EVI-001",
+        "EVI-002"
+      ]
+    },
+    {
+      "id": "ACT-002",
+      "documentId": "DOC-PKS-2024-007",
+      "documentNumber": "019/ITDel/PKS/FTI/V/2024",
+      "partnerName": "PT Astra International Tbk",
+      "triDharma": "EDUCATION",
+      "title": "Magang Capstone Project Manufaktur Astra",
+      "startDate": "2024-06-01",
+      "endDate": "2024-12-05",
+      "pic": "Yanti N. Simamora, S.T., M.Sc.",
+      "participantCount": 15,
+      "facultyId": "FTI",
+      "studyProgramId": "PRODI-MR",
+      "budget": 150000000,
+      "status": "COMPLETED",
+      "outputCount": 3,
+      "outcomeCount": 2,
+      "impactScore": "VERY_HIGH",
+      "evidenceIds": [
+        "EVI-003"
+      ]
+    },
+    {
+      "id": "ACT-003",
+      "documentId": "DOC-PKS-2026-008",
+      "documentNumber": "007/ITDel/PKS/FITE/I/2026",
+      "partnerName": "PT Astra International Tbk",
+      "triDharma": "RESEARCH",
+      "title": "Joint Research Machine Vision Otomotif",
+      "startDate": "2026-01-15",
+      "endDate": "2026-10-30",
+      "pic": "Indra H. M. Saragih, S.T., M.T.",
+      "participantCount": 12,
+      "facultyId": "FITE",
+      "studyProgramId": "PRODI-TE",
+      "budget": 275000000,
+      "status": "ONGOING",
+      "outputCount": 2,
+      "outcomeCount": 1,
+      "impactScore": "HIGH",
+      "evidenceIds": [
+        "EVI-004"
+      ]
+    },
+    {
+      "id": "ACT-004",
+      "documentId": "DOC-PKS-2024-013",
+      "documentNumber": "011/ITDel/PKS/LPPM/IV/2024",
+      "partnerName": "Institut Teknologi Bandung",
+      "triDharma": "RESEARCH",
+      "title": "Joint Research Bioteknologi Andaliman ITB-IT Del",
+      "startDate": "2024-04-10",
+      "endDate": "2025-12-15",
+      "pic": "Maria P. Hutapea, S.Si., M.Biotech.",
+      "participantCount": 14,
+      "facultyId": "FB",
+      "studyProgramId": "PRODI-BP",
+      "budget": 160000000,
+      "status": "COMPLETED",
+      "outputCount": 2,
+      "outcomeCount": 1,
+      "impactScore": "HIGH",
+      "evidenceIds": [
+        "EVI-005"
+      ]
+    },
+    {
+      "id": "ACT-005",
+      "documentId": "DOC-PKS-2024-015",
+      "documentNumber": "022/ITDel/PKS/FB/VII/2024",
+      "partnerName": "Pemerintah Kabupaten Toba",
+      "triDharma": "COMMUNITY_SERVICE",
+      "title": "Pengolahan Sampah Pasar Tradisional Balige (TPS3R)",
+      "startDate": "2024-08-01",
+      "endDate": "2025-07-01",
+      "pic": "Maria P. Hutapea, S.Si., M.Biotech.",
+      "participantCount": 25,
+      "facultyId": "FB",
+      "studyProgramId": "PRODI-BP",
+      "budget": 65000000,
+      "status": "ONGOING",
+      "outputCount": 1,
+      "outcomeCount": 1,
+      "impactScore": "MEDIUM",
+      "evidenceIds": [
+        "EVI-006"
+      ]
     }
   ],
-  activities: [
+  "evidences": [
     {
-      id: "ACT-001",
-      documentId: "DOC-PKS-2024-002",
-      documentNumber: "028/ITDel/PKS/FITE/VI/2024",
-      partnerName: "PT Huawei Tech Investment",
-      triDharma: "EDUCATION",
-      title: "Bootcamp dan Ujian HCIA Datacom 2024",
-      startDate: "2024-09-02",
-      endDate: "2024-11-30",
-      pic: "Ronal M. Panjaitan, S.Kom., M.T.",
-      participantCount: 60,
-      facultyId: "FITE",
-      studyProgramId: "PRODI-IF",
-      budget: 45000000,
-      status: "COMPLETED",
-      outputCount: 1,
-      outcomeCount: 1,
-      impactScore: "HIGH",
-      evidenceIds: ["EVI-001", "EVI-002"]
+      "id": "EVI-001",
+      "title": "Sertifikat HCIA Datacom 54 Mahasiswa Angkatan 2021",
+      "type": "CERTIFICATE",
+      "documentId": "DOC-PKS-2024-002",
+      "documentNumber": "028/ITDel/PKS/FITE/VI/2024",
+      "activityId": "ACT-001",
+      "fileUrl": "sample-evidence/Sertifikat_HCIA_ITDel_2024.zip",
+      "fileName": "Sertifikat_HCIA_ITDel_2024.zip",
+      "fileSize": "18.2 MB",
+      "uploadedDate": "2024-12-22",
+      "uploadedBy": "Ronal M. Panjaitan",
+      "verified": true,
+      "verifiedBy": "SPM Unit",
+      "verifiedDate": "2025-01-05",
+      "mappedCriteria": [
+        "LAM-INFOKOM C.1.4.a",
+        "BAN-PT C.1.b"
+      ]
     },
     {
-      id: "ACT-002",
-      documentId: "DOC-PKS-2024-007",
-      documentNumber: "019/ITDel/PKS/FTI/V/2024",
-      partnerName: "PT Astra International Tbk",
-      triDharma: "EDUCATION",
-      title: "Magang Capstone Project Manufaktur Astra",
-      startDate: "2024-06-01",
-      endDate: "2024-12-05",
-      pic: "Yanti N. Simamora, S.T., M.Sc.",
-      participantCount: 15,
-      facultyId: "FTI",
-      studyProgramId: "PRODI-MR",
-      budget: 150000000,
-      status: "COMPLETED",
-      outputCount: 3,
-      outcomeCount: 2,
-      impactScore: "VERY_HIGH",
-      evidenceIds: ["EVI-003"]
+      "id": "EVI-002",
+      "title": "Foto Dokumentasi dan Absensi Peserta Bootcamp Huawei",
+      "type": "PHOTO_ATTENDANCE",
+      "documentId": "DOC-PKS-2024-002",
+      "documentNumber": "028/ITDel/PKS/FITE/VI/2024",
+      "activityId": "ACT-001",
+      "fileUrl": "sample-evidence/Dokumentasi_Bootcamp_Huawei.pdf",
+      "fileName": "Dokumentasi_Bootcamp_Huawei.pdf",
+      "fileSize": "4.8 MB",
+      "uploadedDate": "2024-11-28",
+      "uploadedBy": "Ronal M. Panjaitan",
+      "verified": true,
+      "verifiedBy": "SPM Unit",
+      "verifiedDate": "2025-01-05",
+      "mappedCriteria": [
+        "LAM-INFOKOM C.1.4.a"
+      ]
     },
     {
-      id: "ACT-003",
-      documentId: "DOC-PKS-2026-008",
-      documentNumber: "007/ITDel/PKS/FITE/I/2026",
-      partnerName: "PT Astra International Tbk",
-      triDharma: "RESEARCH",
-      title: "Joint Research Machine Vision Otomotif",
-      startDate: "2026-01-15",
-      endDate: "2026-10-30",
-      pic: "Indra H. M. Saragih, S.T., M.T.",
-      participantCount: 12,
-      facultyId: "FITE",
-      studyProgramId: "PRODI-TE",
-      budget: 275000000,
-      status: "ONGOING",
-      outputCount: 2,
-      outcomeCount: 1,
-      impactScore: "HIGH",
-      evidenceIds: ["EVI-004"]
+      "id": "EVI-003",
+      "title": "Laporan Evaluasi Magang Industri Astra dan Surat Keterangan Penyelesaian",
+      "type": "REPORT_LETTER",
+      "documentId": "DOC-PKS-2024-007",
+      "documentNumber": "019/ITDel/PKS/FTI/V/2024",
+      "activityId": "ACT-002",
+      "fileUrl": "sample-evidence/Evaluasi_Magang_Astra_2024.pdf",
+      "fileName": "Evaluasi_Magang_Astra_2024.pdf",
+      "fileSize": "3.2 MB",
+      "uploadedDate": "2024-12-10",
+      "uploadedBy": "Yanti N. Simamora",
+      "verified": true,
+      "verifiedBy": "SPM Unit",
+      "verifiedDate": "2024-12-15",
+      "mappedCriteria": [
+        "BAN-PT C.1.b",
+        "LAM-TEKNIK 6.3"
+      ]
     },
     {
-      id: "ACT-004",
-      documentId: "DOC-PKS-2024-013",
-      documentNumber: "011/ITDel/PKS/LPPM/IV/2024",
-      partnerName: "Institut Teknologi Bandung",
-      triDharma: "RESEARCH",
-      title: "Joint Research Bioteknologi Andaliman ITB-IT Del",
-      startDate: "2024-04-10",
-      endDate: "2025-12-15",
-      pic: "Maria P. Hutapea, S.Si., M.Biotech.",
-      participantCount: 14,
-      facultyId: "FB",
-      studyProgramId: "PRODI-BP",
-      budget: 160000000,
-      status: "COMPLETED",
-      outputCount: 2,
-      outcomeCount: 1,
-      impactScore: "HIGH",
-      evidenceIds: ["EVI-005"]
+      "id": "EVI-004",
+      "title": "Draf Publikasi Scopus dan Dataset Citra Cacat Produksi Logam",
+      "type": "PUBLICATION_DATASET",
+      "documentId": "DOC-PKS-2026-008",
+      "documentNumber": "007/ITDel/PKS/FITE/I/2026",
+      "activityId": "ACT-003",
+      "fileUrl": "sample-evidence/Draft_Scopus_Astra_ITDel_2026.pdf",
+      "fileName": "Draft_Scopus_Astra_ITDel_2026.pdf",
+      "fileSize": "2.9 MB",
+      "uploadedDate": "2026-02-18",
+      "uploadedBy": "Indra H. M. Saragih",
+      "verified": true,
+      "verifiedBy": "LPPM IT Del",
+      "verifiedDate": "2026-02-25",
+      "mappedCriteria": [
+        "BAN-PT C.7.a",
+        "LAM-INFOKOM C.7"
+      ]
     },
     {
-      id: "ACT-005",
-      documentId: "DOC-PKS-2024-015",
-      documentNumber: "022/ITDel/PKS/FB/VII/2024",
-      partnerName: "Pemerintah Kabupaten Toba",
-      triDharma: "COMMUNITY_SERVICE",
-      title: "Pengolahan Sampah Pasar Tradisional Balige (TPS3R)",
-      startDate: "2024-08-01",
-      endDate: "2025-07-01",
-      pic: "Maria P. Hutapea, S.Si., M.Biotech.",
-      participantCount: 25,
-      facultyId: "FB",
-      studyProgramId: "PRODI-BP",
-      budget: 65000000,
-      status: "ONGOING",
-      outputCount: 1,
-      outcomeCount: 1,
-      impactScore: "MEDIUM",
-      evidenceIds: ["EVI-006"]
+      "id": "EVI-005",
+      "title": "Publikasi Jurnal Internasional Hasil Isolasi Bakteri Andaliman",
+      "type": "JOURNAL_ARTICLE",
+      "documentId": "DOC-PKS-2024-013",
+      "documentNumber": "011/ITDel/PKS/LPPM/IV/2024",
+      "activityId": "ACT-004",
+      "fileUrl": "sample-evidence/Journal_Andaliman_ITB_ITDel.pdf",
+      "fileName": "Journal_Andaliman_ITB_ITDel.pdf",
+      "fileSize": "1.5 MB",
+      "uploadedDate": "2025-03-10",
+      "uploadedBy": "Maria P. Hutapea",
+      "verified": true,
+      "verifiedBy": "LPPM IT Del",
+      "verifiedDate": "2025-03-20",
+      "mappedCriteria": [
+        "BAN-PT C.7.a",
+        "BAN-PT C.1.b"
+      ]
+    },
+    {
+      "id": "EVI-006",
+      "title": "Berita Acara Uji Coba Bioaktivator dan Rekap Penyaluran Kompos TPS3R",
+      "type": "OFFICIAL_RECORD",
+      "documentId": "DOC-PKS-2024-015",
+      "documentNumber": "022/ITDel/PKS/FB/VII/2024",
+      "activityId": "ACT-005",
+      "fileUrl": "sample-evidence/BAST_TPS3R_Balige_2024.pdf",
+      "fileName": "BAST_TPS3R_Balige_2024.pdf",
+      "fileSize": "2.1 MB",
+      "uploadedDate": "2024-10-05",
+      "uploadedBy": "Maria P. Hutapea",
+      "verified": true,
+      "verifiedBy": "SPM Unit",
+      "verifiedDate": "2024-10-12",
+      "mappedCriteria": [
+        "BAN-PT C.8.a"
+      ]
     }
   ],
-  evidences: [
+  "accreditationFrameworks": [
     {
-      id: "EVI-001",
-      title: "Sertifikat HCIA Datacom 54 Mahasiswa Angkatan 2021",
-      type: "CERTIFICATE",
-      documentId: "DOC-PKS-2024-002",
-      documentNumber: "028/ITDel/PKS/FITE/VI/2024",
-      activityId: "ACT-001",
-      fileUrl: "sample-evidence/Sertifikat_HCIA_ITDel_2024.zip",
-      fileName: "Sertifikat_HCIA_ITDel_2024.zip",
-      fileSize: "18.2 MB",
-      uploadedDate: "2024-12-22",
-      uploadedBy: "Ronal M. Panjaitan",
-      verified: true,
-      verifiedBy: "SPM Unit",
-      verifiedDate: "2025-01-05",
-      mappedCriteria: ["LAM-INFOKOM C.1.4.a", "BAN-PT C.1.b"]
-    },
-    {
-      id: "EVI-002",
-      title: "Foto Dokumentasi dan Absensi Peserta Bootcamp Huawei",
-      type: "PHOTO_ATTENDANCE",
-      documentId: "DOC-PKS-2024-002",
-      documentNumber: "028/ITDel/PKS/FITE/VI/2024",
-      activityId: "ACT-001",
-      fileUrl: "sample-evidence/Dokumentasi_Bootcamp_Huawei.pdf",
-      fileName: "Dokumentasi_Bootcamp_Huawei.pdf",
-      fileSize: "4.8 MB",
-      uploadedDate: "2024-11-28",
-      uploadedBy: "Ronal M. Panjaitan",
-      verified: true,
-      verifiedBy: "SPM Unit",
-      verifiedDate: "2025-01-05",
-      mappedCriteria: ["LAM-INFOKOM C.1.4.a"]
-    },
-    {
-      id: "EVI-003",
-      title: "Laporan Evaluasi Magang Industri Astra dan Surat Keterangan Penyelesaian",
-      type: "REPORT_LETTER",
-      documentId: "DOC-PKS-2024-007",
-      documentNumber: "019/ITDel/PKS/FTI/V/2024",
-      activityId: "ACT-002",
-      fileUrl: "sample-evidence/Evaluasi_Magang_Astra_2024.pdf",
-      fileName: "Evaluasi_Magang_Astra_2024.pdf",
-      fileSize: "3.2 MB",
-      uploadedDate: "2024-12-10",
-      uploadedBy: "Yanti N. Simamora",
-      verified: true,
-      verifiedBy: "SPM Unit",
-      verifiedDate: "2024-12-15",
-      mappedCriteria: ["BAN-PT C.1.b", "LAM-TEKNIK 6.3"]
-    },
-    {
-      id: "EVI-004",
-      title: "Draf Publikasi Scopus dan Dataset Citra Cacat Produksi Logam",
-      type: "PUBLICATION_DATASET",
-      documentId: "DOC-PKS-2026-008",
-      documentNumber: "007/ITDel/PKS/FITE/I/2026",
-      activityId: "ACT-003",
-      fileUrl: "sample-evidence/Draft_Scopus_Astra_ITDel_2026.pdf",
-      fileName: "Draft_Scopus_Astra_ITDel_2026.pdf",
-      fileSize: "2.9 MB",
-      uploadedDate: "2026-02-18",
-      uploadedBy: "Indra H. M. Saragih",
-      verified: true,
-      verifiedBy: "LPPM IT Del",
-      verifiedDate: "2026-02-25",
-      mappedCriteria: ["BAN-PT C.7.a", "LAM-INFOKOM C.7"]
-    },
-    {
-      id: "EVI-005",
-      title: "Publikasi Jurnal Internasional Hasil Isolasi Bakteri Andaliman",
-      type: "JOURNAL_ARTICLE",
-      documentId: "DOC-PKS-2024-013",
-      documentNumber: "011/ITDel/PKS/LPPM/IV/2024",
-      activityId: "ACT-004",
-      fileUrl: "sample-evidence/Journal_Andaliman_ITB_ITDel.pdf",
-      fileName: "Journal_Andaliman_ITB_ITDel.pdf",
-      fileSize: "1.5 MB",
-      uploadedDate: "2025-03-10",
-      uploadedBy: "Maria P. Hutapea",
-      verified: true,
-      verifiedBy: "LPPM IT Del",
-      verifiedDate: "2025-03-20",
-      mappedCriteria: ["BAN-PT C.7.a", "BAN-PT C.1.b"]
-    },
-    {
-      id: "EVI-006",
-      title: "Berita Acara Uji Coba Bioaktivator dan Rekap Penyaluran Kompos TPS3R",
-      type: "OFFICIAL_RECORD",
-      documentId: "DOC-PKS-2024-015",
-      documentNumber: "022/ITDel/PKS/FB/VII/2024",
-      activityId: "ACT-005",
-      fileUrl: "sample-evidence/BAST_TPS3R_Balige_2024.pdf",
-      fileName: "BAST_TPS3R_Balige_2024.pdf",
-      fileSize: "2.1 MB",
-      uploadedDate: "2024-10-05",
-      uploadedBy: "Maria P. Hutapea",
-      verified: true,
-      verifiedBy: "SPM Unit",
-      verifiedDate: "2024-10-12",
-      mappedCriteria: ["BAN-PT C.8.a"]
-    }
-  ],
-  accreditationFrameworks: [
-    {
-      id: "BAN-PT-IAPS",
-      name: "BAN-PT IAPS 4.0 / IAPT 3.0",
-      organization: "Badan Akreditasi Nasional Perguruan Tinggi",
-      description: "Instrumen Akreditasi Program Studi & Perguruan Tinggi dengan 9 Kriteria Utama.",
-      indicators: [
+      "id": "BAN-PT-IAPS",
+      "name": "BAN-PT IAPS 4.0 / IAPT 3.0",
+      "organization": "Badan Akreditasi Nasional Perguruan Tinggi",
+      "description": "Instrumen Akreditasi Program Studi & Perguruan Tinggi dengan 9 Kriteria Utama.",
+      "indicators": [
         {
-          id: "BANPT-C1-KERJASAMA",
-          code: "C.1.b",
-          criterion: "Kriteria 1 - Visi, Misi, Tujuan dan Strategi",
-          name: "Kerja Sama Tri Dharma Perguruan Tinggi",
-          targetScore: 4.0,
-          requiredEvidence: "MoU/PKS aktif, bukti pelaksanaan kegiatan, dokumen implementasi dan dampak nyata bagi kemitraan.",
-          linkedDocumentCount: 8,
-          linkedEvidenceCount: 5,
-          complianceStatus: "MET"
+          "id": "BANPT-C1-KERJASAMA",
+          "code": "C.1.b",
+          "criterion": "Kriteria 1 - Visi, Misi, Tujuan dan Strategi",
+          "name": "Kerja Sama Tri Dharma Perguruan Tinggi",
+          "targetScore": 4,
+          "requiredEvidence": "MoU/PKS aktif, bukti pelaksanaan kegiatan, dokumen implementasi dan dampak nyata bagi kemitraan.",
+          "linkedDocumentCount": 8,
+          "linkedEvidenceCount": 5,
+          "complianceStatus": "MET"
         },
         {
-          id: "BANPT-C6-PENDIDIKAN",
-          code: "C.6.a",
-          criterion: "Kriteria 6 - Pendidikan",
-          name: "Kurikulum & Keterlibatan Praktisi Industri",
-          targetScore: 4.0,
-          requiredEvidence: "PKS magang MBKM, SK dosen praktisi tamu industri, silabus terintegrasi sertifikasi kompetensi.",
-          linkedDocumentCount: 5,
-          linkedEvidenceCount: 3,
-          complianceStatus: "MET"
+          "id": "BANPT-C6-PENDIDIKAN",
+          "code": "C.6.a",
+          "criterion": "Kriteria 6 - Pendidikan",
+          "name": "Kurikulum & Keterlibatan Praktisi Industri",
+          "targetScore": 4,
+          "requiredEvidence": "PKS magang MBKM, SK dosen praktisi tamu industri, silabus terintegrasi sertifikasi kompetensi.",
+          "linkedDocumentCount": 5,
+          "linkedEvidenceCount": 3,
+          "complianceStatus": "MET"
         },
         {
-          id: "BANPT-C7-PENELITIAN",
-          code: "C.7.a",
-          criterion: "Kriteria 7 - Penelitian",
-          name: "Penelitian Bersama Mitra Nasional & Internasional",
-          targetScore: 3.5,
-          requiredEvidence: "PKS riset bersama, laporan kemajuan hibah riset, luaran publikasi atau paten berelasi.",
-          linkedDocumentCount: 4,
-          linkedEvidenceCount: 2,
-          complianceStatus: "MET"
+          "id": "BANPT-C7-PENELITIAN",
+          "code": "C.7.a",
+          "criterion": "Kriteria 7 - Penelitian",
+          "name": "Penelitian Bersama Mitra Nasional & Internasional",
+          "targetScore": 3.5,
+          "requiredEvidence": "PKS riset bersama, laporan kemajuan hibah riset, luaran publikasi atau paten berelasi.",
+          "linkedDocumentCount": 4,
+          "linkedEvidenceCount": 2,
+          "complianceStatus": "MET"
         },
         {
-          id: "BANPT-C8-PENGMAS",
-          code: "C.8.a",
-          criterion: "Kriteria 8 - Pengabdian kepada Masyarakat",
-          name: "Pemberdayaan Masyarakat Daerah Lingkar Kampus",
-          targetScore: 3.5,
-          requiredEvidence: "PKS dengan Pemda/Masyarakat, dokumentasi program TPS3R / digitalisasi desa, sertifikat kepuasan mitra.",
-          linkedDocumentCount: 3,
-          linkedEvidenceCount: 2,
-          complianceStatus: "MET"
+          "id": "BANPT-C8-PENGMAS",
+          "code": "C.8.a",
+          "criterion": "Kriteria 8 - Pengabdian kepada Masyarakat",
+          "name": "Pemberdayaan Masyarakat Daerah Lingkar Kampus",
+          "targetScore": 3.5,
+          "requiredEvidence": "PKS dengan Pemda/Masyarakat, dokumentasi program TPS3R / digitalisasi desa, sertifikat kepuasan mitra.",
+          "linkedDocumentCount": 3,
+          "linkedEvidenceCount": 2,
+          "complianceStatus": "MET"
         }
       ]
     },
     {
-      id: "LAM-INFOKOM",
-      name: "LAM-INFOKOM (Informatika & Komputer)",
-      organization: "Lembaga Akreditasi Mandiri Informatika dan Komputer",
-      description: "Standar Akreditasi Khusus Program Studi Rumpun Ilmu Informatika & Komputer.",
-      indicators: [
+      "id": "LAM-INFOKOM",
+      "name": "LAM-INFOKOM (Informatika & Komputer)",
+      "organization": "Lembaga Akreditasi Mandiri Informatika dan Komputer",
+      "description": "Standar Akreditasi Khusus Program Studi Rumpun Ilmu Informatika & Komputer.",
+      "indicators": [
         {
-          id: "LAM-INFO-C14A",
-          code: "C.1.4.a",
-          criterion: "Kriteria 1 - Tata Pamong & Kerja Sama",
-          name: "Kerja Sama Bidang Pendidikan & Sertifikasi Kompetensi",
-          targetScore: 4.0,
-          requiredEvidence: "PKS Huawei Academy, Microsoft Learn, bukti ujian sertifikasi internasional mahasiswa.",
-          linkedDocumentCount: 6,
-          linkedEvidenceCount: 4,
-          complianceStatus: "MET"
+          "id": "LAM-INFO-C14A",
+          "code": "C.1.4.a",
+          "criterion": "Kriteria 1 - Tata Pamong & Kerja Sama",
+          "name": "Kerja Sama Bidang Pendidikan & Sertifikasi Kompetensi",
+          "targetScore": 4,
+          "requiredEvidence": "PKS Huawei Academy, Microsoft Learn, bukti ujian sertifikasi internasional mahasiswa.",
+          "linkedDocumentCount": 6,
+          "linkedEvidenceCount": 4,
+          "complianceStatus": "MET"
         },
         {
-          id: "LAM-INFO-C14B",
-          code: "C.1.4.b",
-          criterion: "Kriteria 1 - Tata Pamong & Kerja Sama",
-          name: "Kerja Sama Internasional Aktif",
-          targetScore: 3.5,
-          requiredEvidence: "MoU/IA dengan perguruan tinggi luar negeri bereputasi (contoh: NUS STEER program).",
-          linkedDocumentCount: 2,
-          linkedEvidenceCount: 1,
-          complianceStatus: "MET"
+          "id": "LAM-INFO-C14B",
+          "code": "C.1.4.b",
+          "criterion": "Kriteria 1 - Tata Pamong & Kerja Sama",
+          "name": "Kerja Sama Internasional Aktif",
+          "targetScore": 3.5,
+          "requiredEvidence": "MoU/IA dengan perguruan tinggi luar negeri bereputasi (contoh: NUS STEER program).",
+          "linkedDocumentCount": 2,
+          "linkedEvidenceCount": 1,
+          "complianceStatus": "MET"
         },
         {
-          id: "LAM-INFO-C7",
-          code: "C.7",
-          criterion: "Kriteria 7 - Penelitian & Inovasi Perangkat Lunak",
-          name: "Riset Terapan bersama Industri ICT",
-          targetScore: 3.5,
-          requiredEvidence: "Dokumen proposal dan luaran publikasi riset IoT & Edge sensing.",
-          linkedDocumentCount: 2,
-          linkedEvidenceCount: 1,
-          complianceStatus: "MET"
+          "id": "LAM-INFO-C7",
+          "code": "C.7",
+          "criterion": "Kriteria 7 - Penelitian & Inovasi Perangkat Lunak",
+          "name": "Riset Terapan bersama Industri ICT",
+          "targetScore": 3.5,
+          "requiredEvidence": "Dokumen proposal dan luaran publikasi riset IoT & Edge sensing.",
+          "linkedDocumentCount": 2,
+          "linkedEvidenceCount": 1,
+          "complianceStatus": "MET"
         }
       ]
     }
   ],
-  auditLogs: [
-    {
-      id: "AUDIT-001",
-      timestamp: "2024-04-19T08:12:00Z",
-      userRole: "ADMIN_STAFF",
-      userName: "Staff Unit Kerja Sama",
-      action: "DOCUMENT_UPLOADED",
-      documentNumber: "012/ITDel/MoU/IV/2024",
-      details: "Dokumen MoU Huawei Tech Investment diunggah via Batch Upload (SEED-BATCH-01)."
-    },
-    {
-      id: "AUDIT-002",
-      timestamp: "2024-04-19T08:12:05Z",
-      userRole: "SYSTEM_AI",
-      userName: "Deterministic Mock AI Engine",
-      action: "AI_EXTRACTED",
-      documentNumber: "012/ITDel/MoU/IV/2024",
-      details: "Ekstraksi 26 metadata field selesai. Skor keyakinan rata-rata: 0.98. Status: AI_EXTRACTED."
-    },
-    {
-      id: "AUDIT-003",
-      timestamp: "2024-04-20T10:30:00Z",
-      userRole: "ADMIN_STAFF",
-      userName: "Staff Unit Kerja Sama",
-      action: "STATUS_VALIDATED",
-      documentNumber: "012/ITDel/MoU/IV/2024",
-      details: "Pemeriksaan manusia selesai. Status disetujui sebagai data resmi: VALIDATED."
-    },
-    {
-      id: "AUDIT-004",
-      timestamp: "2024-06-12T14:15:00Z",
-      userRole: "ADMIN_STAFF",
-      userName: "Staff Unit Kerja Sama",
-      action: "RELATIONSHIP_LINKED",
-      documentNumber: "028/ITDel/PKS/FITE/VI/2024",
-      details: "Dokumen ditautkan ke parent MoU: 012/ITDel/MoU/IV/2024 (PT Huawei Tech Investment)."
-    },
-    {
-      id: "AUDIT-005",
-      timestamp: "2025-01-25T11:00:00Z",
-      userRole: "BUREAU_HEAD",
-      userName: "Kepala Biro Kemitraan",
-      action: "EVIDENCE_VERIFIED",
-      documentNumber: "028/ITDel/PKS/FITE/VI/2024",
-      details: "Verifikasi sertifikat HCIA Datacom (54 mahasiswa) dan LPJ Final selesai diperiksa."
-    },
-    {
-      id: "AUDIT-006",
-      timestamp: "2026-01-16T15:30:00Z",
-      userRole: "ADMIN_STAFF",
-      userName: "Staff Unit Kerja Sama",
-      action: "DOCUMENT_VALIDATED",
-      documentNumber: "007/ITDel/PKS/FITE/I/2026",
-      details: "PKS Riset AI Astra 2026 divalidasi dan dihubungkan ke MoU Induk Astra 2023."
-    }
-  ]
+  "auditLogs": []
 };
