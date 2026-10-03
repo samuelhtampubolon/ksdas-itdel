@@ -144,7 +144,7 @@ class KSDASUI {
   renderStatusBadge(status) {
     switch (status) {
       case "AI_EXTRACTED":
-        return `<span class="badge badge-ai-extracted">TEREKSTRAKSI</span>`;
+        return `<span class="badge badge-info">PERLU DITINJAU</span>`;
       case "NEEDS_REVIEW":
         return `<span class="badge badge-needs-review">PERLU REVIEW</span>`;
       case "VALIDATED":

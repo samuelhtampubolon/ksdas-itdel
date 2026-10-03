@@ -68,6 +68,26 @@ class PartnerBase(BaseModel):
     def clean_text(cls, v: Optional[str]) -> Optional[str]:
         return sanitize_str(v)
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        value = v.strip().lower()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
+            raise ValueError("Email mitra tidak valid.")
+        return value
+
+    @field_validator("website")
+    @classmethod
+    def validate_website(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        value = v.strip()
+        if not re.fullmatch(r"https?://[^\s/$.?#][^\s]*", value, re.IGNORECASE):
+            raise ValueError("Website harus menggunakan URL http:// atau https:// yang valid.")
+        return value
+
 class PartnerCreate(PartnerBase):
     pass
 
@@ -126,8 +146,7 @@ class DocumentUpdate(BaseModel):
     partner_signatory_name: Optional[str] = None
     it_del_signatory_name: Optional[str] = None
     budget: Optional[float] = None
-    status: Optional[DocumentStatus] = None
-    official_data_confirmed: Optional[bool] = None
+    # Status resmi hanya boleh diubah melalui endpoint validasi yang terlindungi.
 
     @model_validator(mode="after")
     def validate_date_range(self):
@@ -135,6 +154,18 @@ class DocumentUpdate(BaseModel):
             if self.effective_end_date < self.signed_date:
                 raise ValueError("Tanggal berakhir harus sama atau setelah tanggal penandatanganan/mulai.")
         return self
+
+    @field_validator("document_number", "title", "partner_name", "scope", "partner_signatory_name", "it_del_signatory_name")
+    @classmethod
+    def clean_text(cls, v: Optional[str]) -> Optional[str]:
+        return sanitize_str(v)
+
+    @field_validator("budget")
+    @classmethod
+    def validate_budget(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("Anggaran tidak boleh bernilai negatif.")
+        return v
 
 class DocumentResponse(DocumentBase):
     id: str
@@ -147,19 +178,38 @@ class DocumentResponse(DocumentBase):
 # BATCH UPLOAD MODELS
 # ------------------------------------------------------------------------------
 class BatchUploadItem(BaseModel):
-    filename: str
-    file_size_bytes: int
+    filename: str = Field(..., min_length=1, max_length=255)
+    file_size_bytes: int = Field(..., gt=0, le=25 * 1024 * 1024)
     content_type: str = "application/pdf"
 
+    @field_validator("filename")
+    @classmethod
+    def validate_filename(cls, v: str) -> str:
+        value = v.strip()
+        if not value or "/" in value or "\\" in value or "\x00" in value:
+            raise ValueError("Nama berkas tidak valid.")
+        return value
+
+    @field_validator("content_type")
+    @classmethod
+    def validate_content_type(cls, v: str) -> str:
+        allowed = {
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }
+        if v not in allowed:
+            raise ValueError("Tipe berkas tidak diizinkan.")
+        return v
+
 class BatchUploadRequest(BaseModel):
-    batch_title: str = Field(default="Batch Upload Naskah Kemitraan")
-    files: List[BatchUploadItem]
+    batch_title: str = Field(default="Batch Upload Naskah Kemitraan", min_length=1, max_length=150)
+    files: List[BatchUploadItem] = Field(..., min_length=1, max_length=20)
 
 class BatchUploadResponse(BaseModel):
     batch_id: str
     status: str = "PROCESSING"
     total_files: int
-    message: str = "Dokumen berhasil dimasukkan ke dalam antrean pemrosesan AI terisolasi."
+    message: str = "Dokumen berhasil dimasukkan ke antrean pencatatan manual."
 
 # ------------------------------------------------------------------------------
 # AUDIT LOG MODELS

@@ -24,6 +24,18 @@ Direktori `backend/` menyediakan implementasi resmi REST API microservice untuk 
 
 ## 🚀 Panduan Menjalankan Layanan
 
+> **Keamanan deployment:** seluruh endpoint data `/api/v1/*` memerlukan header
+> `X-API-Key`. Sebelum menjalankan production, isi `KSDAS_WRITE_API_KEY` dengan
+> nilai acak minimal 32 karakter melalui secret manager / environment deployment.
+> Jangan menggunakan nilai contoh dari `.env.example`, dan jangan kirim API key
+> tersebut ke browser atau menyimpannya di repository. Integrasikan SSO kampus
+> sebelum frontend production diberi akses tulis langsung.
+
+> **Batasan implementasi saat ini:** API masih memakai data in-memory dan belum
+> memiliki adapter PostgreSQL/MinIO. Karena itu `/ready` sengaja mengembalikan
+> `503` pada seluruh mode. Jangan gunakan kontainer ini sebagai layanan produksi
+> atau mengandalkan `depends_on` sebagai bukti bahwa data persisten tersedia.
+
 ### Opsi A: Menjalankan Secara Lokal (Python Virtual Environment)
 
 ```bash

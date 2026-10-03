@@ -8,14 +8,15 @@
  * Catatan untuk Tim SDI/TSI:
  * Arsitektur Store ini menggunakan pola Repository/Adapter.
  * Mode Prototipe saat ini menggunakan localStorage reaktif.
- * Untuk menghubungkan ke Backend PostgreSQL / REST API kampus:
- * 1. Ubah USE_BACKEND_API menjadi true.
- * 2. Sesuaikan API_BASE_URL (default: /api/v1).
+ * Flag API disediakan sebagai penanda migrasi, tetapi adapter REST belum
+ * diimplementasikan pada store ini. Jangan mengaktifkannya untuk produksi;
+ * gunakan integrasi SSO + adapter API yang memetakan kontrak camelCase UI ke
+ * kontrak API server terlebih dahulu.
  * ============================================================================
  */
 
 const KSDAS_API_CONFIG = {
-  USE_BACKEND_API: false, // Set 'true' untuk mode integrasi server kampus IT Del
+  USE_BACKEND_API: false, // Belum didukung: lihat catatan migrasi di atas.
   API_BASE_URL: "/api/v1",
   TIMEOUT_MS: 10000
 };
@@ -113,15 +114,26 @@ class KSDASStore {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          // Security: Prevent prototype pollution
-          const raw = e.target.result;
-          if (raw.includes("__proto__") || raw.includes("constructor") || raw.includes("prototype")) {
-            console.warn("Peringatan keamanan: String terlarang terdeteksi pada berkas JSON.");
-          }
-
-          const imported = JSON.parse(raw);
+          const imported = JSON.parse(e.target.result);
           if (!imported || typeof imported !== "object" || Array.isArray(imported)) {
             throw new Error("Format JSON tidak valid: Root objek harus berupa JSON Object.");
+          }
+
+          // Reject dangerous *keys* recursively. The previous implementation
+          // merely logged a matching word and continued importing the object.
+          // Checking keys (rather than arbitrary text values) keeps legitimate
+          // document content intact while preventing prototype-pollution input.
+          const pending = [imported];
+          while (pending.length) {
+            const current = pending.pop();
+            if (!current || typeof current !== "object") continue;
+            for (const key of Object.keys(current)) {
+              if (["__proto__", "prototype", "constructor"].includes(key)) {
+                throw new Error("Format JSON ditolak: ditemukan properti terlarang.");
+              }
+              const value = current[key];
+              if (value && typeof value === "object") pending.push(value);
+            }
           }
 
           if (!Array.isArray(imported.documents) || !Array.isArray(imported.partners)) {

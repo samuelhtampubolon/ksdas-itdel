@@ -49,7 +49,7 @@ class KSDASAnalytics {
       }
     });
 
-    const pendingValidationCount = docs.filter(d => d.status === "AI_EXTRACTED" || d.status === "NEEDS_REVIEW").length;
+    const pendingValidationCount = docs.filter(d => d.status === "NEEDS_REVIEW").length;
     const orphanCount = docs.filter(d => (d.type === "PKS_MOA" || d.type === "IA") && !d.parentId).length;
 
     // Total Budget
@@ -734,7 +734,7 @@ class KSDASAnalytics {
           realization: `${ifNas.length} Dokumen Nasional Informatika`,
           percentage: "100% Relevan",
           status: "MEMENUHI (UNGGUL)",
-          detail: "Program beasiswa digital talent, cloud computing, AI, dan sistem otomasi bersama perbankan dan industri teknologi."
+          detail: "Program beasiswa talenta digital, komputasi awan, dan sistem otomasi bersama perbankan dan industri teknologi."
         },
         {
           no: 16,

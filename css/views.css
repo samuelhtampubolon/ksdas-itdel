@@ -142,7 +142,7 @@
   flex: 1;
 }
 
-.ocr-text-view {
+.document-text-view {
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.7;
@@ -154,7 +154,7 @@
   white-space: pre-wrap;
 }
 
-.ocr-highlight {
+.document-highlight {
   background-color: #FEF08A;
   padding: 2px 4px;
   border-radius: 2px;
