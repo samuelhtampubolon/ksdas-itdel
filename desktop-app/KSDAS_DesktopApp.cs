@@ -4,6 +4,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
@@ -124,17 +125,27 @@ namespace KsdasItDelDesktop
         {
             try
             {
-                byte[] raw = File.ReadAllBytes(filePath);
-                string str = Encoding.UTF8.GetString(raw);
-                MatchCollection mc = Regex.Matches(str, @"<w:t(?:\s+[^>]*)?>([\s\S]*?)</w:t>");
-                if (mc.Count > 0)
+                using (ZipArchive archive = ZipFile.OpenRead(filePath))
                 {
-                    StringBuilder sb = new StringBuilder();
-                    foreach (Match m in mc)
+                    ZipArchiveEntry entry = archive.GetEntry("word/document.xml");
+                    if (entry != null)
                     {
-                        sb.Append(m.Groups[1].Value).Append(" ");
+                        using (Stream s = entry.Open())
+                        using (StreamReader reader = new StreamReader(s, Encoding.UTF8))
+                        {
+                            string xml = reader.ReadToEnd();
+                            MatchCollection mc = Regex.Matches(xml, @"<w:t(?:\s+[^>]*)?>([\s\S]*?)</w:t>");
+                            if (mc.Count > 0)
+                            {
+                                StringBuilder sb = new StringBuilder();
+                                foreach (Match m in mc)
+                                {
+                                    sb.Append(m.Groups[1].Value).Append(" ");
+                                }
+                                return sb.ToString();
+                            }
+                        }
                     }
-                    return sb.ToString();
                 }
             }
             catch {}
@@ -428,7 +439,7 @@ namespace KsdasItDelDesktop
             }
 
             // 9. Tanggal & Masa Berlaku
-            Match dm = Regex.Match(text, @"(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})", RegexOptions.IgnoreCase);
+            Match dm = Regex.Match(text, @"(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})", RegexOptions.IgnoreCase);
             if (dm.Success)
             {
                 int day = int.Parse(dm.Groups[1].Value);
@@ -453,17 +464,54 @@ namespace KsdasItDelDesktop
                 doc.signedDate = dt.ToString("yyyy-MM-dd");
                 result.Findings.Add("✓ Mulai Berlaku: " + doc.startDate);
             }
-
-            Match durMatch = Regex.Match(text, @"(?:jangka\s+waktu|selama)\s+(\d+)\s*(?:\([a-z\s]+\))?\s*tahun", RegexOptions.IgnoreCase);
-            if (durMatch.Success)
+            else
             {
-                int yrs = int.Parse(durMatch.Groups[1].Value);
-                DateTime st;
-                if (DateTime.TryParse(doc.startDate, out st))
+                Match dmy = Regex.Match(text, @"\b(0[1-9]|[12]\d|3[01])[-/.](0[1-9]|1[0-2])[-/.](20\d{2})\b");
+                if (dmy.Success)
                 {
-                    DateTime ed = st.AddYears(yrs).AddDays(-1);
-                    doc.endDate = ed.ToString("yyyy-MM-dd");
-                    result.Findings.Add(string.Format("✓ Berakhir: {0} (Durasi {1} Tahun)", doc.endDate, yrs));
+                    doc.startDate = string.Format("{0}-{1}-{2}", dmy.Groups[3].Value, dmy.Groups[2].Value, dmy.Groups[1].Value);
+                    doc.signedDate = doc.startDate;
+                    result.Findings.Add("✓ Mulai Berlaku: " + doc.startDate);
+                }
+            }
+
+            Match mEnd = Regex.Match(text, @"(?:sampai\s+dengan|berakhir\s+pada|berlaku\s+hingga|s\.d\.?)\s*(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})", RegexOptions.IgnoreCase);
+            if (mEnd.Success)
+            {
+                int day = int.Parse(mEnd.Groups[1].Value);
+                string mName = mEnd.Groups[2].Value.ToLower();
+                int year = int.Parse(mEnd.Groups[3].Value);
+                int month = 1;
+                if (mName.StartsWith("jan")) month = 1;
+                else if (mName.StartsWith("feb")) month = 2;
+                else if (mName.StartsWith("mar")) month = 3;
+                else if (mName.StartsWith("apr")) month = 4;
+                else if (mName.StartsWith("mei")) month = 5;
+                else if (mName.StartsWith("jun")) month = 6;
+                else if (mName.StartsWith("jul")) month = 7;
+                else if (mName.StartsWith("agu")) month = 8;
+                else if (mName.StartsWith("sep")) month = 9;
+                else if (mName.StartsWith("okt")) month = 10;
+                else if (mName.StartsWith("nov")) month = 11;
+                else if (mName.StartsWith("des")) month = 12;
+
+                DateTime dt = new DateTime(year, month, day);
+                doc.endDate = dt.ToString("yyyy-MM-dd");
+                result.Findings.Add("✓ Berakhir: " + doc.endDate);
+            }
+            else
+            {
+                Match durMatch = Regex.Match(text, @"(?:jangka\s+waktu|selama)\s+(\d+)\s*(?:\([a-z\s]+\))?\s*tahun", RegexOptions.IgnoreCase);
+                if (durMatch.Success)
+                {
+                    int yrs = int.Parse(durMatch.Groups[1].Value);
+                    DateTime st;
+                    if (DateTime.TryParse(doc.startDate, out st))
+                    {
+                        DateTime ed = st.AddYears(yrs).AddDays(-1);
+                        doc.endDate = ed.ToString("yyyy-MM-dd");
+                        result.Findings.Add(string.Format("✓ Berakhir: {0} (Durasi {1} Tahun)", doc.endDate, yrs));
+                    }
                 }
             }
             if (string.IsNullOrEmpty(doc.endDate))
@@ -585,7 +633,17 @@ namespace KsdasItDelDesktop
     public class MainForm : Form
     {
         private List<NaskahItem> _documents = new List<NaskahItem>();
+        private string _baseDir;
+        private string _dbDir;
+        private string _tablesDir;
+        private string _schemaDir;
+        private string _dosirDir;
+        private string _backupsDir;
         private string _dbPath;
+        private string _relationalDocsPath;
+        private string _mitraPath;
+        private string _fakultasProdiPath;
+        private string _auditPath;
         private DataGridView _grid;
         private TextBox _searchBox;
         private ComboBox _typeCombo;
@@ -594,15 +652,210 @@ namespace KsdasItDelDesktop
 
         public MainForm()
         {
-            _dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ksdas_desktop_database.json");
+            _baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            _dbDir = Path.Combine(_baseDir, "ksdas_local_database");
+            _tablesDir = Path.Combine(_dbDir, "tables");
+            _schemaDir = Path.Combine(_dbDir, "schema");
+            _dosirDir = Path.Combine(_dbDir, "dosir_lampiran");
+            _backupsDir = Path.Combine(_dbDir, "backups");
+            _dbPath = Path.Combine(_baseDir, "ksdas_desktop_database.json");
+            _relationalDocsPath = Path.Combine(_tablesDir, "naskah_kerjasama.json");
+            _mitraPath = Path.Combine(_tablesDir, "mitra_institusi.json");
+            _fakultasProdiPath = Path.Combine(_tablesDir, "fakultas_prodi.json");
+            _auditPath = Path.Combine(_tablesDir, "audit_trail_log.json");
+
+            bool isNew = EnsureStructuredDatabase();
             InitializeUi();
             LoadData();
+
+            if (isNew)
+            {
+                MessageBox.Show(
+                    "Selamat Datang di KSDAS IT Del!\n\n" +
+                    "Sistem Basis Data Terstruktur & Terintegrasi Lokal telah berhasil dibangun otomatis di komputer Anda.\n\n" +
+                    "Direktori Basis Data:\n" + _dbDir + "\n\n" +
+                    "Tabel Terintegrasi:\n" +
+                    "• tables/naskah_kerjasama.json (Relasional Dokumen)\n" +
+                    "• tables/mitra_institusi.json (Master Mitra Kampus & Industri)\n" +
+                    "• tables/fakultas_prodi.json (Taksonomi Fakultas & Prodi)\n" +
+                    "• tables/audit_trail_log.json (Log Audit Transaksi Mutlak)\n" +
+                    "• schema/ksdas_relational_schema.sql (Skema SQL DDL)\n\n" +
+                    "Semua mutasi data tersimpan secara persisten offline.",
+                    "Basis Data Lokal Terstruktur Berhasil Dibangun",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+        }
+
+        private bool EnsureStructuredDatabase()
+        {
+            bool createdNow = false;
+            try
+            {
+                if (!Directory.Exists(_dbDir)) { Directory.CreateDirectory(_dbDir); createdNow = true; }
+                if (!Directory.Exists(_tablesDir)) Directory.CreateDirectory(_tablesDir);
+                if (!Directory.Exists(_schemaDir)) Directory.CreateDirectory(_schemaDir);
+                if (!Directory.Exists(_dosirDir)) Directory.CreateDirectory(_dosirDir);
+                if (!Directory.Exists(_backupsDir)) Directory.CreateDirectory(_backupsDir);
+
+                string sqlPath = Path.Combine(_schemaDir, "ksdas_relational_schema.sql");
+                if (!File.Exists(sqlPath))
+                {
+                    string sqlContent =
+@"-- ========================================================
+-- SKEMA BASIS DATA RELASIONAL KSDAS INSTITUT TEKNOLOGI DEL
+-- Target RDBMS: PostgreSQL 14+ / SQLite 3
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS ksdas_mitra (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    short_name VARCHAR(50),
+    partner_type VARCHAR(50) NOT NULL,
+    country VARCHAR(50) DEFAULT 'Indonesia',
+    city VARCHAR(100),
+    website VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ksdas_fakultas_prodi (
+    program_id VARCHAR(20) PRIMARY KEY,
+    faculty_id VARCHAR(20) NOT NULL,
+    faculty_name VARCHAR(150) NOT NULL,
+    program_name VARCHAR(150) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ksdas_naskah_kerjasama (
+    id VARCHAR(50) PRIMARY KEY,
+    document_number VARCHAR(120) NOT NULL UNIQUE,
+    document_type VARCHAR(30) NOT NULL,
+    title TEXT NOT NULL,
+    partner_id VARCHAR(50) REFERENCES ksdas_mitra(id),
+    faculty_id VARCHAR(20),
+    program_id VARCHAR(20) REFERENCES ksdas_fakultas_prodi(program_id),
+    tri_dharma VARCHAR(100),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    signed_date DATE,
+    status VARCHAR(30) NOT NULL DEFAULT 'AKTIF',
+    activity_name TEXT,
+    pic VARCHAR(150),
+    partner_signatory VARCHAR(150),
+    partner_signatory_title VARCHAR(150),
+    itdel_signatory VARCHAR(150),
+    itdel_signatory_title VARCHAR(150),
+    location VARCHAR(150) DEFAULT 'Sitoluama, Laguboti',
+    budget VARCHAR(100),
+    funding_source VARCHAR(100),
+    scope TEXT,
+    notes TEXT,
+    file_name VARCHAR(255),
+    parent_id VARCHAR(50) REFERENCES ksdas_naskah_kerjasama(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ksdas_audit_log (
+    log_id VARCHAR(50) PRIMARY KEY,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    actor VARCHAR(100) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    target_id VARCHAR(50),
+    details TEXT
+);
+";
+                    File.WriteAllText(sqlPath, sqlContent, Encoding.UTF8);
+                }
+
+                string dictPath = Path.Combine(_schemaDir, "data_dictionary.json");
+                if (!File.Exists(dictPath))
+                {
+                    string dictJson = @"{
+  ""database_name"": ""ksdas_itdel_local"",
+  ""version"": ""1.2.0-LOKAL"",
+  ""architecture"": ""Relational Local File-Based System"",
+  ""tables"": [
+    { ""name"": ""ksdas_naskah_kerjasama"", ""records_file"": ""tables/naskah_kerjasama.json"", ""description"": ""Dosir Naskah Perjanjian (MoU, PKS, IA)"" },
+    { ""name"": ""ksdas_mitra"", ""records_file"": ""tables/mitra_institusi.json"", ""description"": ""Direktori Master Mitra Industri & Universitas"" },
+    { ""name"": ""ksdas_fakultas_prodi"", ""records_file"": ""tables/fakultas_prodi.json"", ""description"": ""Taksonomi Fakultas FITE, FTI, FB dan Program Studi"" },
+    { ""name"": ""ksdas_audit_log"", ""records_file"": ""tables/audit_trail_log.json"", ""description"": ""Buku Log Mutasi dan Riwayat Validasi Staf"" }
+  ]
+}";
+                    File.WriteAllText(dictPath, dictJson, Encoding.UTF8);
+                }
+
+                if (!File.Exists(_mitraPath))
+                {
+                    string mitraJson = @"[
+  { ""id"": ""TOBA"", ""name"": ""Pemerintah Kabupaten Toba"", ""shortName"": ""Pemkab Toba"", ""type"": ""PEMERINTAH_DAERAH"", ""city"": ""Balige"" },
+  { ""id"": ""USU"", ""name"": ""Universitas Sumatera Utara"", ""shortName"": ""USU"", ""type"": ""UNIVERSITAS"", ""city"": ""Medan"" },
+  { ""id"": ""SMKN1_LAGUBOTI"", ""name"": ""SMK Negeri 1 Laguboti"", ""shortName"": ""SMKN 1 Laguboti"", ""type"": ""SEKOLAH_VOKASI"", ""city"": ""Laguboti"" },
+  { ""id"": ""DISPAR_SUMUT"", ""name"": ""Dinas Kebudayaan dan Pariwisata Provinsi Sumatera Utara"", ""shortName"": ""Dispar Sumut"", ""type"": ""PEMERINTAH_DAERAH"", ""city"": ""Medan"" },
+  { ""id"": ""HUAWEI"", ""name"": ""PT Huawei Tech Investment"", ""shortName"": ""Huawei"", ""type"": ""INDUSTRI"", ""city"": ""Jakarta"" },
+  { ""id"": ""MANDIRI"", ""name"": ""PT Bank Mandiri (Persero) Tbk."", ""shortName"": ""Bank Mandiri"", ""type"": ""BUMN"", ""city"": ""Medan"" }
+]";
+                    File.WriteAllText(_mitraPath, mitraJson, Encoding.UTF8);
+                }
+
+                if (!File.Exists(_fakultasProdiPath))
+                {
+                    string fakJson = @"[
+  { ""facultyId"": ""FITE"", ""facultyName"": ""Fakultas Informatika dan Teknik Elektro"", ""programId"": ""IF"", ""programName"": ""S1 Informatika"" },
+  { ""facultyId"": ""FITE"", ""facultyName"": ""Fakultas Informatika dan Teknik Elektro"", ""programId"": ""SI"", ""programName"": ""S1 Sistem Informasi"" },
+  { ""facultyId"": ""FTI"", ""facultyName"": ""Fakultas Teknologi Industri"", ""programId"": ""MR"", ""programName"": ""S1 Manajemen Rekayasa"" },
+  { ""facultyId"": ""FB"", ""facultyName"": ""Fakultas Bioteknologi"", ""programId"": ""BP"", ""programName"": ""S1 Teknik Bioproses"" }
+]";
+                    File.WriteAllText(_fakultasProdiPath, fakJson, Encoding.UTF8);
+                }
+
+                if (!File.Exists(_auditPath))
+                {
+                    string initAudit = string.Format(@"[
+  {{
+    ""logId"": ""INIT-001"",
+    ""timestamp"": ""{0}"",
+    ""actor"": ""SYSTEM_INSTALLER"",
+    ""action"": ""DATABASE_INITIALIZATION"",
+    ""targetId"": ""DATABASE_ROOT"",
+    ""details"": ""Sistem basis data terstruktur dan terintegrasi lokal KSDAS IT Del berhasil dibangun otomatis di komputer lokal.""
+  }}
+]", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    File.WriteAllText(_auditPath, initAudit, Encoding.UTF8);
+                }
+
+                string manifestPath = Path.Combine(_tablesDir, "database_manifest.json");
+                if (!File.Exists(manifestPath))
+                {
+                    string manifest = string.Format(@"{{
+  ""system"": ""KSDAS IT Del Local Relational Database"",
+  ""version"": ""1.2.0-LOKAL"",
+  ""created_at"": ""{0}"",
+  ""schema_status"": ""INTEGRATED_HEALTHY"",
+  ""author"": ""Samuel Hasudungan Tampubolon"",
+  ""institution"": ""Institut Teknologi Del""
+}}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    File.WriteAllText(manifestPath, manifest, Encoding.UTF8);
+                }
+
+                if (!File.Exists(_relationalDocsPath))
+                {
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+                    string seedJson = js.Serialize(GetSeedDocuments());
+                    File.WriteAllText(_relationalDocsPath, seedJson, Encoding.UTF8);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Inisialisasi basis data lokal: " + ex.Message, "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            return createdNow;
         }
 
         private void InitializeUi()
         {
-            Text = "KSDAS IT Del — Sistem Informasi Kerja Sama (Desktop Standalone)";
-            Size = new Size(1180, 720);
+            Text = "KSDAS IT Del — Sistem Informasi Kerja Sama (Desktop Standalone & Local Relational DB)";
+            Size = new Size(1220, 750);
             StartPosition = FormStartPosition.CenterScreen;
             Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
             Icon = SystemIcons.Application;
@@ -619,7 +872,7 @@ namespace KsdasItDelDesktop
             };
             Label subLabel = new Label
             {
-                Text = "KSDAS Standalone Desktop • Penyimpanan Data Persisten Lokal (ksdas_desktop_database.json)",
+                Text = "KSDAS Standalone Desktop • Sistem Basis Data Terstruktur & Terintegrasi Lokal (ksdas_local_database)",
                 ForeColor = Color.FromArgb(213, 221, 230),
                 Font = new Font("Segoe UI", 9f, FontStyle.Regular),
                 Location = new Point(17, 40),
@@ -628,9 +881,10 @@ namespace KsdasItDelDesktop
             headerPanel.Controls.Add(titleLabel);
             headerPanel.Controls.Add(subLabel);
 
-            // Filter & Toolbar Panel
-            Panel toolPanel = new Panel { Dock = DockStyle.Top, Height = 95, BackColor = Color.FromArgb(243, 240, 232), Padding = new Padding(12, 10, 12, 8) };
+            // Filter & Toolbar Panel (3 Baris: Filter, Operasi Naskah, Tata Kelola Basis Data)
+            Panel toolPanel = new Panel { Dock = DockStyle.Top, Height = 135, BackColor = Color.FromArgb(243, 240, 232), Padding = new Padding(12, 10, 12, 8) };
 
+            // Baris 1: Filter
             Label lblSearch = new Label { Text = "Cari Dokumen:", Location = new Point(14, 12), AutoSize = true };
             _searchBox = new TextBox { Location = new Point(115, 9), Width = 220 };
             _searchBox.TextChanged += (s, e) => ApplyFilter();
@@ -650,11 +904,11 @@ namespace KsdasItDelDesktop
             Button btnResetFilter = new Button { Text = "Reset Saringan", Location = new Point(755, 8), Width = 110, Height = 28 };
             btnResetFilter.Click += (s, e) => { _searchBox.Text = ""; _typeCombo.SelectedIndex = 0; _statusCombo.SelectedIndex = 0; };
 
-            // Row 2 Buttons
+            // Baris 2: Operasi Naskah & OCR
             Button btnOcr = new Button
             {
                 Text = "🔍 Ekstraksi Cerdas & OCR",
-                Location = new Point(14, 50),
+                Location = new Point(14, 48),
                 Width = 195,
                 Height = 32,
                 BackColor = Color.FromArgb(180, 83, 9),
@@ -664,23 +918,54 @@ namespace KsdasItDelDesktop
             };
             btnOcr.Click += (s, e) => OpenSmartExtractionDialog();
 
-            Button btnAdd = new Button { Text = "+ Tambah Naskah", Location = new Point(215, 50), Width = 140, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            Button btnAdd = new Button { Text = "+ Tambah Naskah", Location = new Point(215, 48), Width = 140, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnAdd.Click += (s, e) => OpenAddDialog();
 
-            Button btnSave = new Button { Text = "💾 Simpan Database", Location = new Point(361, 50), Width = 145, Height = 32, BackColor = Color.FromArgb(40, 100, 60), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-            btnSave.Click += (s, e) => { SaveData(); MessageBox.Show("Data berhasil disimpan persisten ke file:\n" + _dbPath, "Tersimpan", MessageBoxButtons.OK, MessageBoxIcon.Information); };
+            Button btnSave = new Button { Text = "💾 Simpan Database", Location = new Point(361, 48), Width = 145, Height = 32, BackColor = Color.FromArgb(40, 100, 60), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            btnSave.Click += (s, e) => { SaveData(); MessageBox.Show("Data berhasil disimpan persisten ke basis data terstruktur lokal:\n" + _relationalDocsPath, "Tersimpan", MessageBoxButtons.OK, MessageBoxIcon.Information); };
 
-            Button btnExport = new Button { Text = "📊 Ekspor ke CSV", Location = new Point(512, 50), Width = 130, Height = 32 };
+            Button btnExport = new Button { Text = "📊 Ekspor ke CSV", Location = new Point(512, 48), Width = 130, Height = 32 };
             btnExport.Click += (s, e) => ExportCsv();
 
-            Button btnAnalysis = new Button { Text = "📈 Generate Analisis", Location = new Point(648, 50), Width = 150, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            Button btnAnalysis = new Button { Text = "📈 Generate Analisis", Location = new Point(648, 48), Width = 150, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnAnalysis.Click += (s, e) => ShowAnalysis();
 
-            Button btnOpenWeb = new Button { Text = "🌐 Buka Versi Web", Location = new Point(804, 50), Width = 140, Height = 32 };
+            Button btnOpenWeb = new Button { Text = "🌐 Buka Versi Web", Location = new Point(804, 48), Width = 140, Height = 32 };
             btnOpenWeb.Click += (s, e) => OpenWeb();
 
-            Button btnResetSample = new Button { Text = "↺ Muat Ulang 10 Contoh", Location = new Point(950, 50), Width = 175, Height = 32 };
+            Button btnResetSample = new Button { Text = "↺ Muat Ulang 10 Contoh", Location = new Point(950, 48), Width = 175, Height = 32 };
             btnResetSample.Click += (s, e) => ResetToSeedData();
+
+            // Baris 3: Pengelolaan Basis Data Terstruktur Lokal
+            Button btnOpenDbDir = new Button
+            {
+                Text = "🗄️ Buka Folder Basis Data Lokal",
+                Location = new Point(14, 88),
+                Width = 230,
+                Height = 32,
+                BackColor = Color.FromArgb(30, 80, 110),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnOpenDbDir.Click += (s, e) => OpenDatabaseFolder();
+
+            Button btnSchema = new Button
+            {
+                Text = "📊 Skema Relasional & Log Audit",
+                Location = new Point(250, 88),
+                Width = 220,
+                Height = 32
+            };
+            btnSchema.Click += (s, e) => ShowSchemaDialog();
+
+            Button btnBackup = new Button
+            {
+                Text = "🔄 Cadangkan Basis Data (Snapshot)",
+                Location = new Point(476, 88),
+                Width = 240,
+                Height = 32
+            };
+            btnBackup.Click += (s, e) => BackupDatabase();
 
             toolPanel.Controls.Add(lblSearch);
             toolPanel.Controls.Add(_searchBox);
@@ -696,6 +981,9 @@ namespace KsdasItDelDesktop
             toolPanel.Controls.Add(btnAnalysis);
             toolPanel.Controls.Add(btnOpenWeb);
             toolPanel.Controls.Add(btnResetSample);
+            toolPanel.Controls.Add(btnOpenDbDir);
+            toolPanel.Controls.Add(btnSchema);
+            toolPanel.Controls.Add(btnBackup);
 
             // DataGridView
             _grid = new DataGridView
@@ -734,7 +1022,7 @@ namespace KsdasItDelDesktop
 
             // Status strip
             StatusStrip statusStrip = new StatusStrip();
-            _statusLabel = new ToolStripStatusLabel { Text = "Siap." };
+            _statusLabel = new ToolStripStatusLabel { Text = "🟢 Basis Data Terstruktur: Terkoneksi | Lokasi: ksdas_local_database" };
             statusStrip.Items.Add(_statusLabel);
 
             Controls.Add(_grid);
@@ -743,22 +1031,171 @@ namespace KsdasItDelDesktop
             Controls.Add(statusStrip);
         }
 
+        private void OpenDatabaseFolder()
+        {
+            try
+            {
+                if (Directory.Exists(_dbDir))
+                {
+                    Process.Start("explorer.exe", _dbDir);
+                }
+                else
+                {
+                    MessageBox.Show("Folder basis data lokal belum dibuat: " + _dbDir, "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal membuka folder: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ShowSchemaDialog()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("==================================================");
+            sb.AppendLine("STRUKTUR BASIS DATA RELASIONAL LOKAL KSDAS IT DEL");
+            sb.AppendLine("==================================================");
+            sb.AppendLine();
+            sb.AppendLine("Direktori: " + _dbDir);
+            sb.AppendLine("Status   : Terkoneksi (Lokal Portabel & Terintegrasi)");
+            sb.AppendLine();
+            sb.AppendLine("I. TABEL RELASIONAL TERSEDIA:");
+            sb.AppendLine(string.Format("  1. ksdas_naskah_kerjasama ({0} rekaman)", _documents.Count));
+            sb.AppendLine("     File: tables/naskah_kerjasama.json");
+            sb.AppendLine("     Kolom: id, document_number, document_type, title, partner_id,");
+            sb.AppendLine("            faculty_id, program_id, tri_dharma, start_date, end_date,");
+            sb.AppendLine("            status, activity_name, pic, signatories, budget, scope");
+            sb.AppendLine();
+            sb.AppendLine("  2. ksdas_mitra (6 entitas mitra terstandar)");
+            sb.AppendLine("     File: tables/mitra_institusi.json");
+            sb.AppendLine("     Mitra: Pemkab Toba, USU, SMKN 1 Laguboti, Dispar Sumut, Huawei, Bank Mandiri");
+            sb.AppendLine();
+            sb.AppendLine("  3. ksdas_fakultas_prodi (4 program studi resmi)");
+            sb.AppendLine("     File: tables/fakultas_prodi.json");
+            sb.AppendLine("     Fakultas: FITE (IF, SI), FTI (MR), FB (BP)");
+            sb.AppendLine();
+            sb.AppendLine("  4. ksdas_audit_log (Buku Log Mutasi Sistem)");
+            sb.AppendLine("     File: tables/audit_trail_log.json");
+            sb.AppendLine();
+            sb.AppendLine("II. BERKAS SKEMA DDL (POSTGRESQL & SQLITE):");
+            sb.AppendLine("  • schema/ksdas_relational_schema.sql");
+            sb.AppendLine("  • schema/data_dictionary.json");
+            sb.AppendLine();
+            sb.AppendLine("III. REPOSITORY DOSIR & CADANGAN:");
+            sb.AppendLine("  • dosir_lampiran/ (Arsip naskah PDF/Word/Scan)");
+            sb.AppendLine("  • backups/ (Cadangan snapshot berkala)");
+
+            using (Form dlg = new Form())
+            {
+                dlg.Text = "Struktur Basis Data & Skema Relasional Lokal KSDAS";
+                dlg.Size = new Size(680, 560);
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.Font = new Font("Segoe UI", 9.5f);
+
+                TextBox txt = new TextBox
+                {
+                    Multiline = true,
+                    ReadOnly = true,
+                    ScrollBars = ScrollBars.Both,
+                    Dock = DockStyle.Fill,
+                    Font = new Font("Consolas", 9.5f),
+                    Text = sb.ToString()
+                };
+
+                Panel bot = new Panel { Dock = DockStyle.Bottom, Height = 50, Padding = new Padding(10) };
+                Button btnOpenDir = new Button { Text = "Buka Folder Basis Data di Explorer", Width = 250, Height = 32, Dock = DockStyle.Left };
+                btnOpenDir.Click += (s, e) => OpenDatabaseFolder();
+                Button btnClose = new Button { Text = "Tutup", Width = 90, Height = 32, Dock = DockStyle.Right, DialogResult = DialogResult.OK };
+                bot.Controls.Add(btnOpenDir);
+                bot.Controls.Add(btnClose);
+
+                dlg.Controls.Add(txt);
+                dlg.Controls.Add(bot);
+                dlg.ShowDialog(this);
+            }
+        }
+
+        private void BackupDatabase()
+        {
+            try
+            {
+                if (!Directory.Exists(_backupsDir)) Directory.CreateDirectory(_backupsDir);
+                string ts = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string target = Path.Combine(_backupsDir, string.Format("backup_ksdas_{0}.json", ts));
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                string json = js.Serialize(_documents);
+                File.WriteAllText(target, json, Encoding.UTF8);
+
+                AppendAuditLog("BACKUP_DATABASE", "SNAPSHOT", "Snapshot basis data dibuat: " + Path.GetFileName(target));
+                MessageBox.Show(
+                    "Cadangan basis data lokal berhasil dibuat!\n\nBerkas Cadangan:\n" + target + "\n\nTotal Naskah: " + _documents.Count,
+                    "Cadangan Sukses",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal membuat cadangan: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void AppendAuditLog(string action, string targetId, string details)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_auditPath)) return;
+                List<Dictionary<string, string>> logs = new List<Dictionary<string, string>>();
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                if (File.Exists(_auditPath))
+                {
+                    try
+                    {
+                        string existing = File.ReadAllText(_auditPath, Encoding.UTF8);
+                        logs = js.Deserialize<List<Dictionary<string, string>>>(existing) ?? new List<Dictionary<string, string>>();
+                    }
+                    catch {}
+                }
+                Dictionary<string, string> entry = new Dictionary<string, string>();
+                entry["logId"] = "LOG-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+                entry["timestamp"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                entry["actor"] = "STAFF_DESKTOP";
+                entry["action"] = action;
+                entry["targetId"] = targetId;
+                entry["details"] = details;
+                logs.Add(entry);
+                File.WriteAllText(_auditPath, js.Serialize(logs), Encoding.UTF8);
+            }
+            catch {}
+        }
+
         private void LoadData()
         {
-            if (File.Exists(_dbPath))
+            bool loaded = false;
+            if (File.Exists(_relationalDocsPath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(_relationalDocsPath, Encoding.UTF8);
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+                    _documents = js.Deserialize<List<NaskahItem>>(json) ?? new List<NaskahItem>();
+                    loaded = true;
+                }
+                catch {}
+            }
+            if (!loaded && File.Exists(_dbPath))
             {
                 try
                 {
                     string json = File.ReadAllText(_dbPath, Encoding.UTF8);
                     JavaScriptSerializer js = new JavaScriptSerializer();
                     _documents = js.Deserialize<List<NaskahItem>>(json) ?? new List<NaskahItem>();
+                    loaded = true;
                 }
-                catch
-                {
-                    _documents = GetSeedDocuments();
-                }
+                catch {}
             }
-            else
+            if (!loaded || _documents.Count == 0)
             {
                 _documents = GetSeedDocuments();
                 SaveData();
@@ -773,6 +1210,13 @@ namespace KsdasItDelDesktop
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 string json = js.Serialize(_documents);
                 File.WriteAllText(_dbPath, json, Encoding.UTF8);
+                if (!string.IsNullOrEmpty(_relationalDocsPath))
+                {
+                    string dir = Path.GetDirectoryName(_relationalDocsPath);
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    File.WriteAllText(_relationalDocsPath, json, Encoding.UTF8);
+                }
+                AppendAuditLog("SAVE_DATABASE", "MUTATION", string.Format("Total {0} rekaman naskah tersimpan ke basis data lokal terstruktur.", _documents.Count));
                 UpdateStatus();
             }
             catch (Exception ex)

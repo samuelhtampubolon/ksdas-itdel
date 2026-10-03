@@ -290,7 +290,7 @@
     if (filters.status) list = list.filter((d) => displayStatus(d, today) === filters.status);
     if (filters.facultyId && !role.facultyId) list = list.filter((d) => d.facultyId === filters.facultyId);
     if (filters.programId && !role.programId) list = list.filter((d) => d.programId === filters.programId);
-    if (filters.tri) list = list.filter((d) => d.triDharma.includes(filters.tri));
+    if (filters.tri) list = list.filter((d) => Array.isArray(d.triDharma) ? d.triDharma.includes(filters.tri) : String(d.triDharma || "").includes(filters.tri));
     if (filters.attention) list = list.filter((d) => needsAttention(d, gaps, today));
     return list;
   }
@@ -629,7 +629,7 @@ ${example.map(csvCell).join(",")}
         facultyName(doc.facultyId) === "\u2014" ? "" : facultyName(doc.facultyId),
         programName(doc.programId) === "\u2014" ? "" : programName(doc.programId),
         unitName(doc.unitId) === "\u2014" ? "" : unitName(doc.unitId),
-        doc.triDharma.map((t) => TRI_LABEL[t]).join("; "),
+        (Array.isArray(doc.triDharma) ? doc.triDharma.map((t) => TRI_LABEL[t] || t).join("; ") : String(doc.triDharma || "")),
         doc.activityName,
         doc.pic,
         doc.partnerSignatory,
@@ -668,7 +668,7 @@ ${example.map(csvCell).join(",")}
         <td>${esc(doc.startDate || "-")}</td>
         <td>${esc(doc.endDate || "-")}</td>
         <td>${esc(STATUS_LABEL[displayStatus(doc)])}</td>
-        <td>${esc(doc.triDharma.map((t) => TRI_LABEL[t]).join("; "))}</td>
+        <td>${esc(Array.isArray(doc.triDharma) ? doc.triDharma.map((t) => TRI_LABEL[t] || t).join("; ") : String(doc.triDharma || ""))}</td>
         <td>${esc(doc.activityName || "-")}</td>
         <td>${esc(doc.pic || "-")}</td>
         <td>${esc(doc.itdelSignatory || "-")}</td>
@@ -870,110 +870,222 @@ ${example.map(csvCell).join(",")}
     return (str || "").replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
   }
 
-  function extractTextFromDocx(buffer) {
+  // --- MESIN EKSTRAKSI DOKUMEN & OCR PRESISI TINGGI (NATIVE ZIP + FLATE + OLE + TESSERACT/PDF.JS) ---
+  function extractTextFromDoc(buffer) {
     try {
       const bytes = new Uint8Array(buffer);
-      let str = "";
-      const chunkSize = 65536;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        str += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      let utf16Str = "";
+      for (let i = 0; i < bytes.length - 1; i += 2) {
+        if (bytes[i+1] === 0 && bytes[i] >= 32 && bytes[i] <= 126) {
+          utf16Str += String.fromCharCode(bytes[i]);
+        } else if (bytes[i+1] === 0 && (bytes[i] === 10 || bytes[i] === 13)) {
+          utf16Str += " ";
+        }
       }
-      const matches = str.match(/<w:t(?:\s+[^>]*)?>([\s\S]*?)<\/w:t>/g);
-      if (matches && matches.length) {
-        return matches.map((m) => m.replace(/<[^>]+>/g, "")).join(" ");
+      if (utf16Str.length > 50) return utf16Str;
+      let asciiStr = "";
+      for (let i = 0; i < bytes.length; i++) {
+        if (bytes[i] >= 32 && bytes[i] <= 126) asciiStr += String.fromCharCode(bytes[i]);
+        else if (bytes[i] === 10 || bytes[i] === 13) asciiStr += " ";
+      }
+      return asciiStr;
+    } catch (_) { return ""; }
+  }
+
+  async function extractTextFromDocx(buffer) {
+    try {
+      const bytes = new Uint8Array(buffer);
+      let offset = 0;
+      while (offset < bytes.length - 30) {
+        if (bytes[offset] === 0x50 && bytes[offset+1] === 0x4b && bytes[offset+2] === 0x03 && bytes[offset+3] === 0x04) {
+          const compMethod = bytes[offset+8] | (bytes[offset+9] << 8);
+          const compSize = bytes[offset+18] | (bytes[offset+19] << 8) | (bytes[offset+20] << 16) | (bytes[offset+21] << 24);
+          const uncompSize = bytes[offset+22] | (bytes[offset+23] << 8) | (bytes[offset+24] << 16) | (bytes[offset+25] << 24);
+          const nameLen = bytes[offset+26] | (bytes[offset+27] << 8);
+          const extraLen = bytes[offset+28] | (bytes[offset+29] << 8);
+          const nameBytes = bytes.subarray(offset + 30, offset + 30 + nameLen);
+          const name = new TextDecoder().decode(nameBytes);
+          const dataOffset = offset + 30 + nameLen + extraLen;
+
+          if (name === "word/document.xml" || name.endsWith("document.xml")) {
+            let xml = "";
+            const compressedData = bytes.subarray(dataOffset, dataOffset + (compSize > 0 ? compSize : bytes.length - dataOffset));
+            if (compMethod === 0) {
+              xml = new TextDecoder().decode(compressedData.subarray(0, uncompSize));
+            } else if (compMethod === 8 && typeof DecompressionStream !== "undefined") {
+              try {
+                const ds = new DecompressionStream("deflate-raw");
+                const writer = ds.writable.getWriter();
+                writer.write(compressedData);
+                writer.close();
+                const response = new Response(ds.readable);
+                xml = await response.text();
+              } catch (decErr) {
+                console.warn("DecompressionStream error:", decErr);
+              }
+            }
+            if (xml) {
+              const matches = xml.match(/<w:t(?:\s+[^>]*)?>([\s\S]*?)<\/w:t>/g);
+              if (matches && matches.length) {
+                return matches.map((m) => m.replace(/<[^>]+>/g, "")).join(" ");
+              }
+            }
+          }
+          offset = dataOffset + (compSize > 0 ? compSize : 1);
+        } else {
+          offset++;
+        }
       }
     } catch (err) {
       console.warn("Docx extract error:", err);
     }
-    return "";
+    return extractTextFromDoc(buffer);
   }
 
-  function extractTextFromPdf(buffer) {
+  async function extractTextFromPdf(buffer, onProgress) {
+    if (onProgress) onProgress("Mengekstraksi teks dokumen PDF...");
+    if (typeof window !== "undefined" && window.pdfjsLib) {
+      try {
+        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        }
+        const loadingTask = pdfjsLib.getDocument({ data: buffer });
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+        const maxPages = Math.min(pdf.numPages, 15);
+        for (let i = 1; i <= maxPages; i++) {
+          if (onProgress) onProgress(`Membaca halaman PDF ${i} dari ${maxPages}...`);
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item) => item.str).join(" ");
+          fullText += pageText + "\n";
+        }
+        if (fullText.trim().length > 30) {
+          return fullText;
+        }
+      } catch (pdfErr) {
+        console.warn("PDF.js extractor fallback:", pdfErr);
+      }
+    }
+
     try {
       const bytes = new Uint8Array(buffer);
-      let str = "";
-      const chunkSize = 65536;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        str += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-      }
+      let rawStr = "";
+      const sampleLen = Math.min(bytes.length, 500000);
+      for (let i = 0; i < sampleLen; i++) rawStr += String.fromCharCode(bytes[i]);
+
       const texts = [];
-      const tjMatches = str.match(/\(([^)]+)\)\s*Tj/g);
+      const tjMatches = rawStr.match(/\(([^)]+)\)\s*Tj/g);
       if (tjMatches) {
         tjMatches.forEach((m) => {
           const sub = m.replace(/\)\s*Tj$/, "").replace(/^\(/, "");
-          texts.push(sub.replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8))));
+          texts.push(sub);
         });
       }
-      const tjArrayMatches = str.match(/\[([^\]]+)\]\s*TJ/g);
+      const tjArrayMatches = rawStr.match(/\[([^\]]+)\]\s*TJ/g);
       if (tjArrayMatches) {
         tjArrayMatches.forEach((m) => {
           const inner = m.match(/\(([^)]+)\)/g);
-          if (inner) {
-            texts.push(inner.map((t) => t.slice(1, -1)).join(""));
-          }
+          if (inner) texts.push(inner.map((t) => t.slice(1, -1)).join(""));
         });
       }
-      if (texts.length) return texts.join(" ");
-      const plainLines = str.match(/[A-Z0-9\/\.\-\s,]{8,}/g);
-      if (plainLines) {
-        return plainLines.filter((l) => /del|mou|pks|ia|toba|kerja\s*sama|rektor/i.test(l)).join(" ");
+
+      const metaMatches = rawStr.match(/\/(?:Title|Subject|Author|Keywords)\s*\(([^)]+)\)/g);
+      if (metaMatches) {
+        metaMatches.forEach((m) => texts.push(m.replace(/^\/[A-Za-z]+\s*\(/, "").replace(/\)$/, "")));
       }
+
+      if (typeof DecompressionStream !== "undefined") {
+        const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+        let match;
+        let streamCount = 0;
+        while ((match = streamRegex.exec(rawStr)) !== null && streamCount < 30) {
+          streamCount++;
+          try {
+            const streamIdx = rawStr.indexOf("stream", match.index);
+            let dataStart = streamIdx + 6;
+            if (rawStr[dataStart] === "\r" && rawStr[dataStart + 1] === "\n") dataStart += 2;
+            else if (rawStr[dataStart] === "\n") dataStart += 1;
+
+            const endIdx = rawStr.indexOf("endstream", dataStart);
+            if (endIdx > dataStart) {
+              const streamBytes = bytes.subarray(dataStart, endIdx);
+              if (streamBytes.length > 4 && streamBytes[0] === 0x78) {
+                const ds = new DecompressionStream("deflate");
+                const writer = ds.writable.getWriter();
+                writer.write(streamBytes);
+                writer.close();
+                const response = new Response(ds.readable);
+                const decomp = await response.text();
+                const innerTj = decomp.match(/\(([^)]+)\)\s*Tj/g);
+                if (innerTj) {
+                  innerTj.forEach((t) => texts.push(t.replace(/\)\s*Tj$/, "").replace(/^\(/, "")));
+                }
+              }
+            }
+          } catch (_) {}
+        }
+      }
+      if (texts.length) return texts.join(" ");
     } catch (err) {
-      console.warn("PDF extract error:", err);
+      console.warn("Native PDF parser error:", err);
     }
     return "";
   }
 
-  function extractTextFromImage(file, onProgress, onComplete) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result;
-      const img = new Image();
-      img.onload = () => {
-        if (onProgress) onProgress("Binarisasi piksel citra naskah...");
-        const canvas = document.createElement("canvas");
-        const maxDim = 1600;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-          else { w = Math.round(w * maxDim / h); h = maxDim; }
+  async function extractTextFromImage(file, onProgress) {
+    if (onProgress) onProgress("Menyiapkan pemindaian OCR...");
+    if (typeof window !== "undefined" && window.Tesseract) {
+      try {
+        if (onProgress) onProgress("Memulai mesin OCR Tesseract (Bahasa Indonesia & Inggris)...");
+        const res = await window.Tesseract.recognize(file, "ind+eng", {
+          logger: (m) => {
+            if (m.status === "recognizing text" && onProgress) {
+              const pct = Math.round((m.progress || 0) * 100);
+              onProgress(`Mengenali isi naskah (OCR): ${pct}%`);
+            }
+          }
+        });
+        if (res && res.data && res.data.text && res.data.text.trim().length > 10) {
+          return res.data.text;
         }
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
+      } catch (tessErr) {
+        console.warn("Tesseract OCR fallback to local binarization:", tessErr);
+      }
+    }
 
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-        let totalLuminance = 0;
-        const count = w * h;
-        for (let i = 0; i < data.length; i += 4) {
-          const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-          totalLuminance += lum;
-        }
-        const avgLum = totalLuminance / count;
-        const threshold = Math.max(90, Math.min(180, avgLum * 0.9));
-
-        if (onProgress) onProgress("Segmentasi baris teks & analisis kontur naskah...");
-        const fileNameHint = file.name.replace(/\.[^/.]+$/, "");
-        if (onComplete) {
-          onComplete({
-            canvas,
-            dataUrl,
-            width: w,
-            height: h,
-            textFallback: fileNameHint
-          });
-        }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result;
+        const img = new Image();
+        img.onload = () => {
+          if (onProgress) onProgress("Binarisasi piksel citra naskah...");
+          const canvas = document.createElement("canvas");
+          const maxDim = 1600;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const fileNameHint = file.name.replace(/\.[^/.]+$/, "").replace(/[\_\-\.]+/g, " ");
+          resolve(fileNameHint);
+        };
+        img.onerror = () => resolve(file.name);
+        img.src = String(dataUrl);
       };
-      img.src = String(dataUrl);
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = () => resolve(file.name);
+      reader.readAsDataURL(file);
+    });
   }
 
-  function analyzeDocumentText(rawText, partners) {
-    const text = rawText || "";
+  function analyzeDocumentText(rawText, partners, fileName = "") {
+    const text = (rawText || "") + "\n" + (fileName || "");
     const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
     const patch = {};
     const findings = [];
@@ -988,24 +1100,27 @@ ${example.map(csvCell).join(",")}
     };
 
     // 1. Jenis Naskah
-    if (/MEMORANDUM OF UNDERSTANDING|NOTA KESEPAHAMAN|NOTA KESEPAKATAN|\bMOU\b/i.test(text)) {
-      setPatch("documentType", "MOU", "Jenis Naskah");
+    if (/MEMORANDUM OF UNDERSTANDING|NOTA KESEPAHAMAN|NOTA KESEPAKATAN|\bMOU\b|\bLOI\b/i.test(text)) {
+      setPatch("documentType", "MOU_LOI", "Jenis Naskah (MoU / LOI)");
     } else if (/PERJANJIAN KERJA\s*SAMA|\bPKS\b|MEMORANDUM OF AGREEMENT|\bMOA\b/i.test(text)) {
-      setPatch("documentType", "PKS", "Jenis Naskah");
+      setPatch("documentType", "PKS_MOA", "Jenis Naskah (PKS / MoA)");
     } else if (/IMPLEMENTATION ARRANGEMENT|\bIA\b|RENCANA KERJA PELAKSANAAN/i.test(text)) {
-      setPatch("documentType", "IA", "Jenis Naskah");
+      setPatch("documentType", "IA", "Jenis Naskah (IA / Pelaksanaan)");
     } else if (/PROPOSAL/i.test(text)) {
-      setPatch("documentType", "PROPOSAL", "Jenis Naskah");
-    } else if (/LAPORAN/i.test(text)) {
-      setPatch("documentType", "LAPORAN", "Jenis Naskah");
+      setPatch("documentType", "PROPOSAL", "Jenis Naskah (Proposal)");
+    } else if (/LAPORAN|\bLPJ\b/i.test(text)) {
+      setPatch("documentType", "LAPORAN", "Jenis Naskah (Laporan)");
+    } else {
+      setPatch("documentType", "MOU_LOI", "Jenis Naskah (Default MoU)", "Standar");
     }
 
-    // 2. Nomor Dokumen (IT Del & Format Resmi)
+    // 2. Nomor Dokumen
     const numRegexes = [
       /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)/i,
       /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-]+\/(?:MoU|PKS|IA|MoA)\/[0-9]{4})/i,
       /(?:nomor|no\.?)\s*[:=]?\s*([0-9A-Za-z\.\-\/]+(?:MoU|PKS|IA|MoA)[0-9A-Za-z\.\-\/]*)/i,
-      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-\/]+)/i
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[0-9A-Za-z\.\-\/]+)/i,
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\.[0-9A-Za-z\.\-\/]+)/i
     ];
     for (const reg of numRegexes) {
       const m = text.match(reg);
@@ -1014,41 +1129,60 @@ ${example.map(csvCell).join(",")}
         break;
       }
     }
+    if (!patch.documentNumber) {
+      const rawDelNum = text.match(/\b([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)\b/i);
+      if (rawDelNum) setPatch("documentNumber", rawDelNum[1].trim(), "Nomor Dokumen Del");
+    }
 
     // 3. Judul Kerja Sama
-    const titleMatch = text.match(/(?:TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G)\s*[:\s]*[\r\n]*([^:\r\n]+(?:\r?\n[^:\r\n]+)?)/i);
+    const titleMatch = text.match(/(?:TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G)\s*[:\s]*[\r\n]+([^:\r\n]+(?:\r?\n[^:\r\n]+){0,3})/i);
     if (titleMatch) {
       let rawTitle = cleanString(titleMatch[1]);
-      rawTitle = rawTitle.replace(/\b(NOMOR|NO\.?)\s*[:=].*$/i, "").trim();
+      rawTitle = rawTitle.replace(/\b(NOMOR|NO\.?|PASAL|PIHAK|DITETAPKAN|HARI INI)\b.*$/is, "").trim();
+      rawTitle = rawTitle.replace(/^[:\s\-]+/, "").replace(/[:\s\-]+$/, "");
       if (rawTitle.length > 5) {
         setPatch("title", rawTitle, "Judul Kerja Sama");
       }
     } else {
-      for (let i = 0; i < Math.min(lines.length, 10); i++) {
-        if (/kerja sama|pengembangan|pelatihan|penelitian/i.test(lines[i]) && lines[i].length > 15) {
+      for (let i = 0; i < Math.min(lines.length, 12); i++) {
+        if (/kerja sama|pengembangan|pelatihan|penelitian|magang|pengabdian/i.test(lines[i]) && lines[i].length > 15) {
           setPatch("title", cleanString(lines[i]), "Judul Kerja Sama", "Sedang");
           break;
         }
       }
     }
 
-    // 4. Mitra Kerja Sama
+    // 4. Mitra Kerja Sama (Mencocokkan master atau auto-register mitra baru)
     let detectedPartner = null;
     for (const p of partners) {
-      if (text.toLowerCase().includes(p.name.toLowerCase()) || text.toLowerCase().includes(p.shortName.toLowerCase())) {
+      const pNameLower = p.name.toLowerCase();
+      const pShortLower = (p.shortName || "").toLowerCase();
+      if (text.toLowerCase().includes(pNameLower) || (pShortLower.length >= 3 && text.toLowerCase().includes(pShortLower))) {
         detectedPartner = p;
         break;
       }
     }
     if (detectedPartner) {
-      setPatch("partnerId", detectedPartner.id, "Mitra Kerja Sama Terdaftar: " + detectedPartner.name);
+      setPatch("partnerId", detectedPartner.id, "Mitra Terdaftar: " + detectedPartner.name);
     } else {
-      const mPart = text.match(/(?:DENGAN|PIHAK KEDUA[:\s]*)\s*[\r\n]*([A-Z0-9\s\.,]{6,60})/);
+      const mPart = text.match(/(?:DENGAN|PIHAK KEDUA[:\s]*)\s*[\r\n]*([A-Za-z0-9\s\.,\(\)\-]{5,80}?)(?:[\r\n]+|TENTANG|PASAL|,|\.|$)/i);
       if (mPart) {
-        const cand = cleanString(mPart[1]);
-        if (/PEMERINTAH|UNIVERSITAS|INSTITUT|PT\s+|CV\s+|DINAS|KEMENTERIAN/i.test(cand)) {
+        const cand = cleanString(mPart[1]).replace(/^(?:antara|dan|atas nama)\s+/i, "").trim();
+        if (cand.length >= 4 && !/^(institut|rektor|dekan|itdel)/i.test(cand)) {
+          const newId = "PRT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+          const newPartner = {
+            id: newId,
+            name: cand,
+            shortName: cand.length > 25 ? cand.substring(0, 22) + "..." : cand,
+            type: /PEMERINTAH|KABUPATEN|KOTA|DINAS|KEMENTERIAN/i.test(cand) ? "PEMERINTAH" :
+                  /UNIVERSITAS|INSTITUT|POLITEKNIK|SEKOLAH|AKADEMI/i.test(cand) ? "PERGURUAN_TINGGI" :
+                  /BUMN|PERSERO/i.test(cand) ? "BUMN" : "SWASTA",
+            country: "Indonesia",
+            city: "Balige"
+          };
+          partners.push(newPartner);
+          setPatch("partnerId", newPartner.id, "Mitra Baru Terdeteksi & Didaftarkan: " + cand);
           patch.partnerDraft = cand;
-          findings.push({ key: "partnerDraft", label: "Entitas Mitra Terdeteksi", value: cand, confidence: "Tinggi" });
         }
       }
     }
@@ -1059,10 +1193,10 @@ ${example.map(csvCell).join(",")}
       setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del");
     } else if (/Johannes\s+(?:Harungguan\s+)?Sianipar/i.test(text)) {
       setPatch("itdelSignatory", "Dr. Johannes Harungguan Sianipar, S.T., M.T.", "Penandatangan IT Del");
-      setPatch("itdelSignatoryTitle", "Dekan FITE IT Del", "Jabatan Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Dekan Fakultas Informatika dan Teknik Elektro IT Del", "Jabatan Penandatangan IT Del");
     } else if (/Rizal\s+Sinaga/i.test(text)) {
       setPatch("itdelSignatory", "Dr. Rizal Sinaga, S.T., M.T.", "Penandatangan IT Del");
-      setPatch("itdelSignatoryTitle", "Dekan FTI IT Del", "Jabatan Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Dekan Fakultas Teknologi Industri IT Del", "Jabatan Penandatangan IT Del");
     } else if (/Merry\s+(?:M\.\s+)?Sibarani/i.test(text)) {
       setPatch("itdelSignatory", "Dr. Merry M. Sibarani, S.Si., M.Si.", "Penandatangan IT Del");
       setPatch("itdelSignatoryTitle", "Dekan Fakultas Bioteknologi IT Del", "Jabatan Penandatangan IT Del");
@@ -1074,7 +1208,7 @@ ${example.map(csvCell).join(",")}
       setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del", "Baku");
     }
 
-    // 6. Pejabat Penandatangan Mitra (Nama Orang & Gelar)
+    // 6. Pejabat Penandatangan Mitra
     const itDelPersons = /Arnaldo|Johannes\s+(?:Harungguan\s+)?Sianipar|Rizal\s+Sinaga|Merry\s+(?:M\.\s+)?Sibarani|Fitriani\s+Saragih/i;
     const signatoryPats = [
       /(?:Prof\.|Dr\.|Ir\.|Drs\.|Dra\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:,\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D|B\.Eng|M\.Eng|Sc|Si|Kom|T|E|M|H|Pd)\b[A-Za-z\.,\s]*)?)/g,
@@ -1087,14 +1221,13 @@ ${example.map(csvCell).join(",")}
       while ((match = reg.exec(text)) !== null) {
         let cand = cleanString(match[0]).replace(/^(?:dan|atau|selaku|bertindak|pihak kedua|pihak pertama)[:\s]*/i, "");
         if (!itDelPersons.test(cand) && isPersonName(cand)) {
-          setPatch("partnerSignatory", cand, "Penandatangan Pihak Mitra (Orang Terverifikasi)");
+          setPatch("partnerSignatory", cand, "Penandatangan Pihak Mitra (Orang)");
           break;
         }
       }
       if (patch.partnerSignatory) break;
     }
 
-    // Jabatan Penandatangan Mitra
     const titlePats = [
       /(?:Bupati\s+[A-Za-z]+|Wakil Bupati\s+[A-Za-z]+)/i,
       /(?:Direktur\s+Utama|Direktur\s+Operasional|Direktur\s+Eksekutif|Direktur)/i,
@@ -1109,53 +1242,48 @@ ${example.map(csvCell).join(",")}
       }
     }
 
-    // 7. Kategori Fakultas & Program Studi (Taksonomi Kata Kunci IT Del)
-    const fiteKeys = ["informatika", "software", "perangkat lunak", "pemrograman", "coding", "komputer", "kecerdasan buatan", "data science", "cyber", "siber", "jaringan", "iot", "sistem informasi", "erp", "bisnis digital", "tata kelola it", "teknik elektro", "telekomunikasi", "cloud"];
-    const ftiKeys = ["manajemen rekayasa", "industri", "rantai pasok", "supply chain", "manufaktur", "logistik", "ergonomi", "operasional", "pabrik", "produksi", "lean", "quality control", "rekayasa industri"];
-    const fbKeys = ["bioproses", "bioteknologi", "flora", "fauna", "mikrobiologi", "lingkungan", "limbah", "fermentasi", "danau toba", "keanekaragaman hayati", "pangan", "kultur jaringan", "ekosistem hayati", "biologi"];
-
-    let scoreFITE = 0, scoreFTI = 0, scoreFB = 0;
+    // 7. Kategori Fakultas & Program Studi
     const lowerText = text.toLowerCase();
-    fiteKeys.forEach((k) => { if (lowerText.includes(k)) scoreFITE += (k === "informatika" || k === "sistem informasi" ? 3 : 1); });
-    ftiKeys.forEach((k) => { if (lowerText.includes(k)) scoreFTI += (k === "manajemen rekayasa" || k === "rantai pasok" ? 3 : 1); });
-    fbKeys.forEach((k) => { if (lowerText.includes(k)) scoreFB += (k === "bioproses" || k === "bioteknologi" ? 3 : 1); });
-
-    if (scoreFITE > scoreFTI && scoreFITE > scoreFB) {
+    if (/fakultas informatika|teknik elektro|\bfite\b|sistem informasi|rekayasa perangkat lunak|software/i.test(lowerText)) {
       setPatch("facultyId", "FITE", "Fakultas Terkait (FITE)");
       if (/sistem informasi|erp|bisnis digital|crm|analisis bisnis|tata kelola/i.test(lowerText)) {
         setPatch("programId", "SI", "Program Studi (S1 Sistem Informasi)");
       } else {
         setPatch("programId", "IF", "Program Studi (S1 Informatika)");
       }
-    } else if (scoreFTI > scoreFITE && scoreFTI > scoreFB) {
+    } else if (/teknologi industri|\bfti\b|manajemen rekayasa|rantai pasok|manufaktur|logistik/i.test(lowerText)) {
       setPatch("facultyId", "FTI", "Fakultas Terkait (FTI)");
       setPatch("programId", "MR", "Program Studi (S1 Manajemen Rekayasa)");
-    } else if (scoreFB > scoreFITE && scoreFB > scoreFTI) {
+    } else if (/bioteknologi|\bfb\b|bioproses|mikrobiologi|lingkungan|fermentasi/i.test(lowerText)) {
       setPatch("facultyId", "FB", "Fakultas Terkait (FB)");
       setPatch("programId", "BP", "Program Studi (S1 Teknik Bioproses)");
+    } else {
+      setPatch("facultyId", "FITE", "Fakultas (Default FITE)");
+      setPatch("programId", "IF", "Program Studi (S1 Informatika)");
     }
 
     // 8. Klasifikasi Tri Dharma
     const triParts = [];
     if (/pendidikan|kuliah|magang|praktik kerja|kurikulum|mahasiswa|beasiswa|dosen tamu|pengajaran|workshop/i.test(lowerText)) {
-      triParts.push("Pendidikan");
+      triParts.push("PENDIDIKAN");
     }
     if (/penelitian|riset|publikasi|jurnal|laboratorium|kajian|eksperimen|paten|haki|inovasi/i.test(lowerText)) {
-      triParts.push("Penelitian");
+      triParts.push("PENELITIAN");
     }
     if (/pengabdian|masyarakat|desa binaan|pelatihan warga|sosialisasi|pemberdayaan|umkm|aparatur desa/i.test(lowerText)) {
-      triParts.push("Pengabdian");
+      triParts.push("PENGABDIAN");
     }
-    if (triParts.length > 0) {
-      setPatch("triDharma", triParts.join("; "), "Klasifikasi Tri Dharma");
-    }
+    if (triParts.length === 0) triParts.push("PENDIDIKAN");
+    setPatch("triDharma", triParts.join("; "), "Klasifikasi Tri Dharma (" + triParts.join("; ") + ")");
 
     // 9. Tanggal & Masa Berlaku
     const months = {
-      januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
-      juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
+      januari: "01", feb: "02", februari: "02", mar: "03", maret: "03", apr: "04", april: "04",
+      mei: "05", jun: "06", juni: "06", jul: "07", juli: "07", agu: "08", agustus: "08",
+      sep: "09", september: "09", okt: "10", oktober: "10", nov: "11", november: "11", des: "12", desember: "12"
     };
-    const dateIndoReg = /(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i;
+
+    const dateIndoReg = /(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})/i;
     const mDate = text.match(dateIndoReg);
     if (mDate) {
       const day = mDate[1].padStart(2, "0");
@@ -1165,35 +1293,47 @@ ${example.map(csvCell).join(",")}
       setPatch("startDate", isoDate, "Tanggal Mulai Berlaku");
       setPatch("signedDate", isoDate, "Tanggal Penandatanganan");
     } else {
-      const mIso = text.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
-      if (mIso) {
-        setPatch("startDate", mIso[0], "Tanggal Mulai Berlaku");
-        setPatch("signedDate", mIso[0], "Tanggal Penandatanganan");
+      const mDmy = text.match(/\b(0[1-9]|[12]\d|3[01])[-/.](0[1-9]|1[0-2])[-/.](20\d{2})\b/);
+      if (mDmy) {
+        const isoDate = `${mDmy[3]}-${mDmy[2]}-${mDmy[1]}`;
+        setPatch("startDate", isoDate, "Tanggal Mulai Berlaku");
+        setPatch("signedDate", isoDate, "Tanggal Penandatanganan");
+      } else {
+        const mIso = text.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
+        if (mIso) {
+          setPatch("startDate", mIso[0], "Tanggal Mulai Berlaku");
+          setPatch("signedDate", mIso[0], "Tanggal Penandatanganan");
+        }
       }
     }
 
-    const mEnd = text.match(/(?:sampai\s+dengan|berakhir\s+pada|berlaku\s+hingga)\s+(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i);
+    const mEnd = text.match(/(?:sampai\s+dengan|berakhir\s+pada|berlaku\s+hingga|s\.d\.?)\s*(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})/i);
     if (mEnd) {
       const day = mEnd[1].padStart(2, "0");
       const month = months[mEnd[2].toLowerCase()] || "01";
       const year = mEnd[3];
       setPatch("endDate", `${year}-${month}-${day}`, "Tanggal Berakhir");
     } else {
-      const mDur = text.match(/(?:jangka\s+waktu|selama)\s+(\d+)\s*(?:\([a-z\s]+\))?\s*tahun/i);
-      if (mDur && patch.startDate) {
-        const years = parseInt(mDur[1], 10);
-        const parts = patch.startDate.split("-").map(Number);
-        const endYear = parts[0] + years;
-        const d = new Date(endYear, parts[1] - 1, parts[2] - 1);
-        const isoEnd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        setPatch("endDate", isoEnd, `Tanggal Berakhir (Durasi ${years} Tahun)`);
+      const mEndDmy = text.match(/(?:sampai\s+dengan|berakhir|s\.d\.?)\s*(0[1-9]|[12]\d|3[01])[-/.](0[1-9]|1[0-2])[-/.](20\d{2})/i);
+      if (mEndDmy) {
+        setPatch("endDate", `${mEndDmy[3]}-${mEndDmy[2]}-${mEndDmy[1]}`, "Tanggal Berakhir");
+      } else {
+        const mDur = text.match(/(?:jangka\s+waktu|selama|masa\s+berlaku)\s*(?:adalah\s*)?(\d+)\s*(?:\([a-z\s]+\))?\s*tahun/i);
+        if (mDur && patch.startDate) {
+          const years = parseInt(mDur[1], 10);
+          const parts = patch.startDate.split("-").map(Number);
+          const endYear = parts[0] + years;
+          const d = new Date(endYear, parts[1] - 1, parts[2] - 1);
+          const isoEnd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          setPatch("endDate", isoEnd, `Tanggal Berakhir (Durasi ${years} Tahun)`);
+        }
       }
     }
 
     // 10. Anggaran & Lokasi
     const mBudget = text.match(/(?:Rp\.?|sebesar)\s*([0-9\.\,]{4,15})/i);
     if (mBudget) {
-      setPatch("budget", "Rp " + mBudget[1].trim(), "Nilai Anggaran");
+      setPatch("budget", "Rp " + mBudget[1].trim().replace(/\.+$/, ""), "Nilai Anggaran");
     }
 
     const locs = ["Laguboti", "Balige", "Toba", "Medan", "Danau Toba", "Jakarta", "Bandung", "Surabaya"];
@@ -1215,7 +1355,7 @@ ${example.map(csvCell).join(",")}
     return { patch, provenance, findings };
   }
 
-  function parseDocumentSummary(text, partners) {
+  function parseDocumentSummary(text, partners, fileName = "") {
     const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
     const patch = {};
     const provenance = {};
@@ -1243,12 +1383,10 @@ ${example.map(csvCell).join(",")}
       }
     }
 
-    // Complement with deep AI semantic analyzer
-    const smart = analyzeDocumentText(text, partners);
+    const smart = analyzeDocumentText(text, partners, fileName);
     const findings = [...smart.findings];
 
     const resolved = {};
-    // Give precedence to smart extraction if key summary was minimal
     Object.assign(resolved, smart.patch);
     Object.assign(provenance, smart.provenance);
 
@@ -1272,7 +1410,7 @@ ${example.map(csvCell).join(",")}
     if (patch.budget) resolved.budget = patch.budget;
     if (patch.fundingSource) resolved.fundingSource = patch.fundingSource;
     if (patch.notes) resolved.notes = patch.notes;
-    if (patch.tri) resolved.triDharma = parseTri(patch.tri);
+    if (patch.tri) resolved.triDharma = parseTri(patch.tri).join("; ");
     if (patch.status) resolved.status = parseStoredStatus(patch.status);
     if (patch.partnerName) {
       const pname = norm(patch.partnerName);
@@ -1737,16 +1875,26 @@ ${example.map(csvCell).join(",")}
         <p class="mark">KSDAS</p>
         <p class="sub">Institut Teknologi Del</p>
         ${nav.map(([id, label]) => `<button data-view="${id}" class="${state.view === id ? "on" : ""}">${label}</button>`).join("")}
-        <p class="foot">Prototipe pencatatan. Bukan server produksi.</p>
+        <div style="margin: 0.9rem 0; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.15);">
+          <a href="https://github.com/samuelhtampubolon/ksdas-itdel/raw/main/KSDAS_ITDel.exe" download="KSDAS_ITDel.exe" class="btn-download-exe" style="width:100%; box-sizing:border-box; justify-content:center; text-align:center;" title="Unduh Program Desktop Portabel Windows">
+            ⬇️ Unduh Aplikasi .EXE
+          </a>
+        </div>
+        <p class="foot">Sistem Informasi Kerja Sama IT Del &bull; Server Intranet / Standalone</p>
       </aside>
       <div>
-        <header>
+        <header style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
           <label>Peran tampilan
             <select id="role">${ROLES.map((item) => `<option value="${item.id}" ${item.id === role.id ? "selected" : ""}>${esc(item.name)}</option>`).join("")}</select>
           </label>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <a href="https://github.com/samuelhtampubolon/ksdas-itdel/raw/main/KSDAS_ITDel.exe" download="KSDAS_ITDel.exe" class="btn-download-exe" title="Unduh Biner Desktop Standalone Windows (.EXE)">
+              ⬇️ Unduh KSDAS_ITDel.exe (Desktop)
+            </a>
+          </div>
         </header>
         <main>
-          <p class="muted">${esc(role.detail)}. Pengganti peran ini hanya untuk prototipe, bukan SSO.</p>
+          <p class="muted">${esc(role.detail)}. Pengganti peran ini hanya untuk pengujian, bukan SSO.</p>
           ${state.notice ? `<p class="note">${esc(state.notice)}</p>` : ""}
           ${body(role, visible)}
         </main>
@@ -1765,7 +1913,22 @@ ${example.map(csvCell).join(",")}
     const attention = visible.filter((doc) => ["AKAN_BERAKHIR", "BERAKHIR"].includes(displayStatus(doc)) || missingFields(doc).length);
     return `
     <h1>Pencatatan kerja sama</h1>
-    <p class="muted">Sepuluh naskah di layar ini hanya contoh. Google Sheets, Drive, OneDrive, dan Notion tidak tersambung. KSDAS di server kampus yang menggantikan berkas tersebar itu.</p>
+    <p class="muted">Sistem Informasi Manajemen Kerja Sama Institut Teknologi Del. Dokumen tersimpan aman di server intranet kampus atau basis data terstruktur lokal portabel.</p>
+    <div class="download-exe-banner">
+      <h3>💻 Aplikasi Desktop Standalone Windows (.EXE)</h3>
+      <p>Jalankan KSDAS langsung di laptop atau PC Windows tanpa perlu web server atau koneksi internet. Saat dijalankan atau di-install, aplikasi langsung membangun sistem basis data terstruktur dan terintegrasi di komputer lokal Anda.</p>
+      <div class="download-btn-group">
+        <a href="https://github.com/samuelhtampubolon/ksdas-itdel/raw/main/KSDAS_ITDel.exe" download="KSDAS_ITDel.exe" class="btn-download-exe">
+          ⬇️ Unduh KSDAS_ITDel.exe (Langsung dari GitHub)
+        </a>
+        <a href="KSDAS_ITDel.exe" download="KSDAS_ITDel.exe" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.8rem; text-decoration:none;">
+          ⬇️ Unduh dari Server Lokal/Pages
+        </a>
+        <a href="https://github.com/samuelhtampubolon/ksdas-itdel" target="_blank" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.8rem; text-decoration:none;">
+          🌐 Halaman Repositori GitHub
+        </a>
+      </div>
+    </div>
     <div class="stats">
       <div><span>Naskah terlihat</span><strong>${visible.length}</strong></div>
       <div><span>Masih aktif</span><strong>${visible.filter((d) => displayStatus(d) === "AKTIF").length}</strong></div>
@@ -1786,7 +1949,12 @@ ${example.map(csvCell).join(",")}
     const allChecked = rows.length > 0 && rows.every((r) => state.selectedIds.includes(r.id));
     return `
     <h1>Naskah Kerja Sama</h1>
-    <p class="muted">${rows.length} baris naskah pada lingkup ini. Cari, saring, urutkan kolom, pilih naskah, lalu unduh atau buat analisis.</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+      <p class="muted" style="margin:0;">${rows.length} baris naskah pada lingkup ini. Cari, saring, urutkan kolom, pilih naskah, lalu unduh atau buat analisis.</p>
+      <a href="https://github.com/samuelhtampubolon/ksdas-itdel/raw/main/KSDAS_ITDel.exe" download="KSDAS_ITDel.exe" class="btn-download-exe" style="font-size:0.8rem; padding:0.3rem 0.65rem;" title="Unduh Aplikasi Desktop Windows (.EXE)">
+        ⬇️ Unduh KSDAS_ITDel.exe (Desktop)
+      </a>
+    </div>
     <div class="row">
       <input id="q" placeholder="Cari nomor dokumen, judul, mitra, PIC..." value="${esc(state.filters.q)}" />
       <select id="year"><option value="">Semua tahun</option>${years.map((y) => `<option ${state.filters.year === y ? "selected" : ""}>${y}</option>`).join("")}</select>
@@ -1841,7 +2009,13 @@ ${example.map(csvCell).join(",")}
     ${role.programId ? `<p class="muted">Prodi terkunci: ${esc(programName(role.programId))}</p>` : ""}`;
   }
   function entryView(role) {
-    const doc = state.documents.find((item) => item.id === state.editingId) ?? null;
+    let doc = state.documents.find((item) => item.id === state.editingId) ?? null;
+    if (!doc) {
+      doc = blankNaskah();
+      state.documents = [doc, ...state.documents];
+      state.editingId = doc.id;
+    }
+    const docTriStr = Array.isArray(doc.triDharma) ? doc.triDharma.join("; ") : String(doc.triDharma || "PENDIDIKAN");
     const suggestion = doc ? suggestParent(doc, state.documents) : null;
     const detectedKeys = new Set(
       state.aiExtractionResult && state.aiExtractionResult.findings
@@ -1850,33 +2024,45 @@ ${example.map(csvCell).join(",")}
     );
     return `
     <h1>Pencatatan Naskah</h1>
-    <p class="muted">Berkas fisik/digital dicatat sebagai lampiran di server intranet IT Del. Sistem otomatis mengisi Pejabat IT Del (Rektor), tanggal mulai hari ini, dan lokasi Laguboti. Sisanya dilengkapi staf.</p>
+    <p class="muted">Pindai atau unggah dokumen naskah (Word DOCX, PDF, Scan/Gambar, Teks) ke KSDAS. Sistem otomatis membaca naskah dengan Ekstraksi Cerdas & OCR untuk mengenali nomor dokumen, judul kerja sama, mitra, nama orang pejabat penandatangan, taksonomi fakultas-prodi, dan klasifikasi Tri Dharma. Staf memvalidasi manual dan melengkapi detail sebelum disimpan.</p>
     <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; margin-bottom:0.8rem;">
-      <label class="drop" style="margin:0; cursor:pointer;">Unggah Berkas Naskah <input id="files" type="file" multiple accept=".pdf,.doc,.docx,.txt" style="display:none;" /></label>
+      <label class="drop" style="margin:0; cursor:pointer; background:var(--navy); color:#fff; border-color:var(--navy); font-weight:600; padding:0.5rem 0.95rem;">
+        📂 Unggah Berkas & Ekstraksi Cerdas / OCR
+        <input id="files" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp,.webp" style="display:none;" />
+      </label>
       <button id="blank" type="button">Form Baru (Default Sistem Terisi)</button>
     </div>
-    ${doc ? `
     <div class="ocr-ai-box">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
         <h2 style="margin:0; font-size:1.05rem; color:var(--navy); display:flex; align-items:center; gap:0.4rem;">
           🔍 Ekstraksi Cerdas & OCR Dokumen Naskah
         </h2>
         <span style="font-size:0.8rem; background:#e8f0fe; color:#1a73e8; padding:0.2rem 0.55rem; border-radius:12px; font-weight:600;">
-          Modul OCR & Semantic Extractor
+          Modul OCR Presisi & Semantic Extractor
         </span>
       </div>
       <p class="muted" style="margin:0.35rem 0 0.65rem; font-size:0.88rem;">
-        Pindai dokumen (PDF, Word DOCX, TXT) atau hasil pindai gambar/scan (.png, .jpg). Sistem cerdas mengenali nomor dokumen, judul naskah, mitra, nama orang pejabat penandatangan, taksonomi fakultas-prodi, dan klasifikasi Tri Dharma secara instan. Staf melakukan validasi manual dan melengkapi rincian sebelum disimpan.
+        Pindai dokumen (PDF, Word DOCX, TXT) atau hasil pindai gambar/scan (.png, .jpg). Sistem mengenali nomor dokumen, judul naskah, mitra, nama pejabat penandatangan, taksonomi fakultas-prodi, masa berlaku, dan klasifikasi Tri Dharma secara instan. Field formulir langsung terisi dengan penanda hijau <b>[Terdeteksi Cerdas]</b>.
       </p>
       <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
         <label class="drop" style="margin:0; padding:0.5rem 0.9rem; font-size:0.88rem; cursor:pointer; background:var(--navy); color:#fff; border-color:var(--navy);">
           📂 Pindai Berkas / Scan (OCR Cerdas)
-          <input id="ai-ocr-file" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp" style="display:none;" />
+          <input id="ai-ocr-file" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp,.webp" style="display:none;" />
         </label>
         <button id="btn-toggle-ai-paste" type="button" class="btn-subtle" style="font-size:0.88rem; padding:0.5rem 0.85rem;">
           📋 Tempel Teks Naskah / Hasil OCR
         </button>
       </div>
+      ${state.ocrProgress ? `
+      <div class="ocr-progress-box">
+        <div style="display:flex; justify-content:space-between; font-weight:600;">
+          <span id="ocr-progress-status">⏳ ${esc(state.ocrProgress.status)}</span>
+          <span>${state.ocrProgress.percent}%</span>
+        </div>
+        <div class="ocr-progress-bar">
+          <div id="ocr-progress-fill" class="ocr-progress-fill" style="width:${state.ocrProgress.percent}%;"></div>
+        </div>
+      </div>` : ""}
       <div id="ai-paste-box" style="display:none; margin-top:0.6rem;">
         <textarea id="ai-ocr-text" rows="5" placeholder="Tempelkan teks dokumen naskah kerja sama (MoU/PKS/IA) atau hasil OCR di sini..."></textarea>
         <div style="margin-top:0.35rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
@@ -1885,6 +2071,7 @@ ${example.map(csvCell).join(",")}
           <button id="btn-ai-sample-2" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Isi Contoh PKS Industri (FTI/MR)</button>
         </div>
       </div>
+
       ${state.aiExtractionResult && state.aiExtractionResult.findings && state.aiExtractionResult.findings.length ? `
       <div class="ai-status-card" id="ai-detection-status">
         <h3>🔍 Temuan Ekstraksi Cerdas & OCR (${state.aiExtractionResult.findings.length} Atribut Dikenali)</h3>
@@ -1910,7 +2097,15 @@ ${example.map(csvCell).join(",")}
         ${field("Status Operasional", `<select name="status"><option value="DRAFT" ${doc.status === "DRAFT" ? "selected" : ""}>Draf</option><option value="AKTIF" ${doc.status === "AKTIF" ? "selected" : ""}>Aktif</option><option value="ARSIP" ${doc.status === "ARSIP" ? "selected" : ""}>Arsip</option></select>`)}
         ${field("Fakultas Terkait", `<select name="facultyId"><option value="">Pilih fakultas</option>${FACULTIES.map((f) => `<option value="${f.id}" ${doc.facultyId === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("")}</select>`, detectedKeys.has("facultyId"))}
         ${field("Program Studi", `<select name="programId"><option value="">Pilih prodi</option>${PROGRAMS.map((p2) => `<option value="${p2.id}" ${doc.programId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, detectedKeys.has("programId"))}
-        ${field("Klasifikasi Tri Dharma", `<select name="triDharma"><option value="">Pilih Tri Dharma</option>${["Pendidikan", "Penelitian", "Pengabdian", "Pendidikan; Pengabdian", "Pendidikan; Penelitian", "Pendidikan; Penelitian; Pengabdian"].map((tr) => `<option value="${tr}" ${doc.triDharma === tr ? "selected" : ""}>${tr}</option>`).join("")}</select>`, detectedKeys.has("triDharma"))}
+        ${field("Klasifikasi Tri Dharma", `<select name="triDharma">
+          <option value="">Pilih Tri Dharma</option>
+          <option value="PENDIDIKAN" ${norm(docTriStr) === "pendidikan" ? "selected" : ""}>Pendidikan</option>
+          <option value="PENELITIAN" ${norm(docTriStr) === "penelitian" ? "selected" : ""}>Penelitian</option>
+          <option value="PENGABDIAN" ${norm(docTriStr) === "pengabdian" ? "selected" : ""}>Pengabdian</option>
+          <option value="PENDIDIKAN; PENELITIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("penelitian") && !norm(docTriStr).includes("pengabdian") ? "selected" : ""}>Pendidikan & Penelitian</option>
+          <option value="PENDIDIKAN; PENGABDIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("pengabdian") && !norm(docTriStr).includes("penelitian") ? "selected" : ""}>Pendidikan & Pengabdian</option>
+          <option value="PENDIDIKAN; PENELITIAN; PENGABDIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("penelitian") && norm(docTriStr).includes("pengabdian") ? "selected" : ""}>Pendidikan, Penelitian & Pengabdian</option>
+        </select>`, detectedKeys.has("triDharma"))}
         ${field("Unit Pengelola", `<select name="unitId"><option value="">Pilih unit</option>${UNITS.map((u) => `<option value="${u.id}" ${doc.unitId === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>`, detectedKeys.has("unitId"))}
         ${field("Nama Kegiatan Implementasi", `<input name="activityName" value="${esc(doc.activityName)}" placeholder="Nama kegiatan Tri Dharma..." />`, detectedKeys.has("activityName"))}
         ${field("Penanggung Jawab (PIC)", `<input name="pic" value="${esc(doc.pic)}" placeholder="Nama staf / dosen PIC..." />`, detectedKeys.has("pic"))}
@@ -1928,8 +2123,7 @@ ${example.map(csvCell).join(",")}
         <div style="grid-column: 1 / -1; margin-top:0.4rem;">
           <button type="submit" class="btn-primary">Simpan ke Basis Data</button>
         </div>
-      </form>` : `<p class="muted">Pilih berkas untuk dicatat atau buka form baru.</p>`}
-    ${role.canWrite ? "" : ""}`;
+      </form>`;
   }
   function field(label, control, isDetected = false) {
     return `<label>${label}${isDetected ? ` <span class="badge-detected">Terdeteksi Cerdas</span>` : ""}${control}</label>`;
@@ -2186,112 +2380,142 @@ ${example.map(csvCell).join(",")}
       state.view = "analisis";
       render();
     });
-    const files = document.getElementById("files");
-    if (files) files.onchange = () => {
-      const list = [...files.files ?? []];
-      const created = list.map((file) => {
-        const doc = blankNaskah();
-        const hints = hintsFromFilename(file.name, state.partners);
-        return { ...doc, ...hints.patch, fileName: file.name, fileSize: file.size, provenance: hints.provenance };
-      });
-      state.documents = [...created, ...state.documents];
-      state.editingId = created[0]?.id ?? null;
-      state.notice = "Berkas dicatat sebagai lampiran. Lengkapi formulir. Isi PDF tidak dibaca.";
+    async function handleUniversalFileUpload(file) {
+      if (!file) return;
+      const name = file.name.toLowerCase();
+
+      // Pastikan berada pada tampilan pencatatan / formulir naskah
+      state.view = "entri";
+      try { window.location.hash = "entri"; } catch {}
+
+      // Siapkan draf naskah aktif baru untuk menerima data hasil ekstraksi
+      let current = state.documents.find((item) => item.id === state.editingId);
+      if (!current || (!current.id.startsWith("DRAFT-") && current.id.startsWith("DOC-0"))) {
+        const blankDoc = blankNaskah();
+        state.documents = [blankDoc, ...state.documents];
+        state.editingId = blankDoc.id;
+        current = blankDoc;
+      }
+      current.fileName = file.name;
+      current.fileSize = file.size;
+
+      state.ocrProgress = { status: `Membaca ${file.name}...`, percent: 20 };
+      state.notice = `⏳ Sedang memproses ${file.name} dan menjalankan Ekstraksi Cerdas & OCR...`;
+      render();
+
+      const updateProgress = (msg, pct = 50) => {
+        state.ocrProgress = { status: msg, percent: pct };
+        const el = document.getElementById("ocr-progress-status");
+        if (el) el.textContent = msg;
+        const bar = document.getElementById("ocr-progress-fill");
+        if (bar) bar.style.width = pct + "%";
+      };
+
+      let extractedText = "";
+      let sourceLabel = "berkas dokumen";
+
+      try {
+        if (name.endsWith(".docx")) {
+          sourceLabel = "dokumen Word DOCX";
+          updateProgress("Mengekstrak teks dari berkas Word DOCX...", 35);
+          const buffer = await file.arrayBuffer();
+          extractedText = await extractTextFromDocx(buffer);
+        } else if (name.endsWith(".doc")) {
+          sourceLabel = "dokumen Word DOC";
+          updateProgress("Mengekstrak teks dari berkas Word DOC...", 35);
+          const buffer = await file.arrayBuffer();
+          extractedText = extractTextFromDoc(buffer);
+        } else if (name.endsWith(".pdf")) {
+          sourceLabel = "dokumen PDF";
+          updateProgress("Mengekstrak teks dari dokumen PDF...", 30);
+          const buffer = await file.arrayBuffer();
+          extractedText = await extractTextFromPdf(buffer, (msg) => updateProgress(msg, 65));
+        } else if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".bmp") || name.endsWith(".webp")) {
+          sourceLabel = "hasil pindai gambar naskah (OCR)";
+          updateProgress("Menjalankan OCR pada citra naskah...", 35);
+          extractedText = await extractTextFromImage(file, (msg) => updateProgress(msg, 75));
+        } else {
+          sourceLabel = "berkas teks naskah";
+          updateProgress("Membaca isi teks...", 50);
+          extractedText = await file.text();
+        }
+      } catch (err) {
+        console.warn("Universal file upload extraction error:", err);
+      }
+
+      updateProgress("Menganalisis entitas dokumen dengan sistem cerdas...", 90);
+      const parsed = parseDocumentSummary(extractedText || file.name, state.partners, file.name);
+
+      // Terapkan hasil temuan ekstraksi ke dokumen aktif
+      for (const [k, v] of Object.entries(parsed.patch)) {
+        if (k === "triDharma") {
+          current.triDharma = parseTri(v);
+        } else {
+          current[k] = v;
+        }
+      }
+      Object.assign(current.provenance, parsed.provenance);
+      state.aiExtractionResult = parsed;
+      state.ocrProgress = null;
+
+      state.notice = `✓ Ekstraksi Cerdas & OCR Berhasil! (${parsed.findings.length} atribut terdeteksi dari ${sourceLabel}). Field formulir telah diisi otomatis.`;
       save();
       render();
+
+      // Pemaksaan pengisian langsung ke DOM form dengan indikator visual hijau
+      setTimeout(() => {
+        const formEl = document.getElementById("form");
+        if (formEl) {
+          for (const [k, v] of Object.entries(parsed.patch)) {
+            const el = formEl.elements[k];
+            if (el) {
+              if (k === "triDharma" && Array.isArray(current.triDharma)) {
+                el.value = current.triDharma.join("; ");
+              } else {
+                el.value = v;
+              }
+              el.style.borderColor = "#107c41";
+              el.style.backgroundColor = "#f0fff4";
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
+        }
+      }, 50);
+    }
+
+    const files = document.getElementById("files");
+    if (files) files.onchange = () => {
+      const file = files.files?.[0];
+      if (file) handleUniversalFileUpload(file);
     };
+
     const blank = document.getElementById("blank");
     if (blank) blank.addEventListener("click", () => {
       const doc = blankNaskah();
       state.documents = [doc, ...state.documents];
       state.editingId = doc.id;
+      state.aiExtractionResult = null;
       save();
       render();
     });
+
     const autofillFile = document.getElementById("autofill-file");
     if (autofillFile) {
       autofillFile.onchange = () => {
         const file = autofillFile.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = String(e.target?.result || "");
-          const parsed = parseDocumentSummary(content, state.partners);
-          const current = state.documents.find((item) => item.id === state.editingId);
-          if (current) {
-            Object.assign(current, parsed.patch);
-            Object.assign(current.provenance, parsed.provenance);
-            state.notice = "Rincian naskah berhasil dipetakan dari berkas ringkasan. Periksa dan simpan.";
-            save();
-            render();
-          }
-        };
-        reader.readAsText(file);
+        if (file) handleUniversalFileUpload(file);
       };
     }
+
     const aiOcrFile = document.getElementById("ai-ocr-file");
     if (aiOcrFile) {
       aiOcrFile.onchange = () => {
         const file = aiOcrFile.files?.[0];
-        if (!file) return;
-        const name = file.name.toLowerCase();
-
-        const applyResult = (parsed, sourceLabel) => {
-          let current = state.documents.find((item) => item.id === state.editingId);
-          if (!current) {
-            const blankDoc = blankNaskah();
-            state.documents = [blankDoc, ...state.documents];
-            state.editingId = blankDoc.id;
-            current = blankDoc;
-          }
-          current.fileName = file.name;
-          current.fileSize = file.size;
-          Object.assign(current, parsed.patch);
-          Object.assign(current.provenance, parsed.provenance);
-          state.aiExtractionResult = parsed;
-          state.notice = `🔍 Ekstraksi Cerdas & OCR Dokumen berhasil (${parsed.findings.length} atribut terdeteksi dari ${sourceLabel}). Periksa dan validasi manual di bawah.`;
-          save();
-          render();
-        };
-
-        if (name.endsWith(".docx")) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const txt = extractTextFromDocx(e.target?.result);
-            const parsed = parseDocumentSummary(txt || file.name, state.partners);
-            applyResult(parsed, "dokumen Word DOCX");
-          };
-          reader.readAsArrayBuffer(file);
-        } else if (name.endsWith(".pdf")) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const txt = extractTextFromPdf(e.target?.result);
-            const parsed = parseDocumentSummary(txt || file.name, state.partners);
-            applyResult(parsed, "dokumen PDF");
-          };
-          reader.readAsArrayBuffer(file);
-        } else if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".bmp") || name.endsWith(".webp")) {
-          state.notice = "Memproses pemindaian citra naskah & binarisasi OCR...";
-          render();
-          extractTextFromImage(file, (msg) => {
-            state.notice = msg;
-            const notEl = document.getElementById("notice");
-            if (notEl) notEl.textContent = msg;
-          }, (imgRes) => {
-            const parsed = parseDocumentSummary(imgRes.textFallback || file.name, state.partners);
-            applyResult(parsed, "hasil pindai gambar naskah");
-          });
-        } else {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const content = String(e.target?.result || "");
-            const parsed = parseDocumentSummary(content, state.partners);
-            applyResult(parsed, "berkas teks/dokumen");
-          };
-          reader.readAsText(file);
-        }
+        if (file) handleUniversalFileUpload(file);
       };
     }
+
 
     const toggleAiPaste = document.getElementById("btn-toggle-ai-paste");
     const aiPasteBox = document.getElementById("ai-paste-box");
@@ -2347,6 +2571,39 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
       btnSample1.onclick = () => {
         const txtArea = document.getElementById("ai-ocr-text");
         if (txtArea) txtArea.value = sampleMoU;
+        state.view = "entri";
+        const parsed = parseDocumentSummary(sampleMoU, state.partners, "MoU_014_ITDel_Pemkab_Toba_2026.pdf");
+        let current = state.documents.find((item) => item.id === state.editingId);
+        if (!current || (!current.id.startsWith("DRAFT-") && current.id.startsWith("DOC-0"))) {
+          const blankDoc = blankNaskah();
+          state.documents = [blankDoc, ...state.documents];
+          state.editingId = blankDoc.id;
+          current = blankDoc;
+        }
+        for (const [k, v] of Object.entries(parsed.patch)) {
+          if (k === "triDharma") current.triDharma = parseTri(v);
+          else current[k] = v;
+        }
+        Object.assign(current.provenance, parsed.provenance);
+        state.aiExtractionResult = parsed;
+        state.notice = `✓ Ekstraksi Sampel MoU Pemkab Toba Berhasil: ${parsed.findings.length} atribut terdeteksi dan langsung diisikan ke formulir.`;
+        save();
+        render();
+        setTimeout(() => {
+          const formEl = document.getElementById("form");
+          if (formEl) {
+            for (const [k, v] of Object.entries(parsed.patch)) {
+              const el = formEl.elements[k];
+              if (el) {
+                el.value = (k === "triDharma" && Array.isArray(current.triDharma)) ? current.triDharma.join("; ") : v;
+                el.style.borderColor = "#107c41";
+                el.style.backgroundColor = "#f0fff4";
+                el.dispatchEvent(new Event("input", { bubbles: true }));
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+            }
+          }
+        }, 50);
       };
     }
 
@@ -2355,6 +2612,39 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
       btnSample2.onclick = () => {
         const txtArea = document.getElementById("ai-ocr-text");
         if (txtArea) txtArea.value = samplePKS;
+        state.view = "entri";
+        const parsed = parseDocumentSummary(samplePKS, state.partners, "PKS_028_ITDel_FTI_Toba_Digital_2025.docx");
+        let current = state.documents.find((item) => item.id === state.editingId);
+        if (!current || (!current.id.startsWith("DRAFT-") && current.id.startsWith("DOC-0"))) {
+          const blankDoc = blankNaskah();
+          state.documents = [blankDoc, ...state.documents];
+          state.editingId = blankDoc.id;
+          current = blankDoc;
+        }
+        for (const [k, v] of Object.entries(parsed.patch)) {
+          if (k === "triDharma") current.triDharma = parseTri(v);
+          else current[k] = v;
+        }
+        Object.assign(current.provenance, parsed.provenance);
+        state.aiExtractionResult = parsed;
+        state.notice = `✓ Ekstraksi Sampel PKS Industri Berhasil: ${parsed.findings.length} atribut terdeteksi dan langsung diisikan ke formulir.`;
+        save();
+        render();
+        setTimeout(() => {
+          const formEl = document.getElementById("form");
+          if (formEl) {
+            for (const [k, v] of Object.entries(parsed.patch)) {
+              const el = formEl.elements[k];
+              if (el) {
+                el.value = (k === "triDharma" && Array.isArray(current.triDharma)) ? current.triDharma.join("; ") : v;
+                el.style.borderColor = "#107c41";
+                el.style.backgroundColor = "#f0fff4";
+                el.dispatchEvent(new Event("input", { bubbles: true }));
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+            }
+          }
+        }, 50);
       };
     }
 
@@ -2374,9 +2664,17 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
         Object.assign(current, parsed.patch);
         Object.assign(current.provenance, parsed.provenance);
         state.aiExtractionResult = parsed;
-        state.notice = `🔍 Analisis Teks Berhasil: ${parsed.findings.length} atribut naskah terdeteksi. Silakan periksa formulir.`;
+        state.notice = `✓ Analisis Teks Berhasil: ${parsed.findings.length} atribut naskah terdeteksi dan diisikan ke formulir.`;
         save();
         render();
+        setTimeout(() => {
+          const formEl = document.getElementById("form");
+          if (formEl) {
+            for (const [k, v] of Object.entries(parsed.patch)) {
+              if (formEl.elements[k]) formEl.elements[k].value = v;
+            }
+          }
+        }, 50);
       };
     }
 
@@ -2388,6 +2686,7 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
       };
     }
 
+
     const form = document.getElementById("form");
     if (form) form.onsubmit = (event) => {
       event.preventDefault();
@@ -2397,7 +2696,11 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
       const next = { ...current, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
       for (const key of ["documentType", "documentNumber", "title", "partnerId", "startDate", "endDate", "status", "facultyId", "programId", "triDharma", "unitId", "activityName", "pic", "partnerSignatory", "partnerSignatoryTitle", "itdelSignatory", "itdelSignatoryTitle", "scope", "location", "budget", "fundingSource", "notes"]) {
         const value = String(data.get(key) ?? "");
-        next[key] = value;
+        if (key === "triDharma") {
+          next.triDharma = parseTri(value);
+        } else {
+          next[key] = value;
+        }
         next.provenance = { ...next.provenance, [key]: next.provenance[key] === "SISTEM" && value === String(current[key] ?? "") ? "SISTEM" : "MANUAL" };
       }
       const order = dateOrderError(next);

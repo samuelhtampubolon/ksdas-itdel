@@ -1,0 +1,27 @@
+{
+  "database_name": "ksdas_itdel_local",
+  "version": "1.2.0-LOKAL",
+  "architecture": "Relational Local Structured System",
+  "tables": [
+    {
+      "name": "ksdas_naskah_kerjasama",
+      "file": "tables/naskah_kerjasama.json",
+      "description": "Dosir naskah perjanjian kerja sama (MoU, PKS, IA)"
+    },
+    {
+      "name": "ksdas_mitra",
+      "file": "tables/mitra_institusi.json",
+      "description": "Direktori master mitra industri, universitas, dan pemerintah"
+    },
+    {
+      "name": "ksdas_fakultas_prodi",
+      "file": "tables/fakultas_prodi.json",
+      "description": "Taksonomi fakultas (FITE, FTI, FB) dan program studi"
+    },
+    {
+      "name": "ksdas_audit_log",
+      "file": "tables/audit_trail_log.json",
+      "description": "Buku log mutasi dan riwayat transaksi sistem"
+    }
+  ]
+}

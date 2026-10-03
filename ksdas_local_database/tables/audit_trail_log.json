@@ -1,0 +1,10 @@
+[
+  {
+    "logId": "INIT-001",
+    "timestamp": "2026-10-03 20:19:11",
+    "actor": "SYSTEM_INSTALLER",
+    "action": "DATABASE_INITIALIZATION",
+    "targetId": "DATABASE_ROOT",
+    "details": "Sistem basis data terstruktur dan terintegrasi lokal KSDAS IT Del berhasil dibangun otomatis di komputer lokal."
+  }
+]

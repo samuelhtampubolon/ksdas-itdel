@@ -1,0 +1,26 @@
+[
+  {
+    "facultyId": "FITE",
+    "facultyName": "Fakultas Informatika dan Teknik Elektro",
+    "programId": "IF",
+    "programName": "S1 Informatika"
+  },
+  {
+    "facultyId": "FITE",
+    "facultyName": "Fakultas Informatika dan Teknik Elektro",
+    "programId": "SI",
+    "programName": "S1 Sistem Informasi"
+  },
+  {
+    "facultyId": "FTI",
+    "facultyName": "Fakultas Teknologi Industri",
+    "programId": "MR",
+    "programName": "S1 Manajemen Rekayasa"
+  },
+  {
+    "facultyId": "FB",
+    "facultyName": "Fakultas Bioteknologi",
+    "programId": "BP",
+    "programName": "S1 Teknik Bioproses"
+  }
+]

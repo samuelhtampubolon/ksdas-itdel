@@ -1,0 +1,50 @@
+[
+  {
+    "id": "TOBA",
+    "name": "Pemerintah Kabupaten Toba",
+    "shortName": "Pemkab Toba",
+    "type": "PEMERINTAH",
+    "city": "Balige",
+    "country": "Indonesia"
+  },
+  {
+    "id": "USU",
+    "name": "Universitas Sumatera Utara",
+    "shortName": "USU",
+    "type": "PERGURUAN_TINGGI",
+    "city": "Medan",
+    "country": "Indonesia"
+  },
+  {
+    "id": "SMKN1_LAGUBOTI",
+    "name": "SMK Negeri 1 Laguboti",
+    "shortName": "SMKN 1 Laguboti",
+    "type": "SEKOLAH",
+    "city": "Laguboti",
+    "country": "Indonesia"
+  },
+  {
+    "id": "DISPAR_SUMUT",
+    "name": "Dinas Kebudayaan dan Pariwisata Provinsi Sumatera Utara",
+    "shortName": "Dispar Sumut",
+    "type": "PEMERINTAH",
+    "city": "Medan",
+    "country": "Indonesia"
+  },
+  {
+    "id": "HUAWEI",
+    "name": "PT Huawei Tech Investment",
+    "shortName": "Huawei",
+    "type": "SWASTA",
+    "city": "Jakarta",
+    "country": "Indonesia"
+  },
+  {
+    "id": "MANDIRI",
+    "name": "PT Bank Mandiri (Persero) Tbk.",
+    "shortName": "Bank Mandiri",
+    "type": "BUMN",
+    "city": "Medan",
+    "country": "Indonesia"
+  }
+]

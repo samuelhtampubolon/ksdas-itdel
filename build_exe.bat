@@ -14,7 +14,7 @@ if not exist "%CSC%" (
 )
 
 echo Mengompilasi desktop-app\KSDAS_DesktopApp.cs menjadi KSDAS_ITDel.exe ...
-"%CSC%" /target:winexe /out:KSDAS_ITDel.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Data.dll /r:System.Web.Extensions.dll desktop-app\KSDAS_DesktopApp.cs
+"%CSC%" /target:winexe /out:KSDAS_ITDel.exe /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Data.dll /r:System.Web.Extensions.dll /r:System.IO.Compression.FileSystem.dll /r:System.IO.Compression.dll desktop-app\KSDAS_DesktopApp.cs
 
 if %ERRORLEVEL% EQU 0 (
     echo.
