@@ -1,5 +1,3 @@
-> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
-
 # KSDAS IT DEL - PANDUAN PENGUJIAN PENERIMAAN (DEMO SCRIPTS)
 
 Dokumen ini memandu pengujian fungsional dan demonstrasi langsung KSDAS IT Del sesuai dengan 4 skenario acceptance criteria:

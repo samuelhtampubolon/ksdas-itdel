@@ -73,3 +73,10 @@ Untuk demonstrasi penyimpanan data persisten lokal di laptop/PC Windows tanpa me
 ## 10 Data Contoh Resmi IT Del
 
 Sistem ini hanya menyertakan tepat 10 naskah contoh terstandar (judul diawali kata "Contoh") dengan mitra resmi seperti Pemkab Toba, Universitas Sumatera Utara (USU), SMK Negeri 1 Laguboti, dan Dinas Pariwisata Sumut. Sistem ini bersih dan bebas dari entitas non-akademik yang tidak relevan.
+
+---
+
+## Lisensi
+
+Proyek ini dilisensikan di bawah lisensi terbuka [MIT License](LICENSE).  
+Hak Cipta (c) 2026 Samuel Hasudungan Tampubolon, Institut Teknologi Del.

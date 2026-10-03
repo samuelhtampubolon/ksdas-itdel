@@ -1,5 +1,3 @@
-> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
-
 # KSDAS IT DEL &bull; PEDOMAN PENJAMINAN MUTU, AUDIT MUTU INTERNAL (AMI), AKREDITASI BAN-PT / LAM-INFOKOM, DAN TATA KELOLA BIRO KERJA SAMA
 **Berdasarkan Regulasi Terkini Republik Indonesia: Permendikbudristek No. 53 Tahun 2023 & IKU 6 Kemendikbudristek**
 

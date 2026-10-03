@@ -1,5 +1,3 @@
-> **Catatan 3 Oktober 2026.** Naskah di bawah ini dari rancangan sebelumnya. Yang berlaku sekarang tidak memakai AI, ML, atau OCR. Ikuti README serta `PANDUAN_UJI_COBA_DOKUMEN_LOKAL.md`, `PANDUAN_DELIVERY_DEPLOYMENT.md`, dan `PANDUAN_INTEGRASI_SDI_TSI.md`.
-
 # KSDAS IT DEL - HUMAN-CENTERED UI/UX DESIGN SYSTEM & ACCESSIBILITY SPECIFICATION
 ## Versi 0.3 &bull; Spesifikasi Desain Antarmuka, Pengalaman Pengguna & Faktor Manusia
 
@@ -90,7 +88,7 @@ KSDAS IT Del (Sidebar Navigation)
 │   ├── Analitik Eksekutif       (Tabulasi Silang, Expiry Timeline, Analisis Kesenjangan MoU)
 │   ├── Akreditasi & AMI         (Pemetaan Instrumen BAN-PT, LAM-INFOKOM & Verifikasi Bukti)
 │   ├── Generator Laporan        (Wizard Pembuatan Laporan Resmi & Paket Bukti Siap Cetak)
-│   └── Pencarian Cerdas         (Natural Language Query Copilot Bahasa Indonesia)
+│   └── Pencarian Cerdas         (Natural Language Query Mesin Telusur Bahasa Indonesia)
 └── 4. SISTEM & TATA KELOLA
     ├── Audit Trail              (Log Transaksi Mutlak Sistem & Riwayat Koreksi Staf)
     └── Pengaturan & Cadangan    (Ekspor/Impor JSON, Reset Data Demo, Panduan Handoff)
