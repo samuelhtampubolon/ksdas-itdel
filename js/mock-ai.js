@@ -61,7 +61,7 @@ class KSDASMockAI {
     );
 
     // Assembly
-    const docId = "DOC-AI-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    const docId = "DOC-EXTRACT-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     const documentEntity = {
       id: docId,
       batchId: fileObj.batchId || "BATCH-" + new Date().getFullYear(),
@@ -98,6 +98,25 @@ class KSDASMockAI {
       studyProgramId: fieldExtractions.study_program.value,
       internalUnitId: fieldExtractions.internal_unit.value,
       triDharma: fieldExtractions.tri_dharma.value,
+
+      // Multi-Entities & Multi-Tagging (Fakultas, Prodi, WR, Unit, TriDharma)
+      faculties: fieldExtractions.faculties?.value || [fieldExtractions.faculty.value],
+      studyPrograms: fieldExtractions.study_programs?.value || [fieldExtractions.study_program.value],
+      viceRectors: fieldExtractions.vice_rectors?.value || ["WR3"],
+      internalUnits: fieldExtractions.internal_units?.value || [fieldExtractions.internal_unit.value],
+      triDharmaList: fieldExtractions.tri_dharma_list?.value || [fieldExtractions.tri_dharma.value],
+
+      // 10 Indikator & Metadata Akreditasi SPM/AMI
+      geoLevel: fieldExtractions.geo_level?.value || "NASIONAL",
+      fieldRelevance: fieldExtractions.field_relevance?.value || "SANGAT_RELEVAN",
+      pddiktiStatus: fieldExtractions.pddikti_status?.value || "SUDAH_DILAPORKAN",
+      pddiktiNumber: fieldExtractions.pddikti_number?.value || `PDDIKTI/2026/REG/${Math.floor(1000 + Math.random() * 9000)}`,
+      mbkmSupport: fieldExtractions.mbkm_support?.value || "YA",
+      mbkmActivityTypes: fieldExtractions.mbkm_activity_types?.value || "Magang Bersertifikat, Pembelajaran Luar Kampus Terstruktur",
+      followUpStatus: fieldExtractions.follow_up_status?.value || "PROGRAM_BERJALAN",
+      mediaPublication: fieldExtractions.media_publication?.value || "Publikasi pada Portal Resmi Institut Teknologi Del (del.ac.id)",
+      monevStatus: fieldExtractions.monev_status?.value || "TEREVALUASI_MEMUASKAN",
+      dtpsInvolvement: fieldExtractions.dtps_involvement?.value || "4 Dosen Tetap Program Studi (Koordinator & Tim)",
 
       // Activity, Output, Impact
       activityName: fieldExtractions.activity_name.value,
@@ -516,6 +535,45 @@ class KSDASMockAI {
       source_text: "Rencana tindak lanjut",
       extraction_method: "NLP_INFERENCE"
     };
+
+    // 27-31. Multi-Entities
+    let multiEnt = { faculties: [facultyVal], studyPrograms: [prodiVal], viceRectors: ["WR3"], internalUnits: [unitVal], triDharmaList: [triVal] };
+    if (typeof window !== "undefined" && window.KSDASVerifier && typeof window.KSDASVerifier.detectMultiEntities === "function") {
+      multiEnt = window.KSDASVerifier.detectMultiEntities(content, fileName);
+    }
+    res.faculties = { value: multiEnt.faculties, confidence: 0.95, source_text: multiEnt.faculties.join(", "), extraction_method: "MULTI_ENTITY_DETECTOR" };
+    res.study_programs = { value: multiEnt.studyPrograms, confidence: 0.95, source_text: multiEnt.studyPrograms.join(", "), extraction_method: "MULTI_ENTITY_DETECTOR" };
+    res.vice_rectors = { value: multiEnt.viceRectors, confidence: 0.95, source_text: multiEnt.viceRectors.join(", "), extraction_method: "MULTI_ENTITY_DETECTOR" };
+    res.internal_units = { value: multiEnt.internalUnits, confidence: 0.95, source_text: multiEnt.internalUnits.join(", "), extraction_method: "MULTI_ENTITY_DETECTOR" };
+    res.tri_dharma_list = { value: multiEnt.triDharmaList, confidence: 0.95, source_text: multiEnt.triDharmaList.join(", "), extraction_method: "MULTI_ENTITY_DETECTOR" };
+
+    // 32-41. 10 Parameter Akreditasi & SPM / AMI (Lengkap & Terverifikasi)
+    let accredParams = {
+      geoLevel: (countryVal !== "Indonesia" || content.toLowerCase().includes("malaysia") || content.toLowerCase().includes("huawei")) ? "INTERNASIONAL" : (content.toLowerCase().includes("sumut") ? "WILAYAH_LOKAL" : "NASIONAL"),
+      fieldRelevance: "SANGAT_RELEVAN",
+      pddiktiStatus: "SUDAH_DILAPORKAN",
+      pddiktiNumber: `PDDIKTI/2026/REG/${Math.floor(1000 + Math.random() * 9000)}`,
+      mbkmSupport: "YA",
+      mbkmActivityTypes: "Magang Bersertifikat, Pembelajaran Luar Kampus Terstruktur",
+      followUpStatus: docType === "MOU_LOI" ? "TERWUJUD_PKS" : (docType === "PKS_MOA" ? "TERWUJUD_IA" : "PROGRAM_BERJALAN"),
+      mediaPublication: "Publikasi pada Portal Resmi Institut Teknologi Del (del.ac.id) & Media Sosial Resmi",
+      monevStatus: "TEREVALUASI_MEMUASKAN",
+      dtpsInvolvement: "4 Dosen Tetap Program Studi (Koordinator & Tim)"
+    };
+    if (typeof window !== "undefined" && window.KSDASVerifier && typeof window.KSDASVerifier.detectAccreditationParameters === "function") {
+      accredParams = window.KSDASVerifier.detectAccreditationParameters(content, fileName, partnerObj.partnerName);
+    }
+
+    res.geo_level = { value: accredParams.geoLevel, confidence: 0.95, source_text: accredParams.geoLevel, extraction_method: "HEURISTIC_PARSER" };
+    res.field_relevance = { value: accredParams.fieldRelevance, confidence: 0.95, source_text: accredParams.fieldRelevance, extraction_method: "HEURISTIC_PARSER" };
+    res.pddikti_status = { value: accredParams.pddiktiStatus, confidence: 0.94, source_text: accredParams.pddiktiStatus, extraction_method: "PDDIKTI_VALIDATOR" };
+    res.pddikti_number = { value: accredParams.pddiktiNumber, confidence: 0.94, source_text: accredParams.pddiktiNumber, extraction_method: "PDDIKTI_VALIDATOR" };
+    res.mbkm_support = { value: accredParams.mbkmSupport, confidence: 0.95, source_text: accredParams.mbkmSupport, extraction_method: "MBKM_CLASSIFIER" };
+    res.mbkm_activity_types = { value: accredParams.mbkmActivityTypes, confidence: 0.92, source_text: accredParams.mbkmActivityTypes, extraction_method: "MBKM_CLASSIFIER" };
+    res.follow_up_status = { value: accredParams.followUpStatus, confidence: 0.93, source_text: accredParams.followUpStatus, extraction_method: "LIFECYCLE_TRACKER" };
+    res.media_publication = { value: accredParams.mediaPublication, confidence: 0.91, source_text: accredParams.mediaPublication, extraction_method: "MEDIA_VERIFIER" };
+    res.monev_status = { value: accredParams.monevStatus, confidence: 0.94, source_text: accredParams.monevStatus, extraction_method: "MONEV_ENGINE" };
+    res.dtps_involvement = { value: accredParams.dtpsInvolvement, confidence: 0.92, source_text: accredParams.dtpsInvolvement, extraction_method: "DTPS_CALCULATOR" };
 
     return res;
   }

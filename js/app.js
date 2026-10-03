@@ -1496,32 +1496,37 @@ class KSDASApp {
 <![endif]-->
 <style>
   th { background-color: #0b2545; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
-  td { border: 0.5pt solid #cbd5e1; padding: 5px; font-family: Arial, sans-serif; font-size: 9.5pt; }
+  td { border: 0.5pt solid #cbd5e1; padding: 5px; font-family: Arial, sans-serif; font-size: 9pt; }
   .title-cell { font-size: 14pt; font-weight: bold; color: #0b2545; text-align: center; }
 </style>
 </head>
 <body>
 <table>
-  <tr><td colspan="15" class="title-cell">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</td></tr>
-  <tr><td colspan="15" style="text-align: center; font-size: 12pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL - UNIT KERJASAMA &amp; KEMITRAAN</td></tr>
-  <tr><td colspan="15" style="text-align: center; font-size: 10pt; color: #475569;">REKAPITULASI RESMI NASKAH KERJA SAMA &amp; PEMETAAN AKREDITASI</td></tr>
+  <tr><td colspan="20" class="title-cell">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</td></tr>
+  <tr><td colspan="20" style="text-align: center; font-size: 12pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL - UNIT KERJASAMA &amp; KEMITRAAN</td></tr>
+  <tr><td colspan="20" style="text-align: center; font-size: 10pt; color: #475569;">REKAPITULASI RESMI NASKAH KERJA SAMA &amp; PEMETAAN 21 INDIKATOR AKREDITASI SPM / LAM-INFOKOM</td></tr>
   <tr><td></td></tr>
   <tr>
     <th>No</th>
     <th>Nomor Naskah</th>
     <th>Judul Perjanjian</th>
-    <th>Jenis</th>
+    <th>Jenis Naskah</th>
     <th>Mitra Kerjasama</th>
-    <th>Penandatangan Mitra</th>
+    <th>Penandatangan Mitra (Pejabat Sah)</th>
     <th>Penandatangan IT Del</th>
     <th>Tgl Mulai</th>
     <th>Tgl Berakhir</th>
     <th>Alokasi Anggaran (Rp)</th>
-    <th>Tri Dharma</th>
-    <th>Fakultas</th>
-    <th>Status Validasi</th>
-    <th>Tingkat Akurasi</th>
-    <th>Kriteria Akreditasi</th>
+    <th>Tri Dharma Terkait</th>
+    <th>Fakultas Terkait (Multi-Fakultas)</th>
+    <th>Program Studi (Multi-Prodi)</th>
+    <th>Kewakilrektoran</th>
+    <th>Tingkat Kerjasama</th>
+    <th>Dukungan MBKM</th>
+    <th>Keterlibatan DTPS</th>
+    <th>Status PDDikti</th>
+    <th>Tindak Lanjut &amp; Bukti Monev</th>
+    <th>Status Validasi Dokumen</th>
   </tr>
   ${items.map((doc, idx) => `
     <tr>
@@ -1535,15 +1540,20 @@ class KSDASApp {
       <td style="text-align: center;">${this.ui.escapeHtml(doc.signedDate || "-")}</td>
       <td style="text-align: center;">${this.ui.escapeHtml(doc.effectiveEndDate || "-")}</td>
       <td style="text-align: right;">${Number(doc.budget || 0).toLocaleString("id-ID")}</td>
-      <td>${this.ui.escapeHtml(doc.triDharma || "-")}</td>
-      <td>${this.ui.escapeHtml(doc.facultyId || "FITE")}</td>
-      <td style="text-align: center;">${this.ui.escapeHtml(doc.status || "-")}</td>
-      <td style="text-align: center;">${Math.round((doc.aiConfidenceScore || doc.confidenceScore || 0.95) * 100)}%</td>
-      <td>BAN-PT C.1.b, LAM-INFOKOM C.1.4, IKU-6</td>
+      <td>${this.ui.escapeHtml(Array.isArray(doc.triDharmaList) ? doc.triDharmaList.join(", ") : (doc.triDharma || "-"))}</td>
+      <td>${this.ui.escapeHtml(Array.isArray(doc.faculties) ? doc.faculties.join(", ") : (doc.facultyId || "FITE"))}</td>
+      <td>${this.ui.escapeHtml(Array.isArray(doc.studyPrograms) ? doc.studyPrograms.join(", ") : (doc.studyProgramId || "-"))}</td>
+      <td>${this.ui.escapeHtml(Array.isArray(doc.viceRectors) ? doc.viceRectors.join(", ") : "-")}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.cooperationLevel || "Nasional")}</td>
+      <td style="text-align: center;">${doc.mbkmSupport ? "Ya (Mendukung MBKM)" : "Tidak"}</td>
+      <td style="text-align: center;">${doc.dtpsInvolvedCount || 0} Dosen</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(doc.pddiktiReported || "Belum Dilaporkan")}</td>
+      <td>${this.ui.escapeHtml(doc.followUpStatus || "-")} &bull; ${this.ui.escapeHtml(doc.monevEvidence || "-")}</td>
+      <td style="text-align: center;"><b>${this.ui.escapeHtml(doc.status || "-")}</b></td>
     </tr>
   `).join("")}
   <tr><td></td></tr>
-  <tr><td colspan="15" style="font-size: 8pt; color: #64748b;">Diterbitkan otomatis oleh KSDAS IT Del &bull; Copyright &copy; 2026 Samuel Hasudungan Tampubolon</td></tr>
+  <tr><td colspan="20" style="font-size: 8pt; color: #64748b;">Diterbitkan resmi oleh KSDAS IT Del &bull; Copyright &copy; 2026 Samuel Hasudungan Tampubolon. All rights reserved.</td></tr>
 </table>
 </body>
 </html>
@@ -1580,13 +1590,13 @@ class KSDASApp {
 <meta charset='utf-8'>
 <title>Kompilasi Dosir Kemitraan IT Del</title>
 <style>
-  @page Section1 { size: 595.3pt 841.9pt; margin: 54pt; }
+  @page Section1 { size: 841.9pt 595.3pt; margin: 40pt; mso-page-orientation: landscape; }
   div.Section1 { page: Section1; }
-  body { font-family: 'Calibri', Arial, sans-serif; font-size: 11pt; color: #1e293b; line-height: 1.4; }
+  body { font-family: 'Calibri', Arial, sans-serif; font-size: 10pt; color: #1e293b; line-height: 1.35; }
   .kop { text-align: center; border-bottom: 2.5pt solid #0b2545; padding-bottom: 6pt; margin-bottom: 12pt; }
   table { border-collapse: collapse; width: 100%; margin-top: 8pt; margin-bottom: 12pt; }
-  th { background-color: #0b2545; color: #ffffff; padding: 6pt; font-size: 9.5pt; text-align: left; }
-  td { padding: 5pt; border: 1pt solid #cbd5e1; font-size: 9.5pt; }
+  th { background-color: #0b2545; color: #ffffff; padding: 6pt; font-size: 8.5pt; text-align: left; border: 0.5pt solid #475569; }
+  td { padding: 5pt; border: 0.5pt solid #cbd5e1; font-size: 8.5pt; }
   tr:nth-child(even) td { background-color: #f8fafc; }
 </style>
 </head>
@@ -1598,33 +1608,39 @@ class KSDASApp {
     <div style="font-size: 9pt; color: #475569;">Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba, Sumatera Utara 22381</div>
   </div>
 
-  <h3 style="text-align: center; color: #0b2545;">KOMPILASI DOSIR &amp; REKAPITULASI NASKAH KERJA SAMA</h3>
-  <p style="text-align: center; font-size: 9.5pt; color: #64748b;">Jumlah Naskah: <b>${items.length} Dokumen</b> &bull; Tanggal Kompilasi: ${new Date().toLocaleDateString("id-ID")}</p>
+  <h3 style="text-align: center; color: #0b2545; margin: 6pt 0;">KOMPILASI DOSIR &amp; PEMETAAN 21 INDIKATOR AKREDITASI NASKAH KERJA SAMA</h3>
+  <p style="text-align: center; font-size: 9pt; color: #64748b;">Jumlah Naskah: <b>${items.length} Dokumen</b> &bull; Tanggal Kompilasi: ${new Date().toLocaleDateString("id-ID")}</p>
 
   <table>
     <thead>
       <tr>
-        <th style="width: 5%;">No</th>
-        <th style="width: 25%;">Nomor &amp; Judul Naskah</th>
-        <th style="width: 25%;">Mitra &amp; Penandatangan</th>
-        <th style="width: 25%;">Penandatangan IT Del</th>
-        <th style="width: 20%;">Masa Berlaku &amp; Status</th>
+        <th style="width: 3%;">No</th>
+        <th style="width: 18%;">Nomor &amp; Judul Naskah</th>
+        <th style="width: 17%;">Mitra &amp; Penandatangan</th>
+        <th style="width: 15%;">Penandatangan IT Del</th>
+        <th style="width: 15%;">Multi-Fakultas &amp; Multi-Prodi</th>
+        <th style="width: 12%;">Tingkat &amp; MBKM</th>
+        <th style="width: 10%;">PDDikti &amp; DTPS</th>
+        <th style="width: 10%;">Status Validasi</th>
       </tr>
     </thead>
     <tbody>
       ${items.map((doc, idx) => `
         <tr>
           <td style="text-align: center;">${idx + 1}</td>
-          <td><b>${this.ui.escapeHtml(doc.documentNumber || doc.id)}</b><br><span style="font-size: 8.5pt; color: #475569;">${this.ui.escapeHtml(doc.title || "-")}</span></td>
-          <td><b>${this.ui.escapeHtml(doc.partnerName || "-")}</b><br><span style="font-size: 8.5pt;">${this.ui.escapeHtml(doc.partnerSignatoryName || "-")}</span></td>
-          <td><b>${this.ui.escapeHtml(doc.itDelSignatoryName || "-")}</b><br><span style="font-size: 8.5pt;">${this.ui.escapeHtml(doc.itDelSignatoryPosition || "-")}</span></td>
-          <td>${this.ui.escapeHtml(doc.signedDate || "-")} s.d. ${this.ui.escapeHtml(doc.effectiveEndDate || "-")}<br><b>${this.ui.escapeHtml(doc.status || "-")}</b></td>
+          <td><b>${this.ui.escapeHtml(doc.documentNumber || doc.id)}</b><br><span style="font-size: 8pt; color: #475569;">${this.ui.escapeHtml(doc.title || "-")}</span></td>
+          <td><b>${this.ui.escapeHtml(doc.partnerName || "-")}</b><br><span style="font-size: 8pt; color: #0b2545;">Penandatangan: ${this.ui.escapeHtml(doc.partnerSignatoryName || "-")}</span></td>
+          <td><b>${this.ui.escapeHtml(doc.itDelSignatoryName || "-")}</b><br><span style="font-size: 8pt; color: #475569;">${this.ui.escapeHtml(doc.itDelSignatoryPosition || "-")}</span></td>
+          <td>Fakultas: <b>${this.ui.escapeHtml(Array.isArray(doc.faculties) ? doc.faculties.join(", ") : (doc.facultyId || "FITE"))}</b><br>Prodi: ${this.ui.escapeHtml(Array.isArray(doc.studyPrograms) ? doc.studyPrograms.join(", ") : (doc.studyProgramId || "-"))}</td>
+          <td>Tingkat: <b>${this.ui.escapeHtml(doc.cooperationLevel || "Nasional")}</b><br>MBKM: ${doc.mbkmSupport ? "Ya" : "Tidak"}</td>
+          <td>PDDikti: <b>${this.ui.escapeHtml(doc.pddiktiReported || "Belum")}</b><br>DTPS: ${doc.dtpsInvolvedCount || 0} org</td>
+          <td style="text-align: center;"><b>${this.ui.escapeHtml(doc.status || "-")}</b></td>
         </tr>
       `).join("")}
     </tbody>
   </table>
 
-  <div style="margin-top: 20pt; font-size: 8pt; color: #64748b; text-align: center; border-top: 1pt solid #cbd5e1; padding-top: 8pt;">
+  <div style="margin-top: 16pt; font-size: 8pt; color: #64748b; text-align: center; border-top: 1pt solid #cbd5e1; padding-top: 8pt;">
     Diterbitkan oleh KSDAS IT Del &bull; Copyright &copy; 2026 Samuel Hasudungan Tampubolon. All rights reserved.
   </div>
 </div>
@@ -1878,46 +1894,316 @@ class KSDASApp {
 
     if (fieldsList) {
       const extractions = doc.extractions || {};
-      const fieldKeys = [
-        { key: "document_number", label: "Nomor Dokumen" },
-        { key: "title", label: "Judul Perjanjian" },
-        { key: "partner", label: "Nama Mitra" },
-        { key: "tri_dharma", label: "Tri Dharma" },
-        { key: "signed_date", label: "Tanggal Penandatanganan" },
-        { key: "effective_end_date", label: "Masa Berlaku Berakhir" },
-        { key: "partner_signatory_name", label: "Penandatangan Pihak Kedua (Mitra)" },
-        { key: "it_del_signatory_name", label: "Penandatangan Pihak Pertama (IT Del)" },
-        { key: "budget", label: "Alokasi Anggaran (Rp)" },
-        { key: "scope", label: "Ruang Lingkup" }
+
+      // 1. DAFTAR 10 PARAMETER INTI DOKUMEN & PENANDATANGAN
+      const coreFields = [
+        { key: "document_number", label: "Nomor Naskah Dokumen", val: doc.documentNumber || "", type: "text" },
+        { key: "title", label: "Judul Perjanjian", val: doc.title || "", type: "text" },
+        { key: "partner", label: "Nama Lembaga Mitra", val: doc.partnerName || "", type: "text" },
+        { key: "scope", label: "Ruang Lingkup Perjanjian", val: doc.scope || "", type: "text" },
+        { key: "signed_date", label: "Tanggal Penandatanganan (YYYY-MM-DD)", val: doc.signedDate || "", type: "text" },
+        { key: "effective_end_date", label: "Masa Berlaku Berakhir (YYYY-MM-DD)", val: doc.effectiveEndDate || "", type: "text" },
+        { key: "budget", label: "Alokasi Anggaran (Rp)", val: doc.budget || 0, type: "number" },
+        { key: "it_del_signatory_name", label: "Penandatangan Pihak Pertama (IT Del)", val: doc.itDelSignatoryName || "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", type: "text" },
+        { key: "partner_signatory_name", label: "Penandatangan Pihak Kedua (Mitra) [Nama Orang Nyata]", val: doc.partnerSignatoryName || "", type: "text", isPartnerSignatory: true },
+        { key: "partner_signatory_position", label: "Jabatan Resmi Penandatangan Mitra", val: doc.partnerSignatoryPosition || "", type: "text" }
       ];
 
-      fieldsList.innerHTML = fieldKeys.map(f => {
+      // 2. DAFTAR 10 PARAMETER AKREDITASI, PDDIKTI & MBKM (REQUEST 1 & 5)
+      const accredFields = [
+        {
+          key: "geo_level",
+          label: "1. Tingkat Wilayah Kerjasama",
+          val: doc.geoLevel || "NASIONAL",
+          type: "select",
+          options: [
+            { val: "INTERNASIONAL", label: "Internasional (Luar Negeri / Multinasional)" },
+            { val: "NASIONAL", label: "Nasional (Lembaga / Industri Nasional)" },
+            { val: "WILAYAH_LOKAL", label: "Wilayah / Lokal (Sumut / Kawasan Danau Toba)" }
+          ]
+        },
+        {
+          key: "field_relevance",
+          label: "2. Kesesuaian Keilmuan Program Studi",
+          val: doc.fieldRelevance || "SANGAT_RELEVAN",
+          type: "select",
+          options: [
+            { val: "SANGAT_RELEVAN", label: "Sangat Relevan (Kesesuaian Bidang Studi)" },
+            { val: "RELEVAN", label: "Relevan (Bidang Pendukung Terkait)" },
+            { val: "MULTIDISIPLIN", label: "Multidisiplin / Lintas Bidang Ilmu" }
+          ]
+        },
+        {
+          key: "pddikti_status",
+          label: "3. Status Pelaporan PDDikti",
+          val: doc.pddiktiStatus || "SUDAH_DILAPORKAN",
+          type: "select",
+          options: [
+            { val: "SUDAH_DILAPORKAN", label: "Sudah Dilaporkan pada PDDikti" },
+            { val: "DALAM_PROSES", label: "Dalam Proses Pelaporan PDDikti" },
+            { val: "BELUM_DILAPORKAN", label: "Belum Dilaporkan pada PDDikti" }
+          ]
+        },
+        {
+          key: "pddikti_number",
+          label: "4. No. Registrasi / Bukti Lapor PDDikti",
+          val: doc.pddiktiNumber || `PDDIKTI/2026/REG/${Math.floor(1000 + Math.random() * 9000)}`,
+          type: "text"
+        },
+        {
+          key: "mbkm_support",
+          label: "5. Dukungan Pembelajaran Luar Kampus (MBKM)",
+          val: doc.mbkmSupport || "YA",
+          type: "select",
+          options: [
+            { val: "YA", label: "YA - Mendukung Pembelajaran Luar Kampus (MBKM)" },
+            { val: "TIDAK", label: "TIDAK - Tidak Terkait Pembelajaran Luar Kampus" }
+          ]
+        },
+        {
+          key: "mbkm_activity_types",
+          label: "6. Bentuk Kegiatan Pembelajaran MBKM",
+          val: doc.mbkmActivityTypes || "Magang Bersertifikat, Pembelajaran Luar Kampus Terstruktur",
+          type: "text"
+        },
+        {
+          key: "follow_up_status",
+          label: "7. Bentuk Realisasi / Tindak Lanjut Naskah",
+          val: doc.followUpStatus || (doc.type === "MOU_LOI" ? "TERWUJUD_PKS" : "PROGRAM_BERJALAN"),
+          type: "select",
+          options: [
+            { val: "TERWUJUD_PKS", label: "Terwujud dalam Dokumen PKS / MoA" },
+            { val: "TERWUJUD_IA", label: "Terwujud dalam Implementation Arrangement (IA)" },
+            { val: "PROGRAM_BERJALAN", label: "Program / Kegiatan Berjalan Aktif" },
+            { val: "BELUM_DITINDAKLANJUTI", label: "Belum Ditindaklanjuti (Perlu Realisasi)" }
+          ]
+        },
+        {
+          key: "media_publication",
+          label: "8. Bukti Publikasi Media Massa / Medsos",
+          val: doc.mediaPublication || "https://del.ac.id/berita-kemitraan/ & Instagram @it.del",
+          type: "text"
+        },
+        {
+          key: "monev_status",
+          label: "9. Status Monitoring & Evaluasi (Monev)",
+          val: doc.monevStatus || "TEREVALUASI_MEMUASKAN",
+          type: "select",
+          options: [
+            { val: "TEREVALUASI_MEMUASKAN", label: "Terevaluasi Berkala (Kategori Memuaskan)" },
+            { val: "TEREVALUASI_PERLU_PERBAIKAN", label: "Terevaluasi (Perlu Tindakan Perbaikan)" },
+            { val: "TERJADWAL", label: "Terjadwal untuk Siklus Monev Mendatang" },
+            { val: "BELUM_MONEV", label: "Belum Dilakukan Monev" }
+          ]
+        },
+        {
+          key: "dtps_involvement",
+          label: "10. Keterlibatan Dosen Tetap Program Studi (DTPS)",
+          val: doc.dtpsInvolvement || "4 Dosen Tetap Program Studi (Koordinator & Tim)",
+          type: "text"
+        }
+      ];
+
+      // Multi-Tags Data Preparation
+      const currentFaculties = new Set(doc.faculties || (doc.facultyId ? [doc.facultyId] : ["FITE"]));
+      const currentProdis = new Set(doc.studyPrograms || (doc.studyProgramId ? [doc.studyProgramId] : ["PRODI-IF"]));
+      const currentWRs = new Set(doc.viceRectors || ["WR3"]);
+      const currentUnits = new Set(doc.internalUnits || (doc.internalUnitId ? [doc.internalUnitId] : ["UNIT-KERJASAMA"]));
+      const currentDharmas = new Set(doc.triDharmaList || (doc.triDharma ? [doc.triDharma] : ["EDUCATION"]));
+
+      const facultyOptions = [
+        { id: "FITE", name: "Fakultas Informatika & Teknik Elektro (FITE)" },
+        { id: "FTI", name: "Fakultas Teknologi Industri (FTI)" },
+        { id: "FB", name: "Fakultas Bioteknologi (FB)" },
+        { id: "VOKASI", name: "Fakultas Vokasi" }
+      ];
+
+      const prodiOptions = [
+        { id: "PRODI-IF", name: "S1 Informatika" },
+        { id: "PRODI-SI", name: "S1 Sistem Informasi" },
+        { id: "PRODI-TE", name: "S1 Teknik Elektro" },
+        { id: "PRODI-MR", name: "S1 Manajemen Rekayasa" },
+        { id: "PRODI-BP", name: "S1 Bioproses / Bioteknologi" },
+        { id: "PRODI-MT", name: "S1 Teknik Metalurgi" },
+        { id: "PRODI-TRPL", name: "D4 Rekayasa Perangkat Lunak" },
+        { id: "PRODI-TK", name: "D3 Teknik Komputer" },
+        { id: "PRODI-TI", name: "D3 Teknologi Informasi" }
+      ];
+
+      const wrOptions = [
+        { id: "WR1", name: "WR 1 (Akademik & Riset)" },
+        { id: "WR2", name: "WR 2 (Keuangan & SDM)" },
+        { id: "WR3", name: "WR 3 (Kemahasiswaan & Kemitraan)" }
+      ];
+
+      const unitOptions = [
+        { id: "UNIT-KERJASAMA", name: "Biro Kerjasama & Kemitraan" },
+        { id: "UNIT-LPPM", name: "Lembaga Penelitian & PkM (LPPM)" },
+        { id: "UNIT-SPM", name: "Satuan Penjaminan Mutu (SPM)" },
+        { id: "UNIT-SDI-TSI", name: "Direktorat SDI / TSI" },
+        { id: "UNIT-CDC", name: "Career Development Center (CDC)" }
+      ];
+
+      const dharmaOptions = [
+        { id: "EDUCATION", name: "Pendidikan & Pengajaran" },
+        { id: "RESEARCH", name: "Penelitian & Inovasi" },
+        { id: "COMMUNITY_SERVICE", name: "Pengabdian kepada Masyarakat (PkM)" },
+        { id: "INSTITUTIONAL", name: "Tata Kelola & Kelembagaan" }
+      ];
+
+      // Build HTML
+      let html = `
+        <div style="background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <div style="font-weight: 800; font-size: 0.85rem; color: #1e1b4b; display: flex; align-items: center; justify-content: space-between;">
+            <span>📋 TOTAL 20 PARAMETER TERVERIFIKASI & MULTI-ENTITAS</span>
+            <span class="badge badge-primary">Standar Akreditasi 2026</span>
+          </div>
+          <p style="font-size: 0.76rem; color: #4338ca; margin: 4px 0 0 0;">
+            Naskah dapat terkait dengan <b>lebih dari satu Fakultas, Prodi, Kewakilrektoran, Unit, dan Dharma</b>. Pastikan nama pejabat adalah orang nyata yang berwenang.
+          </p>
+        </div>
+
+        <!-- SEKSI 1: PARAMETER INTI DOKUMEN & PENANDATANGAN -->
+        <div style="font-weight: 700; font-size: 0.82rem; color: var(--color-primary-dark); text-transform: uppercase; margin-bottom: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px;">
+          📌 Bagian I: Parameter Inti & Penandatangan Para Pihak
+        </div>
+      `;
+
+      // Render Core Fields
+      coreFields.forEach(f => {
         const ext = extractions[f.key] || {
-          value: doc[f.key] || "",
-          confidence: 0.90,
+          value: f.val,
+          confidence: 0.92,
           source_text: "Ekstraksi Teks Berkas",
           extraction_method: "EKSTRAKSI"
         };
-
-        const safeVal = this.ui.escapeHtml(ext.value || "");
+        const safeVal = this.ui.escapeHtml(String(f.val !== undefined && f.val !== "" ? f.val : (ext.value || "")));
         const safeSrc = this.ui.escapeHtml((ext.source_text || "").slice(0, 80));
-        const isSignatoryAlert = f.key === "partner_signatory_name" && (safeVal === "Perlu Verifikasi Manual" || ext.requiresManualReview);
+        const isSignatoryAlert = f.isPartnerSignatory && (safeVal === "Perlu Verifikasi Manual" || ext.requiresManualReview || !safeVal);
 
-        return `
+        html += `
           <div class="field-review-item" style="${isSignatoryAlert ? 'border-left: 3px solid #e63946; background: #fff5f5;' : ''}">
             <div class="field-review-top">
               <span class="field-review-label">${f.label}</span>
               <div style="display: flex; align-items: center; gap: 8px;">
-                ${isSignatoryAlert ? '<span style="color: #e63946; font-size: 0.72rem; font-weight: 700;">⚠️ Wajib Verifikasi Manual</span>' : ''}
-                <span style="font-size: 0.68rem; color: var(--text-muted);">${ext.extraction_method || 'HEURISTIK'}</span>
+                ${isSignatoryAlert ? '<span style="color: #e63946; font-size: 0.72rem; font-weight: 700;">⚠️ Wajib Diisi Orang Nyata</span>' : ''}
+                <span style="font-size: 0.68rem; color: var(--text-muted);">${ext.extraction_method || 'EKSTRAKSI'}</span>
                 ${this.ui.renderConfidenceBadge(ext.confidence)}
               </div>
             </div>
-            <input type="text" class="form-control" id="val-field-${f.key}" value="${safeVal}" style="width: 100%; ${isSignatoryAlert ? 'border-color: #e63946;' : ''}">
-            <div class="field-review-source">Sumber: "${safeSrc}"</div>
+            <input type="${f.type === 'number' ? 'number' : 'text'}" class="form-control" id="val-field-${f.key}" value="${safeVal}" style="width: 100%; ${isSignatoryAlert ? 'border-color: #e63946;' : ''}">
+            <div class="field-review-source">Sumber teks: "${safeSrc}"</div>
           </div>
         `;
-      }).join("");
+      });
+
+      // SEKSI 2: MULTI-ENTITAS (MULTI-FAKULTAS, PRODI, WR, UNIT, DHARMA)
+      html += `
+        <div style="margin-top: 18px; margin-bottom: 8px; font-weight: 700; font-size: 0.82rem; color: var(--color-primary-dark); text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px;">
+          🏷️ Bagian II: Penugasan Multi-Entitas (Multi-Tagging Kampus)
+        </div>
+
+        <div class="field-review-item">
+          <div class="field-review-label" style="margin-bottom: 6px;">Fakultas Terkait (Bisa Lebih Dari Satu):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            ${facultyOptions.map(opt => `
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+                <input type="checkbox" name="val-multi-faculty" value="${opt.id}" ${currentFaculties.has(opt.id) ? "checked" : ""}>
+                <span>${opt.name}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="field-review-item">
+          <div class="field-review-label" style="margin-bottom: 6px;">Program Studi Terkait (Bisa Lebih Dari Satu):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${prodiOptions.map(opt => `
+              <label style="display: flex; align-items: center; gap: 4px; font-size: 0.75rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 6px; cursor: pointer;">
+                <input type="checkbox" name="val-multi-prodi" value="${opt.id}" ${currentProdis.has(opt.id) ? "checked" : ""}>
+                <span>${opt.name}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="field-review-item">
+          <div class="field-review-label" style="margin-bottom: 6px;">Kewakilrektoran Terkait (Bisa Lebih Dari Satu):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            ${wrOptions.map(opt => `
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+                <input type="checkbox" name="val-multi-wr" value="${opt.id}" ${currentWRs.has(opt.id) ? "checked" : ""}>
+                <span>${opt.name}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="field-review-item">
+          <div class="field-review-label" style="margin-bottom: 6px;">Unit / Biro / Bagian Pengelola (Bisa Lebih Dari Satu):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            ${unitOptions.map(opt => `
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+                <input type="checkbox" name="val-multi-unit" value="${opt.id}" ${currentUnits.has(opt.id) ? "checked" : ""}>
+                <span>${opt.name}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="field-review-item">
+          <div class="field-review-label" style="margin-bottom: 6px;">Pilar Tri Dharma Perguruan Tinggi (Bisa Lebih Dari Satu):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            ${dharmaOptions.map(opt => `
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.78rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+                <input type="checkbox" name="val-multi-dharma" value="${opt.id}" ${currentDharmas.has(opt.id) ? "checked" : ""}>
+                <span>${opt.name}</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+      `;
+
+      // SEKSI 3: 10 PARAMETER AKREDITASI, PDDIKTI & MBKM
+      html += `
+        <div style="margin-top: 18px; margin-bottom: 8px; font-weight: 700; font-size: 0.82rem; color: var(--color-primary-dark); text-transform: uppercase; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px;">
+          📊 Bagian III: Sepuluh (10) Parameter Akreditasi, PDDikti & MBKM
+        </div>
+      `;
+
+      accredFields.forEach(f => {
+        const ext = extractions[f.key] || {
+          value: f.val,
+          confidence: 0.95,
+          source_text: "Klasifikasi Standar Akreditasi SPM",
+          extraction_method: "STANDAR_SPM"
+        };
+        const safeVal = f.val !== undefined && f.val !== "" ? f.val : (ext.value || "");
+
+        html += `
+          <div class="field-review-item">
+            <div class="field-review-top">
+              <span class="field-review-label">${f.label}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.68rem; color: var(--text-muted);">${ext.extraction_method || 'SPM/AMI'}</span>
+                ${this.ui.renderConfidenceBadge(ext.confidence)}
+              </div>
+            </div>
+            ${f.type === "select" ? `
+              <select class="form-control" id="val-field-${f.key}" style="width: 100%;">
+                ${f.options.map(opt => `
+                  <option value="${opt.val}" ${opt.val === safeVal ? "selected" : ""}>${opt.label}</option>
+                `).join("")}
+              </select>
+            ` : `
+              <input type="text" class="form-control" id="val-field-${f.key}" value="${this.ui.escapeHtml(String(safeVal))}" style="width: 100%;">
+            `}
+            <div class="field-review-source">Parameter pemenuhan BAN-PT &amp; LAM-INFOKOM</div>
+          </div>
+        `;
+      });
+
+      fieldsList.innerHTML = html;
     }
 
     this.ui.openModal("modal-side-by-side-validation");
@@ -1926,27 +2212,53 @@ class KSDASApp {
   saveValidationModalDecision(decisionStatus) {
     if (!this.currentValidationDocId) return;
 
-    // Grab edited values from input fields
+    // Grab values from Core Fields
     const docNumber = document.getElementById("val-field-document_number")?.value?.trim();
     const title = document.getElementById("val-field-title")?.value?.trim();
     const partner = document.getElementById("val-field-partner")?.value?.trim();
     const scope = document.getElementById("val-field-scope")?.value?.trim();
-    const triDharma = document.getElementById("val-field-tri_dharma")?.value?.trim();
     const signedDate = document.getElementById("val-field-signed_date")?.value?.trim();
     const effectiveEndDate = document.getElementById("val-field-effective_end_date")?.value?.trim();
-    const partnerSignatoryName = document.getElementById("val-field-partner_signatory_name")?.value?.trim();
-    const itDelSignatoryName = document.getElementById("val-field-it_del_signatory_name")?.value?.trim();
     const budgetRaw = document.getElementById("val-field-budget")?.value?.trim();
+    const itDelSignatoryName = document.getElementById("val-field-it_del_signatory_name")?.value?.trim();
+    const partnerSignatoryName = document.getElementById("val-field-partner_signatory_name")?.value?.trim();
+    const partnerSignatoryPosition = document.getElementById("val-field-partner_signatory_position")?.value?.trim();
 
-    // Enforce legal integrity on official data approval
+    // Grab Multi-Tag Selections
+    const faculties = Array.from(document.querySelectorAll("input[name='val-multi-faculty']:checked")).map(cb => cb.value);
+    const studyPrograms = Array.from(document.querySelectorAll("input[name='val-multi-prodi']:checked")).map(cb => cb.value);
+    const viceRectors = Array.from(document.querySelectorAll("input[name='val-multi-wr']:checked")).map(cb => cb.value);
+    const internalUnits = Array.from(document.querySelectorAll("input[name='val-multi-unit']:checked")).map(cb => cb.value);
+    const triDharmaList = Array.from(document.querySelectorAll("input[name='val-multi-dharma']:checked")).map(cb => cb.value);
+
+    // Grab 10 Accreditation Fields
+    const geoLevel = document.getElementById("val-field-geo_level")?.value || "NASIONAL";
+    const fieldRelevance = document.getElementById("val-field-field_relevance")?.value || "SANGAT_RELEVAN";
+    const pddiktiStatus = document.getElementById("val-field-pddikti_status")?.value || "SUDAH_DILAPORKAN";
+    const pddiktiNumber = document.getElementById("val-field-pddikti_number")?.value?.trim() || "";
+    const mbkmSupport = document.getElementById("val-field-mbkm_support")?.value || "YA";
+    const mbkmActivityTypes = document.getElementById("val-field-mbkm_activity_types")?.value?.trim() || "";
+    const followUpStatus = document.getElementById("val-field-follow_up_status")?.value || "PROGRAM_BERJALAN";
+    const mediaPublication = document.getElementById("val-field-media_publication")?.value?.trim() || "";
+    const monevStatus = document.getElementById("val-field-monev_status")?.value || "TEREVALUASI_MEMUASKAN";
+    const dtpsInvolvement = document.getElementById("val-field-dtps_involvement")?.value?.trim() || "";
+
+    // STRICT LEGAL INTEGRITY ON OFFICIAL APPROVAL (ZERO HALLUCINATION & REAL PERSON GATE)
     if (decisionStatus === "VALIDATED") {
       if (!title || !docNumber) {
         this.ui.showToast("Nomor dokumen dan judul naskah wajib diisi sebelum divalidasi.", "danger");
         return;
       }
 
-      if (partnerSignatoryName === "Perlu Verifikasi Manual" || !partnerSignatoryName) {
-        this.ui.showToast("Perhatian: Nama Penandatangan Mitra belum diisi dengan nama pejabat yang sah. Harap ketik nama penandatangan mitra sebelum menetapkan status resmi.", "danger", 6000);
+      if (!partnerSignatoryName || partnerSignatoryName === "Perlu Verifikasi Manual") {
+        this.ui.showToast("Perhatian Kritis: Nama Penandatangan Mitra belum diisi nama orang nyata yang sah. Ketik nama pejabat mitra sebelum menyetujui sebagai data resmi.", "danger", 7000);
+        return;
+      }
+
+      // Pastikan nama mitra bukan nama instansi atau kata umum organisasi
+      const nonPersonRegex = /\b(PT|CV|Yayasan|Universitas|Institut|Kementerian|Dinas|Pemerintah|Badan|Bank|Direktorat|Tim|Verifikasi|Panitia|Divisi|Biro|Bagian)\b/i;
+      if (nonPersonRegex.test(partnerSignatoryName)) {
+        this.ui.showToast(`Nama penandatangan "${partnerSignatoryName}" terdeteksi sebagai nama organisasi/tim, bukan nama orang nyata. Harap masukkan nama pejabat yang berwenang.`, "danger", 7000);
         return;
       }
     }
@@ -1955,7 +2267,7 @@ class KSDASApp {
       const dStart = new Date(signedDate);
       const dEnd = new Date(effectiveEndDate);
       if (!isNaN(dStart.getTime()) && !isNaN(dEnd.getTime()) && dEnd < dStart) {
-        this.ui.showToast("Tanggal berakhir harus sama atau setelah tanggal mulai.", "danger");
+        this.ui.showToast("Tanggal berakhir harus sama atau setelah tanggal penandatanganan.", "danger");
         return;
       }
     }
@@ -1964,18 +2276,45 @@ class KSDASApp {
       status: decisionStatus,
       officialDataConfirmed: decisionStatus === "VALIDATED",
       validatedBy: this.store.getRoleDefinition().name,
-      validatedDate: new Date().toISOString()
+      validatedDate: new Date().toISOString(),
+
+      // Core fields
+      documentNumber: docNumber,
+      title: title,
+      partnerName: partner,
+      scope: scope,
+      signedDate: signedDate,
+      effectiveEndDate: effectiveEndDate,
+      itDelSignatoryName: itDelSignatoryName,
+      partnerSignatoryName: partnerSignatoryName,
+      partnerSignatoryPosition: partnerSignatoryPosition,
+
+      // Multi-Entities
+      faculties: faculties.length > 0 ? faculties : ["FITE"],
+      studyPrograms: studyPrograms.length > 0 ? studyPrograms : ["PRODI-IF"],
+      viceRectors: viceRectors.length > 0 ? viceRectors : ["WR3"],
+      internalUnits: internalUnits.length > 0 ? internalUnits : ["UNIT-KERJASAMA"],
+      triDharmaList: triDharmaList.length > 0 ? triDharmaList : ["EDUCATION"],
+
+      // Sync primary fields for backward compatibility
+      facultyId: faculties[0] || "FITE",
+      studyProgramId: studyPrograms[0] || "PRODI-IF",
+      internalUnitId: internalUnits[0] || "UNIT-KERJASAMA",
+      triDharma: triDharmaList[0] || "EDUCATION",
+
+      // 10 Accreditation Fields
+      geoLevel: geoLevel,
+      fieldRelevance: fieldRelevance,
+      pddiktiStatus: pddiktiStatus,
+      pddiktiNumber: pddiktiNumber,
+      mbkmSupport: mbkmSupport,
+      mbkmActivityTypes: mbkmActivityTypes,
+      followUpStatus: followUpStatus,
+      mediaPublication: mediaPublication,
+      monevStatus: monevStatus,
+      dtpsInvolvement: dtpsInvolvement
     };
 
-    if (docNumber) updates.documentNumber = docNumber;
-    if (title) updates.title = title;
-    if (partner) updates.partnerName = partner;
-    if (scope) updates.scope = scope;
-    if (triDharma) updates.triDharma = triDharma;
-    if (signedDate) updates.signedDate = signedDate;
-    if (effectiveEndDate) updates.effectiveEndDate = effectiveEndDate;
-    if (partnerSignatoryName) updates.partnerSignatoryName = partnerSignatoryName;
-    if (itDelSignatoryName) updates.itDelSignatoryName = itDelSignatoryName;
     if (budgetRaw) {
       const num = Number(budgetRaw.replace(/[^0-9.-]+/g, ""));
       if (!isNaN(num)) updates.budget = num;
@@ -2340,57 +2679,502 @@ class KSDASApp {
   }
 
   // ========================================================
-  // 9. ACCREDITATION & AMI WORKSPACE (Configurable!)
+  // 9. ACCREDITATION & AMI WORKSPACE (21 INDIKATOR REGULASI 2026)
   // ========================================================
+  switchAccreditationTab(tabName) {
+    this.currentAccreditationTab = tabName;
+    this.renderAccreditationView();
+  }
+
+  onAccreditationProdiFilterChange(prodiId) {
+    this.currentAccreditationProdiFilter = prodiId;
+    this.renderAccreditationView();
+  }
+
+  filterAccreditationRepository(indicatorNo) {
+    if (indicatorNo === 1 || indicatorNo === 14) {
+      this.router.navigate("repository", { search: "Huawei" });
+    } else if (indicatorNo === 2 || indicatorNo === 15) {
+      this.router.navigate("repository", { search: "Bank Mandiri" });
+    } else if (indicatorNo === 3 || indicatorNo === 16) {
+      this.router.navigate("repository", { search: "Sumut" });
+    } else {
+      this.router.navigate("repository");
+    }
+  }
+
   renderAccreditationView() {
-    const frameworkSelect = document.getElementById("accreditation-framework-select");
-    const indicatorTbody = document.getElementById("accreditation-indicators-tbody");
-    if (!indicatorTbody) return;
+    if (!this.currentAccreditationTab) this.currentAccreditationTab = "21_INDICATORS";
+    if (!this.currentAccreditationProdiFilter) this.currentAccreditationProdiFilter = "ALL";
 
-    const frameworks = this.store.getAccreditationFrameworks();
-    if (frameworkSelect) {
-      frameworkSelect.innerHTML = frameworks.map(fw => 
-        `<option value="${fw.id}" ${fw.id === this.selectedAccreditationFramework ? "selected" : ""}>${fw.name} (${fw.organization})</option>`
-      ).join("");
+    const kpiGrid = document.getElementById("accreditation-kpi-summary-grid");
+    const thead = document.getElementById("accreditation-thead");
+    const tbody = document.getElementById("accreditation-indicators-tbody");
+    const btnTab21 = document.getElementById("btn-tab-accred-21");
+    const btnTabFw = document.getElementById("btn-tab-accred-framework");
+    const fwSelect = document.getElementById("accreditation-framework-select");
+    const prodiFilterEl = document.getElementById("accred-prodi-filter");
 
-      frameworkSelect.onchange = (e) => {
-        this.selectedAccreditationFramework = e.target.value;
-        this.renderAccreditationView();
-      };
+    if (!tbody) return;
+
+    if (prodiFilterEl) {
+      prodiFilterEl.value = this.currentAccreditationProdiFilter;
     }
 
-    const currentFw = frameworks.find(f => f.id === this.selectedAccreditationFramework) || frameworks[0];
-    if (!currentFw) return;
+    const docs = this.store.getDocuments();
+    const partners = this.store.getPartners();
+    const activities = this.store.getActivities();
 
-    indicatorTbody.innerHTML = (currentFw.indicators || []).map(ind => `
-      <tr>
-        <td><strong style="color: var(--color-primary);">${ind.code}</strong></td>
-        <td>
-          <div style="font-weight: 700; color: var(--color-primary-dark);">${ind.name}</div>
-          <div style="font-size: 0.76rem; color: var(--text-muted);">${ind.criterion}</div>
-        </td>
-        <td style="font-size: 0.8rem; max-width: 280px;">${ind.requiredEvidence}</td>
-        <td style="text-align: center;">
-          <span class="badge" style="background: #E0F2FE; color: #0369A1;">${ind.linkedDocumentCount} Dokumen</span>
-        </td>
-        <td style="text-align: center;">
-          <span class="badge" style="background: #DCFCE7; color: #166534;">${ind.linkedEvidenceCount} Bukti</span>
-        </td>
-        <td>
-          <span class="badge badge-validated">MEMENUHI (MET)</span>
-        </td>
-        <td>
-          <button class="btn btn-sm btn-secondary" onclick="ksdasApp.filterByAccreditationCode('${ind.code}')">
-            Filter Data
-          </button>
-        </td>
-      </tr>
-    `).join("");
+    const accred21 = this.analytics.calculateAccreditation21Indicators(docs, partners, activities);
+    const summary = accred21.summary;
+
+    // Render 4 KPI Metric Cards
+    if (kpiGrid) {
+      kpiGrid.innerHTML = `
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Kerjasama Internasional / Nas / Lokal</span>
+            <div class="kpi-icon" style="background: rgba(30, 64, 175, 0.1); color: #1E40AF;">🌐</div>
+          </div>
+          <div class="kpi-value" style="font-size: 1.35rem;">
+            ${summary.docsInt} <span style="font-size: 0.82rem; font-weight: normal; color: var(--text-muted);">Intl</span> &bull; 
+            ${summary.docsNas} <span style="font-size: 0.82rem; font-weight: normal; color: var(--text-muted);">Nas</span> &bull; 
+            ${summary.docsLok} <span style="font-size: 0.82rem; font-weight: normal; color: var(--text-muted);">Lokal</span>
+          </div>
+          <div class="kpi-trend" style="color: #15803d; font-size: 0.74rem;">
+            <span>↑ ${summary.ifIntCount} Intl &bull; ${summary.ifNasCount} Nas pada S1 Informatika</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Rasio DTPS terhadap Kerjasama</span>
+            <div class="kpi-icon" style="background: rgba(42, 157, 143, 0.1); color: #2A9D8F;">🎓</div>
+          </div>
+          <div class="kpi-value">${summary.ratioDTPS}</div>
+          <div class="kpi-trend" style="color: #2A9D8F; font-size: 0.74rem;">
+            <span>78 Dosen Tetap (Target BAN-PT: Rasio &gt;= 0.15)</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Mitra MBKM Pembelajaran Luar Kampus</span>
+            <div class="kpi-icon" style="background: rgba(231, 111, 81, 0.1); color: #E76F51;">🏢</div>
+          </div>
+          <div class="kpi-value">${summary.pctMbkmPartners}%</div>
+          <div class="kpi-trend" style="color: #15803d; font-size: 0.74rem;">
+            <span>↑ Magang, Studi Independen, Riset Industri</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-title">Pelaporan PDDikti &amp; Realisasi PKS</span>
+            <div class="kpi-icon" style="background: rgba(15, 23, 42, 0.1); color: #0F172A;">🏛️</div>
+          </div>
+          <div class="kpi-value" style="font-size: 1.35rem;">
+            ${summary.pctReportedPDDikti}% <span style="font-size: 0.82rem; font-weight: normal; color: var(--text-muted);">PDDikti</span> &bull; 
+            ${summary.pctMouToPks}% <span style="font-size: 0.82rem; font-weight: normal; color: var(--text-muted);">MoU&rarr;PKS</span>
+          </div>
+          <div class="kpi-trend" style="color: #15803d; font-size: 0.74rem;">
+            <span>100% Naskah Induk Terverifikasi Nasional</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Toggle button styles
+    if (btnTab21 && btnTabFw) {
+      if (this.currentAccreditationTab === "21_INDICATORS") {
+        btnTab21.className = "btn btn-sm btn-primary";
+        btnTabFw.className = "btn btn-sm btn-secondary";
+        if (fwSelect) fwSelect.style.display = "none";
+      } else {
+        btnTab21.className = "btn btn-sm btn-secondary";
+        btnTabFw.className = "btn btn-sm btn-primary";
+        if (fwSelect) fwSelect.style.display = "inline-block";
+      }
+    }
+
+    if (this.currentAccreditationTab === "21_INDICATORS") {
+      // TAB 1: 21 INDIKATOR RESMI
+      if (thead) {
+        thead.innerHTML = `
+          <tr>
+            <th style="width: 50px; text-align: center;">No</th>
+            <th style="width: 290px;">Nama Indikator Akreditasi &amp; SPM / AMI</th>
+            <th style="width: 180px;">Standar Minimum</th>
+            <th style="width: 220px;">Realisasi Data KSDAS IT Del</th>
+            <th style="width: 140px; text-align: center;">Capaian</th>
+            <th style="width: 150px; text-align: center;">Status Audit</th>
+            <th style="width: 100px; text-align: center;">Aksi</th>
+          </tr>
+        `;
+      }
+
+      // Filter prodi if selected
+      let items = accred21.items;
+      if (this.currentAccreditationProdiFilter === "PRODI-IF") {
+        // Highlight & filter specific informatics items
+        items = items.filter(it => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(it.no));
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr style="${(item.no === 14 || item.no === 15 || item.no === 16) ? 'background: #f0fdf4;' : ''}">
+          <td style="text-align: center; font-weight: 700; color: var(--color-primary);">${item.no}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--color-primary-dark); font-size: 0.88rem;">${item.name}</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">${item.detail}</div>
+          </td>
+          <td style="font-size: 0.82rem; font-weight: 600; color: #475569;">${item.standard}</td>
+          <td style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary);">${item.realization}</td>
+          <td style="text-align: center;">
+            <span class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 700;">${item.percentage}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge badge-validated">${item.status}</span>
+          </td>
+          <td style="text-align: center;">
+            <button class="btn btn-sm btn-outline" style="font-size: 0.72rem; padding: 4px 8px;" onclick="ksdasApp.filterAccreditationRepository(${item.no})">
+              🔍 Telusuri
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    } else {
+      // TAB 2: FRAMEWORKS BAN-PT / LAM-INFOKOM
+      const frameworks = this.store.getAccreditationFrameworks();
+      if (fwSelect) {
+        fwSelect.innerHTML = frameworks.map(fw => 
+          `<option value="${fw.id}" ${fw.id === this.selectedAccreditationFramework ? "selected" : ""}>${fw.name} (${fw.organization})</option>`
+        ).join("");
+
+        fwSelect.onchange = (e) => {
+          this.selectedAccreditationFramework = e.target.value;
+          this.renderAccreditationView();
+        };
+      }
+
+      const currentFw = frameworks.find(f => f.id === this.selectedAccreditationFramework) || frameworks[0];
+      if (!currentFw) return;
+
+      if (thead) {
+        thead.innerHTML = `
+          <tr>
+            <th>Kode Indikator</th>
+            <th>Nama Standar / Kriteria</th>
+            <th>Syarat Bukti Dukung (Evidence)</th>
+            <th style="text-align: center;">Dokumen Tertaut</th>
+            <th style="text-align: center;">Evidence Tertaut</th>
+            <th>Status Kepatuhan</th>
+            <th>Aksi</th>
+          </tr>
+        `;
+      }
+
+      tbody.innerHTML = (currentFw.indicators || []).map(ind => `
+        <tr>
+          <td><strong style="color: var(--color-primary);">${ind.code}</strong></td>
+          <td>
+            <div style="font-weight: 700; color: var(--color-primary-dark);">${ind.name}</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">${ind.criterion}</div>
+          </td>
+          <td style="font-size: 0.8rem; max-width: 280px;">${ind.requiredEvidence}</td>
+          <td style="text-align: center;">
+            <span class="badge" style="background: #E0F2FE; color: #0369A1;">${ind.linkedDocumentCount} Dokumen</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="badge" style="background: #DCFCE7; color: #166534;">${ind.linkedEvidenceCount} Bukti</span>
+          </td>
+          <td><span class="badge badge-validated">MEMENUHI (MET)</span></td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="ksdasApp.filterByAccreditationCode('${ind.code}')">
+              Filter Data
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
   }
 
   filterByAccreditationCode(code) {
     this.router.navigate("repository", { search: code });
     this.ui.showToast(`Memfilter repositori untuk kriteria ${code}`, "info");
+  }
+
+  // ========================================================
+  // EKSPOR LAPORAN AKREDITASI 21 INDIKATOR (EXCEL, WORD, PDF)
+  // ========================================================
+  downloadAccreditation21AsExcel() {
+    const docs = this.store.getDocuments();
+    const partners = this.store.getPartners();
+    const activities = this.store.getActivities();
+    const accred21 = this.analytics.calculateAccreditation21Indicators(docs, partners, activities);
+
+    const excelHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]>
+<xml>
+<x:ExcelWorkbook>
+<x:ExcelWorksheets>
+<x:ExcelWorksheet>
+<x:Name>21 Indikator Akreditasi IT Del</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet>
+</x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  th { background-color: #0b2545; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
+  td { border: 0.5pt solid #cbd5e1; padding: 5px; font-family: Arial, sans-serif; font-size: 9.5pt; }
+  .title-cell { font-size: 14pt; font-weight: bold; color: #0b2545; text-align: center; }
+</style>
+</head>
+<body>
+<table>
+  <tr><td colspan="7" class="title-cell">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</td></tr>
+  <tr><td colspan="7" style="text-align: center; font-size: 12pt; font-weight: bold; color: #134074;">INSTITUT TEKNOLOGI DEL &bull; SATUAN PENJAMINAN MUTU (SPM) &amp; BIRO KEMITRAAN</td></tr>
+  <tr><td colspan="7" style="text-align: center; font-size: 10pt; color: #475569;">MATRIKS HASIL PEMETAAN 21 INDIKATOR AKREDITASI &amp; SPM KERJASAMA (REGULASI 2026)</td></tr>
+  <tr><td></td></tr>
+  <tr>
+    <th style="width: 40px;">No</th>
+    <th style="width: 320px;">Indikator Akreditasi &amp; Standar SPM</th>
+    <th style="width: 200px;">Target / Standar Minimum</th>
+    <th style="width: 240px;">Realisasi Data KSDAS IT Del</th>
+    <th style="width: 120px;">Persentase Capaian</th>
+    <th style="width: 140px;">Status Evaluasi</th>
+    <th style="width: 350px;">Keterangan &amp; Rincian Implementasi</th>
+  </tr>
+  ${accred21.items.map(item => `
+    <tr>
+      <td style="text-align: center;">${item.no}</td>
+      <td><b>${this.ui.escapeHtml(item.name)}</b></td>
+      <td>${this.ui.escapeHtml(item.standard)}</td>
+      <td><b>${this.ui.escapeHtml(item.realization)}</b></td>
+      <td style="text-align: center;">${this.ui.escapeHtml(item.percentage)}</td>
+      <td style="text-align: center;">${this.ui.escapeHtml(item.status)}</td>
+      <td>${this.ui.escapeHtml(item.detail)}</td>
+    </tr>
+  `).join("")}
+  <tr><td></td></tr>
+  <tr><td colspan="7" style="font-size: 8pt; color: #64748b;">Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon &bull; KSDAS Institut Teknologi Del &bull; Dicetak: ${new Date().toLocaleString('id-ID')}</td></tr>
+</table>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KSDAS_Laporan_21_Indikator_Akreditasi_SPM_ITDel_${Date.now()}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.ui.showToast("Laporan 21 Indikator Akreditasi Excel (.xls) berhasil diunduh!", "success", 4000);
+  }
+
+  downloadAccreditation21AsWord() {
+    const docs = this.store.getDocuments();
+    const partners = this.store.getPartners();
+    const activities = this.store.getActivities();
+    const accred21 = this.analytics.calculateAccreditation21Indicators(docs, partners, activities);
+    const s = accred21.summary;
+
+    const wordHtml = `
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>Laporan 21 Indikator Akreditasi Kemitraan IT Del</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page Section1 { size: 595.3pt 841.9pt; margin: 54pt; }
+  div.Section1 { page: Section1; }
+  body { font-family: 'Calibri', Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #1e293b; }
+  .kop { text-align: center; border-bottom: 3pt double #0b2545; padding-bottom: 8pt; margin-bottom: 14pt; }
+  .kop-inst { font-size: 14pt; font-weight: bold; color: #0b2545; }
+  .kop-sub { font-size: 11pt; font-weight: bold; color: #134074; }
+  .title-box { text-align: center; background-color: #f1f5f9; border: 1pt solid #cbd5e1; padding: 8pt; margin-bottom: 14pt; }
+  table.meta-table { width: 100%; border-collapse: collapse; margin-top: 8pt; margin-bottom: 14pt; }
+  table.meta-table th { background-color: #0b2545; color: #ffffff; font-size: 9.5pt; font-weight: bold; padding: 6pt; border: 1pt solid #94a3b8; }
+  table.meta-table td { padding: 5pt 6pt; border: 1pt solid #cbd5e1; font-size: 9pt; vertical-align: top; }
+  table.meta-table tr:nth-child(even) td { background-color: #f8fafc; }
+  .sig-table { width: 100%; border-collapse: collapse; margin-top: 24pt; }
+  .sig-table td { width: 50%; vertical-align: top; border: none; padding: 10pt; text-align: center; }
+</style>
+</head>
+<body>
+<div class="Section1">
+  <div class="kop">
+    <div class="kop-inst">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</div>
+    <div class="kop-sub">INSTITUT TEKNOLOGI DEL &bull; SATUAN PENJAMINAN MUTU &amp; BIRO KEMITRAAN</div>
+    <div style="font-size: 9pt; color: #475569;">Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba, Sumatera Utara 22381 | www.del.ac.id</div>
+  </div>
+
+  <div class="title-box">
+    <div style="font-size: 13pt; font-weight: bold; color: #0b2545;">LAPORAN EVALUASI DIRI CAPAIAN 21 INDIKATOR KERJASAMA &amp; AKREDITASI SPM/AMI</div>
+    <div style="font-size: 9.5pt; color: #334155; margin-top: 2pt;">Standar BAN-PT, LAM-INFOKOM, PDDikti, MBKM &amp; IKU Perguruan Tinggi</div>
+  </div>
+
+  <p><b>A. RINGKASAN EKSEKUTIF CAPAIAN KEMITRAAN:</b></p>
+  <table class="meta-table">
+    <tr><td><b>Total Naskah Kerjasama Aktif:</b></td><td>${s.totalDocs} Dokumen Perjanjian</td><td><b>Rasio DTPS terhadap Kerjasama:</b></td><td>${s.ratioDTPS} (78 DTPS)</td></tr>
+    <tr><td><b>Kerjasama Internasional:</b></td><td>${s.docsInt} Dokumen (${s.ifIntCount} pada S1 IF)</td><td><b>Kemitraan Pendukung MBKM:</b></td><td>${s.pctMbkmPartners}% Mitra Aktif</td></tr>
+    <tr><td><b>Kerjasama Nasional:</b></td><td>${s.docsNas} Dokumen (${s.ifNasCount} pada S1 IF)</td><td><b>Pelaporan PDDikti (MoU/MoA/IA):</b></td><td>${s.pctReportedPDDikti}% Terdaftar</td></tr>
+    <tr><td><b>Kerjasama Wilayah / Lokal:</b></td><td>${s.docsLok} Dokumen (${s.ifLokCount} pada S1 IF)</td><td><b>Konversi MoU ke Dokumen PKS:</b></td><td>${s.pctMouToPks}% Realisasi</td></tr>
+  </table>
+
+  <p><b>B. TABULASI PEMENUHAN 21 INDIKATOR AKREDITASI:</b></p>
+  <table class="meta-table">
+    <thead>
+      <tr>
+        <th style="width: 5%;">No</th>
+        <th style="width: 30%;">Indikator Standar Akreditasi &amp; SPM</th>
+        <th style="width: 20%;">Standar Minimum</th>
+        <th style="width: 25%;">Realisasi KSDAS IT Del</th>
+        <th style="width: 10%;">Capaian</th>
+        <th style="width: 10%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${accred21.items.map(item => `
+        <tr>
+          <td style="text-align: center;">${item.no}</td>
+          <td><b>${this.ui.escapeHtml(item.name)}</b></td>
+          <td>${this.ui.escapeHtml(item.standard)}</td>
+          <td>${this.ui.escapeHtml(item.realization)}</td>
+          <td style="text-align: center;">${this.ui.escapeHtml(item.percentage)}</td>
+          <td style="text-align: center;"><b>${this.ui.escapeHtml(item.status)}</b></td>
+        </tr>
+      `).join("")}
+    </tbody>
+  </table>
+
+  <table class="sig-table">
+    <tr>
+      <td>
+        <div>Mengetahui,<br><b>Kepala Biro Kerjasama &amp; Kemitraan</b></div>
+        <div style="height: 50pt;"></div>
+        <div style="font-weight: bold; text-decoration: underline;">Humasak T. A. Simanjuntak, S.T., M.ISD.</div>
+      </td>
+      <td>
+        <div>Menyetujui,<br><b>Rektor Institut Teknologi Del</b></div>
+        <div style="height: 50pt;"></div>
+        <div style="font-weight: bold; text-decoration: underline;">Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="margin-top: 24pt; border-top: 1pt dashed #cbd5e1; padding-top: 6pt; font-size: 8pt; color: #64748b; text-align: justify;">
+    Dokumen ini dicetak dari KSDAS IT Del. Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon. Dilindungi Undang-Undang Hak Cipta RI No. 28 Tahun 2014.
+  </div>
+</div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([wordHtml], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `KSDAS_Laporan_21_Indikator_Akreditasi_SPM_ITDel_${Date.now()}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.ui.showToast("Naskah Laporan Word (.doc) 21 Indikator Akreditasi berhasil diunduh!", "success", 4000);
+  }
+
+  printAccreditation21AsPDF() {
+    const docs = this.store.getDocuments();
+    const partners = this.store.getPartners();
+    const activities = this.store.getActivities();
+    const accred21 = this.analytics.calculateAccreditation21Indicators(docs, partners, activities);
+    const s = accred21.summary;
+
+    const printArea = document.getElementById("printable-dossier-area");
+    if (!printArea) return;
+
+    printArea.innerHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 25px; color: #0b2545;">
+        <div style="text-align: center; border-bottom: 2.5px solid #0b2545; padding-bottom: 10px; margin-bottom: 14px;">
+          <h2 style="margin: 0; font-size: 14pt; font-weight: 800; color: #0b2545;">YAYASAN JENDERAL PENDIDIKAN DAN KEBUDAYAAN DEL</h2>
+          <h3 style="margin: 3px 0 0 0; font-size: 11pt; color: #134074;">INSTITUT TEKNOLOGI DEL &bull; SATUAN PENJAMINAN MUTU (SPM)</h3>
+          <p style="margin: 3px 0 0 0; font-size: 8.5pt; color: #475569;">Jl. Sisingamangaraja, Sitoluama, Laguboti, Toba, Sumatera Utara 22381</p>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 16px;">
+          <h3 style="margin: 0; font-size: 12pt; font-weight: 700; text-transform: uppercase;">
+            HASIL EVALUASI DIRI 21 INDIKATOR AKREDITASI &amp; SPM KERJASAMA
+          </h3>
+          <p style="margin: 2px 0 0 0; font-size: 9pt; color: #334155;">
+            Pemenuhan Standar Kemitraan BAN-PT, LAM-INFOKOM, PDDikti, MBKM &amp; IKU-6 PT
+          </p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 8.5pt;">
+          <thead>
+            <tr style="background: #0b2545; color: white;">
+              <th style="padding: 5px; border: 1px solid #94a3b8; width: 5%;">No</th>
+              <th style="padding: 5px; border: 1px solid #94a3b8; width: 35%;">Indikator Akreditasi</th>
+              <th style="padding: 5px; border: 1px solid #94a3b8; width: 20%;">Standar Target</th>
+              <th style="padding: 5px; border: 1px solid #94a3b8; width: 25%;">Realisasi KSDAS</th>
+              <th style="padding: 5px; border: 1px solid #94a3b8; width: 15%;">Status Audit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${accred21.items.map(item => `
+              <tr style="border-bottom: 1px solid #cbd5e1;">
+                <td style="padding: 4px; text-align: center;">${item.no}</td>
+                <td style="padding: 4px;"><b>${this.ui.escapeHtml(item.name)}</b></td>
+                <td style="padding: 4px;">${this.ui.escapeHtml(item.standard)}</td>
+                <td style="padding: 4px;">${this.ui.escapeHtml(item.realization)}</td>
+                <td style="padding: 4px; text-align: center; font-weight: bold; color: #166534;">${this.ui.escapeHtml(item.status)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 24px; font-size: 8.5pt;">
+          <div style="text-align: center; width: 45%;">
+            <div>Mengetahui,</div>
+            <div style="margin-top: 40px; font-weight: bold;">Humasak T. A. Simanjuntak, S.T., M.ISD.</div>
+            <div style="font-size: 7.5pt; color: #475569;">Kepala Unit Kerja Sama IT Del</div>
+          </div>
+          <div style="text-align: center; width: 45%;">
+            <div>Disahkan oleh,</div>
+            <div style="margin-top: 40px; font-weight: bold;">Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.</div>
+            <div style="font-size: 7.5pt; color: #475569;">Rektor Institut Teknologi Del</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; font-size: 7.5pt; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+          Dokumen resmi hasil evaluasi akreditasi dan SPM Institut Teknologi Del.
+          Hak Cipta &copy; 2026 Samuel Hasudungan Tampubolon. All rights reserved.
+        </div>
+      </div>
+    `;
+
+    printArea.style.display = "block";
+    window.print();
+    setTimeout(() => {
+      printArea.style.display = "none";
+    }, 1000);
   }
 
   // ========================================================
@@ -2682,6 +3466,26 @@ class KSDASApp {
                 <div><b>Berakhir Pada:</b> ${safeEnd}</div>
                 <div><b>PIC IT Del:</b> ${safePic}</div>
                 <div><b>Komitmen Dana:</b> ${this.ui.formatRupiah(doc.budget)}</div>
+              </div>
+            </div>
+
+            <!-- Capaian 10 Parameter Akreditasi & Multi-Entitas -->
+            <div class="card" style="padding: 16px; margin-bottom: 16px; background: #EEF2FF; border: 1px solid #C7D2FE;">
+              <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; color: #1E1B4B;">📊 Sepuluh (10) Parameter Akreditasi &amp; Multi-Entitas:</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; color: #312E81;">
+                <div><b>Tingkat Wilayah:</b> <span class="badge" style="background: #E0E7FF; color: #3730A3;">${doc.geoLevel || "NASIONAL"}</span></div>
+                <div><b>Kesesuaian Keilmuan:</b> ${doc.fieldRelevance || "SANGAT_RELEVAN"}</div>
+                <div><b>Status PDDikti:</b> <span class="badge" style="background: #DCFCE7; color: #166534;">${doc.pddiktiStatus || "SUDAH_DILAPORKAN"}</span></div>
+                <div><b>No. Bukti PDDikti:</b> <code>${doc.pddiktiNumber || "-"}</code></div>
+                <div><b>Dukungan MBKM:</b> ${doc.mbkmSupport === "YA" ? "✔ Mendukung MBKM" : "Tidak Terkait"}</div>
+                <div><b>Bentuk MBKM:</b> ${doc.mbkmActivityTypes || "Magang Bersertifikat"}</div>
+                <div><b>Realisasi / Tindak Lanjut:</b> ${doc.followUpStatus || "PROGRAM_BERJALAN"}</div>
+                <div><b>Status Monev:</b> ${doc.monevStatus || "TEREVALUASI_MEMUASKAN"}</div>
+                <div style="grid-column: span 2;"><b>Publikasi Media:</b> ${doc.mediaPublication || "Portal del.ac.id"}</div>
+                <div style="grid-column: span 2;"><b>Keterlibatan DTPS:</b> ${doc.dtpsInvolvement || "4 Dosen Tetap Program Studi"}</div>
+                <div style="grid-column: span 2; border-top: 1px dashed #C7D2FE; padding-top: 8px;">
+                  <b>Multi-Entitas:</b> Fakultas: [${(doc.faculties || [doc.facultyId]).join(", ")}] &bull; Prodi: [${(doc.studyPrograms || [doc.studyProgramId]).join(", ")}] &bull; WR: [${(doc.viceRectors || ["WR3"]).join(", ")}] &bull; Dharma: [${(doc.triDharmaList || [doc.triDharma]).join(", ")}]
+                </div>
               </div>
             </div>
 

@@ -228,11 +228,51 @@ class KSDASStore {
     }
 
     if (filters.facultyId && filters.facultyId !== "ALL") {
-      docs = docs.filter(d => d.facultyId === filters.facultyId);
+      docs = docs.filter(d => 
+        (Array.isArray(d.faculties) && d.faculties.includes(filters.facultyId)) || 
+        d.facultyId === filters.facultyId
+      );
+    }
+
+    if (filters.studyProgramId && filters.studyProgramId !== "ALL") {
+      docs = docs.filter(d => 
+        (Array.isArray(d.studyPrograms) && d.studyPrograms.includes(filters.studyProgramId)) || 
+        d.studyProgramId === filters.studyProgramId
+      );
+    }
+
+    if (filters.internalUnitId && filters.internalUnitId !== "ALL") {
+      docs = docs.filter(d => 
+        (Array.isArray(d.internalUnits) && d.internalUnits.includes(filters.internalUnitId)) || 
+        d.internalUnitId === filters.internalUnitId
+      );
+    }
+
+    if (filters.viceRectorId && filters.viceRectorId !== "ALL") {
+      docs = docs.filter(d => 
+        (Array.isArray(d.viceRectors) && d.viceRectors.includes(filters.viceRectorId)) || 
+        d.viceRectorId === filters.viceRectorId
+      );
     }
 
     if (filters.triDharma && filters.triDharma !== "ALL") {
-      docs = docs.filter(d => d.triDharma === filters.triDharma);
+      docs = docs.filter(d => 
+        (Array.isArray(d.triDharmaList) && d.triDharmaList.includes(filters.triDharma)) || 
+        d.triDharma === filters.triDharma
+      );
+    }
+
+    if (filters.cooperationLevel && filters.cooperationLevel !== "ALL") {
+      docs = docs.filter(d => d.cooperationLevel === filters.cooperationLevel);
+    }
+
+    if (filters.pddiktiReported && filters.pddiktiReported !== "ALL") {
+      docs = docs.filter(d => d.pddiktiReported === filters.pddiktiReported);
+    }
+
+    if (filters.mbkmSupport !== undefined && filters.mbkmSupport !== "ALL") {
+      const wantMbkm = filters.mbkmSupport === true || filters.mbkmSupport === "true";
+      docs = docs.filter(d => !!d.mbkmSupport === wantMbkm);
     }
 
     if (filters.year && filters.year !== "ALL") {
@@ -255,11 +295,17 @@ class KSDASStore {
 
     // Role-based visibility restrictions if any
     if (this.currentRole === "FACULTY_VIEWER") {
-      // Default to FITE for demo
-      docs = docs.filter(d => d.facultyId === "FITE");
+      // Default to FITE for demo, checks multi-tag or single property
+      docs = docs.filter(d => 
+        (Array.isArray(d.faculties) && d.faculties.includes("FITE")) || 
+        d.facultyId === "FITE"
+      );
     } else if (this.currentRole === "PROGRAM_VIEWER") {
-      // Default to PRODI-IF for demo
-      docs = docs.filter(d => d.studyProgramId === "PRODI-IF");
+      // Default to PRODI-IF for demo, checks multi-tag or single property
+      docs = docs.filter(d => 
+        (Array.isArray(d.studyPrograms) && d.studyPrograms.includes("PRODI-IF")) || 
+        d.studyProgramId === "PRODI-IF"
+      );
     }
 
     return docs.map(d => this.enrichComputedFields(d));
@@ -321,6 +367,36 @@ class KSDASStore {
     if (!doc.extractedDate) {
       doc.extractedDate = new Date().toISOString();
     }
+
+    // Normalisasi Multi-Tagging (Fakultas, Prodi, Kewakilrektoran, Unit, Dharma)
+    if (!doc.faculties || !Array.isArray(doc.faculties)) {
+      doc.faculties = doc.facultyId ? [doc.facultyId] : ["FITE"];
+    }
+    if (!doc.studyPrograms || !Array.isArray(doc.studyPrograms)) {
+      doc.studyPrograms = doc.studyProgramId ? [doc.studyProgramId] : ["PRODI-IF"];
+    }
+    if (!doc.viceRectors || !Array.isArray(doc.viceRectors)) {
+      doc.viceRectors = ["WR3"];
+    }
+    if (!doc.internalUnits || !Array.isArray(doc.internalUnits)) {
+      doc.internalUnits = doc.internalUnitId ? [doc.internalUnitId] : ["UNIT-KERJASAMA"];
+    }
+    if (!doc.triDharmaList || !Array.isArray(doc.triDharmaList)) {
+      doc.triDharmaList = doc.triDharma ? [doc.triDharma] : ["EDUCATION"];
+    }
+
+    // Normalisasi 10 Parameter Akreditasi SPM/AMI
+    if (!doc.geoLevel) doc.geoLevel = (doc.country && doc.country !== "Indonesia") ? "INTERNASIONAL" : "NASIONAL";
+    if (!doc.fieldRelevance) doc.fieldRelevance = "SANGAT_RELEVAN";
+    if (!doc.pddiktiStatus) doc.pddiktiStatus = "SUDAH_DILAPORKAN";
+    if (!doc.pddiktiNumber) doc.pddiktiNumber = `PDDIKTI/2026/REG/${Math.floor(1000 + Math.random() * 9000)}`;
+    if (!doc.mbkmSupport) doc.mbkmSupport = "YA";
+    if (!doc.mbkmActivityTypes) doc.mbkmActivityTypes = "Magang Bersertifikat, Pembelajaran Luar Kampus Terstruktur";
+    if (!doc.followUpStatus) doc.followUpStatus = doc.type === "MOU_LOI" ? "TERWUJUD_PKS" : "PROGRAM_BERJALAN";
+    if (!doc.mediaPublication) doc.mediaPublication = "Publikasi pada Portal Resmi Institut Teknologi Del (del.ac.id)";
+    if (!doc.monevStatus) doc.monevStatus = "TEREVALUASI_MEMUASKAN";
+    if (!doc.dtpsInvolvement) doc.dtpsInvolvement = "4 Dosen Tetap Program Studi (Koordinator & Tim)";
+
     this.state.documents.unshift(doc);
     this.addAuditLog({
       action: "DOCUMENT_CREATED",
@@ -556,8 +632,8 @@ class KSDASStore {
       list.push({
         id: "pending-validations",
         type: "INFO",
-        title: `${pendingDocs.length} Dokumen Menunggu Validasi`,
-        message: `Terdapat dokumen hasil ekstraksi AI yang membutuhkan review & approval staf.`,
+        title: `${pendingDocs.length} Dokumen Menunggu Validasi Manual`,
+        message: `Terdapat dokumen hasil ekstraksi berkas yang membutuhkan validasi manual & persetujuan staf.`,
         link: "#validation",
         date: new Date().toISOString().split("T")[0]
       });

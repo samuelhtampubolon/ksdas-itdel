@@ -565,35 +565,70 @@
         <!-- ==============================================
              9. ACCREDITATION & AMI WORKSPACE (Configurable!)
              ============================================== -->
+        <!-- ==============================================
+             9. ACCREDITATION & AMI WORKSPACE (Configurable!)
+             ============================================== -->
         <section id="view-accreditation" class="view-section">
           <div class="view-header">
             <div class="view-title-group">
-              <h2>Workspace Akreditasi & SPM / AMI</h2>
-              <p>Pemetaan otomatis indikator kerja sama ke instrumen BAN-PT, LAM-INFOKOM, dan bukti fisik terkait.</p>
+              <h2>Workspace Akreditasi, SPM &amp; AMI (21 Indikator Regulasi 2026)</h2>
+              <p>Pemenuhan resmi butir kerjasama instrumen BAN-PT, LAM-INFOKOM, PDDikti, MBKM, dan Audit Mutu Internal Institut Teknologi Del.</p>
             </div>
-            <div class="view-actions">
-              <select id="accreditation-framework-select" class="form-control" style="font-weight: 700; color: var(--color-primary-dark);"></select>
-              <button class="btn btn-secondary" onclick="ksdasRouter.navigate('reports', { type: 'ACCREDITATION_PACK' })">
-                Ekspor Paket Bukti Akreditasi
+            <div class="view-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" onclick="ksdasApp.downloadAccreditation21AsExcel()" title="Unduh Spreadsheet Excel 21 Indikator (.xls)">
+                📗 Unduh Excel (.xls)
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="ksdasApp.downloadAccreditation21AsWord()" title="Unduh Naskah Laporan Word (.doc)">
+                📘 Unduh Word (.doc)
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="ksdasApp.printAccreditation21AsPDF()" title="Cetak / Simpan Laporan PDF Resmi">
+                🖨️ Cetak / Ekspor PDF
               </button>
             </div>
           </div>
 
+          <!-- 4 Kartu KPI Ringkasan 21 Indikator Akreditasi -->
+          <div class="kpi-grid" id="accreditation-kpi-summary-grid" style="margin-bottom: 20px;">
+            <!-- Diisi dinamis oleh ksdasApp.renderAccreditationView() -->
+          </div>
+
+          <!-- Tab Bar & Filter Prodi -->
+          <div class="card" style="margin-bottom: 16px; padding: 12px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-sm btn-primary" id="btn-tab-accred-21" onclick="ksdasApp.switchAccreditationTab('21_INDICATORS')">
+                  ⭐ 21 Indikator SPM &amp; Akreditasi (2026)
+                </button>
+                <button class="btn btn-sm btn-secondary" id="btn-tab-accred-framework" onclick="ksdasApp.switchAccreditationTab('FRAMEWORKS')">
+                  📋 Matriks BAN-PT &amp; LAM-INFOKOM
+                </button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Saring Prodi:</span>
+                <select id="accred-prodi-filter" class="form-control" style="font-size: 0.82rem; padding: 4px 8px;" onchange="ksdasApp.onAccreditationProdiFilterChange(this.value)">
+                  <option value="ALL">Semua Program Studi IT Del</option>
+                  <option value="PRODI-IF">Khusus S1 Informatika (LAM-INFOKOM)</option>
+                  <option value="PRODI-SI">S1 Sistem Informasi</option>
+                  <option value="PRODI-TE">S1 Teknik Elektro</option>
+                  <option value="PRODI-MR">S1 Manajemen Rekayasa</option>
+                  <option value="PRODI-BP">S1 Bioteknologi / Bioproses</option>
+                </select>
+                <select id="accreditation-framework-select" class="form-control" style="font-size: 0.82rem; padding: 4px 8px; display: none;"></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wadah Konten Tabel Utama Akreditasi -->
           <div class="card">
             <div class="table-container">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Kode Indikator</th>
-                    <th>Nama Standar / Kriteria</th>
-                    <th>Syarat Bukti Dukung (Evidence)</th>
-                    <th style="text-align: center;">Dokumen Tertaut</th>
-                    <th style="text-align: center;">Evidence Tertaut</th>
-                    <th>Status Kepatuhan</th>
-                    <th>Aksi</th>
-                  </tr>
+              <table class="data-table" id="accreditation-main-table">
+                <thead id="accreditation-thead">
+                  <!-- Header dinamis sesuai tab -->
                 </thead>
-                <tbody id="accreditation-indicators-tbody"></tbody>
+                <tbody id="accreditation-indicators-tbody">
+                  <!-- Isi dinamis 21 indikator -->
+                </tbody>
               </table>
             </div>
           </div>

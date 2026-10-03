@@ -163,11 +163,11 @@ flowchart TD
 | 2 | **Dashboard Eksekutif** | Kartu metrik KPI, bilah peringatan masa berlaku kritis (<90 hari), dan *Implementation Funnel* | ✅ 100% |
 | 3 | **Master Mitra** | Direktori mitra terstruktur (Industri swasta, BUMN, PT, Pemda, Yayasan) beserta kontak PIC | ✅ 100% |
 | 4 | **Repositori Dokumen** | Manajemen terpadu naskah perjanjian dengan multi-filter dinamis, sortir, dan rincian lengkap | ✅ 100% |
-| 5 | **Batch Upload AI** | Pengunggahan banyak file sekaligus (*multi-select/drag-drop*) dengan **10 Dokumen Sampel IT Del** | ✅ 100% |
-| 6 | **Klasifikasi Cerdas** | Pendeteksian tipe naskah otomatis (`MOU_LOI`, `PKS_MOA`, `IA`, `PROPOSAL`, `FINAL_REPORT`) | ✅ 100% |
-| 7 | **Ekstraksi 26 Field** | Penangkapan nomor naskah, perihal, penandatangan mitra/Del, masa berlaku, anggaran, luaran | ✅ 100% |
-| 8 | **Confidence Score** | Persentase keyakinan ekstraksi AI (0-100%) disertai nomor halaman dan kutipan naskah sumber | ✅ 100% |
-| 9 | **Human-in-the-Loop Validation** | Tinjauan *side-by-side* teks berkas vs formulir koreksi, approval bertingkat, dan *Bulk Approve* | ✅ 100% |
+| 5 | **Batch Upload Dokumen** | Pengunggahan banyak file sekaligus (*multi-select/drag-drop*) dengan **10 Dokumen Sampel IT Del** | ✅ 100% |
+| 6 | **Klasifikasi Dokumen** | Pendeteksian tipe naskah otomatis (`MOU_LOI`, `PKS_MOA`, `IA`, `PROPOSAL`, `FINAL_REPORT`) | ✅ 100% |
+| 7 | **Ekstraksi 36 Field & Akreditasi** | Penangkapan nomor naskah, perihal, penandatangan mitra/Del, masa berlaku, anggaran, 10 data akreditasi | ✅ 100% |
+| 8 | **Tingkat Akurasi (Confidence)** | Persentase keyakinan ekstraksi sistem (0-100%) disertai nomor halaman dan kutipan naskah sumber | ✅ 100% |
+| 9 | **Workspace Validasi Manual** | Tinjauan *side-by-side* teks berkas vs formulir koreksi, approval bertingkat, dan *Bulk Approve* | ✅ 100% |
 | 10 | **Pohon Relasi Dokumen** | Visualisasi hierarki (`Mitra` &rarr; `MoU` &rarr; `PKS` &rarr; `IA` &rarr; `Laporan`) & deteksi dokumen yatim (*orphan*) | ✅ 100% |
 | 11 | **Pelacakan Tri Dharma** | Pemantauan implementasi pada bidang Pendidikan, Penelitian & Inovasi, PKM, dan Tata Kelola | ✅ 100% |
 | 12 | **Output, Outcome & Impact** | Pencatatan luaran terukur (sertifikasi industri, publikasi Scopus, penyerapan kerja lulusan) | ✅ 100% |

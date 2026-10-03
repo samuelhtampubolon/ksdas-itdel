@@ -58,7 +58,7 @@ Staf Unit Kerja Sama sering bekerja multitasking dalam tempo tinggi: melayani ku
 
 | Persona | Peran Pengguna | Kebutuhan Utama | Aksi Kritis pada KSDAS |
 | :--- | :--- | :--- | :--- |
-| **A. Staf Unit Kerja Sama** | `ADMIN_STAFF` | Efisiensi input & integrasi data | Batch upload berkas, verifikasi ekstraksi AI, menautkan relasi PKS ke MoU, generate laporan. |
+| **A. Staf Unit Kerja Sama** | `ADMIN_STAFF` | Efisiensi input & integrasi data | Batch upload berkas, validasi manual ekstraksi dokumen, menautkan relasi PKS ke MoU, generate laporan. |
 | **B. Kepala Biro Kemitraan** | `BUREAU_HEAD` | Pengawasan & akuntabilitas data | Otorisasi akhir status naskah, monitoring kontrak kritis, analisis efektivitas mitra. |
 | **C. Wakil Rektor III** | `WR3` | Pengambilan keputusan strategis | Dasbor eksekutif, analisis gap tindak lanjut (*follow-up gap*), peringatan kedaluwarsa naskah. |
 | **D. Satuan Penjaminan Mutu**| `QUALITY_REVIEWER`| Pemenuhan standar akreditasi | Pemetaan naskah ke indikator BAN-PT/LAM-INFOKOM, verifikasi bukti fisik (*evidence*). |
@@ -88,7 +88,7 @@ KSDAS IT Del (Sidebar Navigation)
 │   ├── Analitik Eksekutif       (Tabulasi Silang, Expiry Timeline, Analisis Kesenjangan MoU)
 │   ├── Akreditasi & AMI         (Pemetaan Instrumen BAN-PT, LAM-INFOKOM & Verifikasi Bukti)
 │   ├── Generator Laporan        (Wizard Pembuatan Laporan Resmi & Paket Bukti Siap Cetak)
-│   └── Pencarian Cerdas AI      (Natural Language Query Copilot Bahasa Indonesia)
+│   └── Pencarian Cerdas         (Natural Language Query Copilot Bahasa Indonesia)
 └── 4. SISTEM & TATA KELOLA
     ├── Audit Trail              (Log Transaksi Mutlak Sistem & Riwayat Koreksi Staf)
     └── Pengaturan & Cadangan    (Ekspor/Impor JSON, Reset Data Demo, Panduan Handoff)
@@ -111,7 +111,7 @@ Dasbor dirancang untuk menjawab 4 pertanyaan mendasar pimpinan dalam 5 detik per
 ### Filter Umum (*Top Bar Filters*):
 - **Tahun Pelaksanaan:** `ALL`, `2027`, `2026`, `2025`, `2024`, `2023`.
 - **Jenis Naskah:** `MoU / LOI`, `PKS / MoA`, `Implementation Arrangement (IA)`, `Proposal`, `Laporan Akhir`.
-- **Status Validasi:** `AI_EXTRACTED`, `NEEDS_REVIEW`, `VALIDATED`, `REJECTED`.
+- **Status Validasi:** `TEREKSTRAKSI`, `NEEDS_REVIEW`, `VALIDATED`, `REJECTED`.
 - **Mitra Strategis:** Dropdown pencarian seluruh mitra terdaftar.
 - **Pilar Tri Dharma:** Pendidikan, Penelitian, Pengabdian kepada Masyarakat, Tata Kelola.
 
@@ -120,13 +120,13 @@ Untuk memangkas navigasi berulang staf, disediakan tombol preset instan:
 - 🎯 **"AMI 2026 - FTI"**: Menyaring langsung dokumen tahun 2026, fakultas FTI, status VALIDATED.
 - 🔬 **"Riset Aktif 2025-2026"**: Menyaring langsung naskah PKS penelitian aktif.
 - ⚠️ **"Kontrak Expiring (<90 Hari)"**: Menyaring naskah yang memerlukan tindakan mitigasi perpanjangan.
-- 🛡️ **"Pending Validasi Staf"**: Menyaring naskah baru hasil ekstraksi AI yang menunggu persetujuan.
+- 🛡️ **"Pending Validasi Staf"**: Menyaring naskah baru hasil ekstraksi sistem yang menunggu persetujuan.
 
 ---
 
 ## 6. PENGALAMAN TABEL DATA & PROGRESIFITAS INFORMASI (TABLE UX)
 
-- **Prinsip *No Overcrowded Table*:** Tabel utama hanya menampilkan kolom esensial (Judul, Nomor, Tipe, Mitra, Masa Berlaku, Status Validasi, Skor AI, dan Tombol Aksi).
+- **Prinsip *No Overcrowded Table*:** Tabel utama hanya menampilkan kolom esensial (Judul, Nomor, Tipe, Mitra, Masa Berlaku, Status Validasi, Tingkat Akurasi, dan Tombol Aksi).
 - **Progresifitas Informasi (*Drawer / Modal Detail*):** Rincian mendalam (komitmen dana, penandatangan kedua pihak, sasaran output/outcome, teks OCR lengkap, dan berkas lampiran) diakses melalui tombol **"Detail"**.
 - **Pencegahan Data Terpotong di Mobile:** Wadah tabel membungkus baris data dengan pengguliran horizontal lancar (*smooth momentum*).
 
