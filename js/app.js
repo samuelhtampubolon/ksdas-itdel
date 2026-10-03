@@ -14,7 +14,8 @@
 class KSDASApp {
   constructor() {
     this.store = window.ksdasStore;
-    this.ai = window.ksdasAI;
+    this.docParser = window.ksdasDocParser || window.ksdasAI;
+    this.ai = this.docParser; // Backward compatibility
     this.analytics = window.ksdasAnalytics;
     this.ui = window.ksdasUI;
     this.router = window.ksdasRouter;
@@ -789,7 +790,7 @@ class KSDASApp {
         id: "QUEUE-" + Math.floor(Math.random() * 100000),
         fileName: safeName,
         fileSize: (f.size / (1024 * 1024)).toFixed(2) + " MB",
-        simulatedOcrText: "",
+        rawDocumentText: "",
         status: "QUEUED",
         progress: 0,
         result: null
@@ -802,11 +803,11 @@ class KSDASApp {
         const reader = new FileReader();
         if (ext === ".txt" || ext === ".md" || ext === ".rtf") {
           reader.onload = (e) => {
-            queueItem.simulatedOcrText = e.target.result || "";
+            queueItem.rawDocumentText = e.target.result || "";
             resolve();
           };
           reader.onerror = () => {
-            queueItem.simulatedOcrText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
+            queueItem.rawDocumentText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
             resolve();
           };
           reader.readAsText(f);
@@ -830,17 +831,17 @@ class KSDASApp {
               if (printable.trim().length >= 3) words.push(printable.trim());
               const extracted = words.join(" ").replace(/\s+/g, " ").trim();
               if (extracted.length > 40) {
-                queueItem.simulatedOcrText = extracted;
+                queueItem.rawDocumentText = extracted;
               } else {
-                queueItem.simulatedOcrText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}. Naskah perjanjian resmi pelaksanaan Tri Dharma Perguruan Tinggi bidang Pendidikan, Penelitian, dan Pengabdian kepada Masyarakat bersama mitra strategis.`;
+                queueItem.rawDocumentText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}. Naskah perjanjian resmi pelaksanaan Tri Dharma Perguruan Tinggi bidang Pendidikan, Penelitian, dan Pengabdian kepada Masyarakat bersama mitra strategis.`;
               }
             } catch (err) {
-              queueItem.simulatedOcrText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
+              queueItem.rawDocumentText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
             }
             resolve();
           };
           reader.onerror = () => {
-            queueItem.simulatedOcrText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
+            queueItem.rawDocumentText = `DOKUMEN KERJA SAMA INSTITUT TEKNOLOGI DEL: ${safeName}.`;
             resolve();
           };
           reader.readAsArrayBuffer(f);
@@ -936,18 +937,15 @@ class KSDASApp {
         stageIndicator.textContent = `Menganalisis Dokumen ${i + 1} dari ${this.batchQueue.length}: ${item.fileName}...`;
       }
 
-      // Simulate realistic local AI latency
-      await new Promise(r => setTimeout(r, 220));
-
-      // Execute Mock AI parser on real text
-      const processedDoc = this.ai.processDocument({
+      // Eksekusi parser ekstraksi metadata dokumen
+      const processedDoc = this.docParser.processDocument({
         name: item.fileName,
         fileSize: item.fileSize,
-        text: item.simulatedOcrText,
+        text: item.rawDocumentText || item.text,
         batchId: batchId
       }, existingDocs);
 
-      // Save extracted document into store (as AI_EXTRACTED)
+      // Simpan dokumen terekstraksi ke store
       this.store.addDocument(processedDoc);
 
       item.status = "EXTRACTED";
@@ -3304,7 +3302,7 @@ class KSDASApp {
         const queryText = inputEl.value;
         if (!queryText.trim()) return;
 
-        const interpretation = this.ai.interpretNaturalLanguageQuery(queryText);
+        const interpretation = (this.docParser.interpretSearchQuery || this.docParser.interpretNaturalLanguageQuery).call(this.docParser, queryText);
         this.renderNLInterpretationResult(interpretation);
       };
 

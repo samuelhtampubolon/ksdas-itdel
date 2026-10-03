@@ -7,21 +7,21 @@
  * Hak Cipta: © 2026 Samuel Hasudungan Tampubolon. All rights reserved.
  * Institusi: Institut Teknologi Del, Sitoluama, Laguboti, Sumatera Utara
  * Versi: 0.2.0
- * Berkas: js/mock-ai.js (AI Document Processing & Natural Language Parser)
+ * Berkas: js/doc-parser.js (Document Metadata Parser and Catalog Engine)
  * ============================================================================
  *
  * Implements deterministic document classification, 26-field metadata extraction,
  * entity normalization, relationship suggestion, quality flags calculation,
  * confidence scoring, and natural-language query interpretation.
  *
- * DISCLAIMER: This is a client-side deterministic heuristic engine designed
+ * DISCLSistemMER: This is a client-side deterministic heuristic engine designed
  * as a functional prototype for the IT Del Cooperation System. It runs entirely
  * offline in the browser without external cloud LLM dependencies.
  */
 
-class KSDASMockAI {
+class KSDASDocumentParser {
   constructor() {
-    this.engineName = "KSDAS Heuristic NLP & Pattern Engine v0.2";
+    this.engineName = "KSDAS Document Parser and Metadata Engine v0.3";
   }
 
   /**
@@ -31,7 +31,7 @@ class KSDASMockAI {
    * @returns {Object} Extracted document entity with audit & quality flags
    */
   processDocument(fileObj, existingDocuments = []) {
-    const rawText = fileObj.text || fileObj.simulatedOcrText || fileObj.simulatedText || fileObj.content || "";
+    const rawText = fileObj.text || fileObj.rawDocumentText || fileObj.simulatedText || fileObj.content || "";
     const fileName = fileObj.name || fileObj.fileName || "unknown_doc.pdf";
 
     // A. Classify Document Type
@@ -139,7 +139,7 @@ class KSDASMockAI {
       relationshipReason: relationship.reason,
 
       // Status & Quality
-      status: (fieldExtractions.partner_signatory_name?.requiresManualReview || qualityAnalysis.flags.includes("unverified_signatory")) ? "NEEDS_REVIEW" : "AI_EXTRACTED",
+      status: (fieldExtractions.partner_signatory_name?.requiresManualReview || qualityAnalysis.flags.includes("unverified_signatory")) ? "NEEDS_REVIEW" : "TEREKSTRAKSI",
       confidenceScore: qualityAnalysis.overallConfidence,
       qualityFlags: qualityAnalysis.flags,
       hasEvidence: false,
@@ -929,7 +929,7 @@ class KSDASMockAI {
    * Natural Language Query Interpretation
    * e.g. "Tampilkan PKS industri aktif tahun 2026 yang punya kegiatan penelitian"
    */
-  interpretNaturalLanguageQuery(queryText) {
+  interpretSearchQuery(queryText) {
     const q = (queryText || "").toLowerCase().trim();
     const result = {
       rawQuery: queryText,
@@ -1021,4 +1021,4 @@ class KSDASMockAI {
 }
 
 // Global singleton instance
-window.ksdasAI = new KSDASMockAI();
+window.ksdasSistem = new KSDASDocumentParser();

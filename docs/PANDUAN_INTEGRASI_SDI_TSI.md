@@ -45,7 +45,7 @@ Prototipe KSDAS IT Del telah menyelesaikan 100% perancangan proses bisnis, hiera
 | **Basis Data** | Browser `localStorage` (JSON reactive) | **PostgreSQL 14 / 16 Enterprise** | [`docs/schema_production_postgres.sql`](schema_production_postgres.sql) |
 | **Penyimpanan Berkas** | Simulasi memori peramban / DataURL | **MinIO S3 On-Premise Kampus IT Del** | Bagian 4 panduan ini |
 | **Autentikasi** | Role Selector instan (8 Peran Institusi) | **SSO IT Del (Keycloak / OAuth2 / CAS)** | Bagian 5 panduan ini |
-| **Ekstraksi AI & OCR** | Deterministic Mock AI (26 field regex/NLP) | **Tesseract OCR / Campus Python Worker** | [`docs/AI_PROCESSING_SPEC.md`](AI_PROCESSING_SPEC.md) |
+| **Ekstraksi Dokumen** | Parser Teks Terstruktur Client-Side | **Worker Ekstraksi Teks Python (PyPDF/Docx)** | [`js/doc-parser.js`](../js/doc-parser.js) |
 | **Antarmuka (Frontend)** | HTML5, Vanilla CSS, Modular ES6 | **Digunakan Langsung (Zero Re-write)** | Folder `index.html`, `css/`, `js/` |
 | **Komunikasi Data** | Event Bus lokal (`KSDASStore`) | **HTTP REST API Adapter (`fetch`)** | Bagian 7 panduan ini |
 
@@ -140,27 +140,26 @@ sequenceDiagram
 
 ---
 
-## 6. LANGKAH 4: PIPELINE PEMROSESAN DOKUMEN & AI / OCR
+## 6. LANGKAH 4: PIPELINE PEMROSESAN & EKSTRAKSI DOKUMEN
 
-Prototipe menggunakan *deterministic mock engine* ([`js/mock-ai.js`](../js/mock-ai.js)) yang telah memetakan aturan ekstraksi 26 field. Tim teknis dapat mengimplementasikan microservice OCR berbasis Python (FastAPI + Tesseract / Poppler) atau server GPU lokal kampus.
+Sistem menggunakan modul ekstraksi teks terstruktur ([`js/doc-parser.js`](../js/doc-parser.js)) yang telah memetakan aturan ekstraksi metadata dokumen. Tim teknis dapat mengimplementasikan microservice backend berbasis Python (FastAPI + PyPDF / python-docx) atau worker database kampus.
 
 ### Alur Pemrosesan Dokumen di Backend:
 ```mermaid
 graph TD
     Upload[1. Unggah Berkas PDF/DOCX] --> Validate[2. Validasi MIME, Checksum SHA256 & Antivirus ClamAV]
     Validate --> MinIO[3. Simpan ke MinIO Storage]
-    Validate --> WorkerQueue[4. Masukkan Pekerjaan ke Celery / Redis Queue]
-    WorkerQueue --> OCR[5. Ekstraksi Teks OCR Tesseract/Poppler]
-    OCR --> Parser[6. Ekstraksi 26 Field & Confidence Score]
-    Parser --> Matcher[7. Deteksi Calon Induk MoU/PKS]
-    Matcher --> DB[(8. Simpan ke PostgreSQL dengan Status AI_EXTRACTED)]
-    DB --> Event[9. Notifikasi Staf: Dokumen Siap Ditinjau Human-in-the-Loop]
+    Validate --> WorkerQueue[4. Masukkan Pekerjaan ke Background Queue]
+    WorkerQueue --> Parser[5. Ekstraksi Teks & Metadata Dokumen]
+    Parser --> Matcher[6. Deteksi Calon Induk MoU/PKS]
+    Matcher --> DB[(7. Simpan ke PostgreSQL dengan Status TEREKSTRAKSI)]
+    DB --> Event[8. Notifikasi Staf: Dokumen Siap Validasi Manual]
 ```
 
 ### Aturan Keamanan Utama:
 - Berkas yang diunggah wajib dipindai antivirus (*ClamAV daemon*) sebelum disimpan.
 - Berkas tidak boleh dijalankan sebagai skrip (*disable execution permissions* pada direktori unggahan).
-- Skor keyakinan (*confidence score*) harus dihitung per field (0.00 - 1.00).
+- Seluruh dokumen baru memerlukan verifikasi staf resmi melalui Workspace Validasi Manual sebelum status diubah menjadi `VALIDATED`.
 
 ---
 

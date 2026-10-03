@@ -3,7 +3,7 @@
  * Hak Cipta (c) 2026 Samuel Hasudungan Tampubolon - Institut Teknologi Del
  *
  * Modul terintegrasi ringan (Lightweight Open Source Client-Side Engine):
- * 1. Deteksi Tulisan & Teks Dokumen (Canvas OCR, Text Stream Analyzer & Keyword Extractor)
+ * 1. Deteksi Tulisan & Teks Dokumen (Canvas Text Stream Analyzer & Keyword Extractor)
  * 2. Deteksi Nama & Gelar Pejabat (Zero-Hallucination Legal NER, Academic Degree & Signatory Parser)
  * 3. Deteksi Multi-Entitas (Multi-Fakultas, Multi-Prodi, Multi-Kewakilrektoran, Multi-Unit, Multi-TriDharma)
  * 4. Deteksi 10 Parameter Akreditasi & SPM (Tingkat Wilayah, Relevansi Keilmuan, PDDikti, MBKM, Monev, dll.)
