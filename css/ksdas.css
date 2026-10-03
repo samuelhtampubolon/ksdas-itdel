@@ -83,6 +83,46 @@ textarea { min-height: 8rem; }
 .tablewrap { overflow-x: auto; }
 ul { margin: 0; padding-left: 1.1rem; }
 li { margin: 0.25rem 0; }
+.ocr-ai-box {
+  background: #f0f6fc;
+  border: 1.5px solid var(--navy);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  margin: 0.8rem 0 1rem;
+}
+.ai-status-card {
+  background: var(--surface);
+  border: 1px solid #c2d7ed;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.6rem;
+  font-size: 0.92rem;
+}
+.ai-status-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.98rem;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ai-findings-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.35rem 0.8rem;
+  margin: 0.4rem 0 0.6rem;
+  padding-left: 1.1rem;
+}
+.badge-detected {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #e1f0da;
+  color: #216118;
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  margin-left: 0.4rem;
+  font-weight: 600;
+}
 @media (max-width: 800px) {
   .shell { grid-template-columns: 1fr; }
   aside { position: static; }

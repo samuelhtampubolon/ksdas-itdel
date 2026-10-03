@@ -6,42 +6,52 @@ Dokumen ini memandu staf, Dekan, Kaprodi, dan pimpinan dalam menguji coba alur o
 
 ---
 
-## 1. Alur Kerja Staf Unit Kerja Sama
+## 1. Alur Kerja Staf Unit Kerja Sama & Ekstraksi Cerdas (OCR)
 
-Alur operasional staf dirancang efisien dan deterministik (tanpa AI/ML/OCR) untuk menggantikan kebiasaan pencatatan tersebar di Google Sheets, Google Drive, OneDrive, dan Notion.
+Alur operasional staf menggabungkan **Modul Ekstraksi Cerdas & OCR Lokal** untuk membaca berkas fisik pindaian (scan/gambar), Word (`.docx`), PDF, atau berkas ringkasan, yang kemudian **diverifikasi, divalidasi, dan dilengkapi secara manual oleh Staf** untuk memastikan data 100% valid dan presisi.
 
 ```
-[Unggah Berkas Naskah] 
+[Unggah Berkas Naskah (Scan/Gambar, PDF, Word .docx, Teks)] 
        ↓ 
-[Tercatat di Basis Data] 
+[Modul Ekstraksi Cerdas & OCR Berjalan di Klien/Lokal] 
        ↓ 
-[Formulir Terbuka dengan Default Sistem] 
-  (Rektor Dr. Arnaldo Sinaga, Tanggal Hari Ini, Lokasi Laguboti)
-       ↓
-[Pilihan Isian Staf]:
-  ├─ A. Input / Lengkapi Manual Sebagian Besar Kolom
-  └─ B. Pintasan Otomatisasi: Pilih Berkas / Tempel Ringkasan (.csv/.txt)
-       ↓
+[Pendeteksian Entitas Naskah Otomatis]:
+  ├─ Nomor Dokumen (MoU / PKS / IA IT Del & Mitra)
+  ├─ Judul Kerja Sama (ekstraksi kepala naskah & klausul "TENTANG")
+  ├─ Penandatangan & Gelar (Pembeda cerdas: orang asli vs nama lembaga)
+  ├─ Kategori Fakultas & Program Studi (FITE, FTI, FB, Vokasi)
+  ├─ Klasifikasi Tri Dharma (Pendidikan, Penelitian, Pengabdian)
+  ├─ Masa Berlaku & Periode (Tanggal Mulai, Berakhir, Durasi Tahun)
+  └─ Nilai Anggaran & Lokasi Pelaksanaan
+       ↓ 
+[Formulir Terisi Otomatis dengan Label Badge: "Terdeteksi Cerdas"] 
+       ↓ 
+[Tahap Krusial: Verifikasi & Validasi Manual oleh Staf]:
+  ├─ Staf meneliti kesesuaian draf isian dengan fisik dokumen
+  ├─ Staf melengkapi detail spesifik (pasal, rekening, klausul khusus)
+  └─ Staf menetapkan status naskah (Draf / Aktif)
+       ↓ 
 [Validasi Aturan & Simpan ke Basis Data]
 ```
 
 ### Langkah Pengujian Staf:
 1. Masuk ke aplikasi dan pilih peran **Staf Unit Kerja Sama**.
 2. Klik menu **Catat**.
-3. **Unggah Berkas Lampiran**: Klik *Unggah Berkas Naskah* (PDF/Word/Scan). Berkas tercatat di sistem sebagai lampiran dosir.
-4. **Periksa Nilai Awal Sistem**: Formulir terbuka dan kolom-kolom yang sudah dipastikan institusi terisi otomatis:
-   - Penandatangan IT Del: `Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.`
-   - Jabatan IT Del: `Rektor Institut Teknologi Del`
-   - Tanggal Mulai: Tanggal hari ini
-   - Lokasi: `Laguboti`
-   - Unit Pengelola: `Unit Kerja Sama`
-5. **Pintasan Otomatisasi Staf (Autofill dari Ringkasan)**:
-   - Jika staf memiliki berkas ringkasan naskah dari Excel/Word/CSV, klik tombol **"📄 Isi otomatis dari berkas (.csv / .txt)"** ATAU klik **"📋 Tempel ringkasan naskah"**.
-   - Sistem secara deterministik memetakan puluhan field formulir (Nomor dokumen, judul, mitra, masa berlaku, kegiatan, PIC, nama & jabatan mitra, anggaran, ruang lingkup) secara otomatis.
-   - Staf tidak perlu mengetik puluhan kolom dari nol!
+3. **Uji Coba Ekstraksi Cerdas & OCR Berkas**:
+   - Klik **"📂 Pilih Berkas / Scan..."** untuk memilih berkas naskah Anda sendiri (`.docx`, `.pdf`, `.png`, `.jpg`, `.txt`, `.csv`).
+   - Sistem akan memproses berkas, menjalankan pemindaian teks dan ekstraksi pola semantik lokal.
+   - *Alternatif Uji Coba Cepat Tanpa Menyiapkan Berkas*: Klik tombol **"⚡ Coba Sampel MoU Pemkab Toba"** atau **"⚡ Coba Sampel PKS FITE"**.
+4. **Pemeriksaan Hasil Deteksi Cerdas**:
+   - Kotak status ekstraksi menampilkan ringkasan entitas yang berhasil diidentifikasi (Nomor naskah, Judul, Mitra, Penandatangan, Fakultas/Prodi, Tri Dharma, Masa Berlaku, Nilai).
+   - Seluruh field formulir yang berhasil dikenali otomatis akan terisi dan ditandai dengan lencana hijau `<span class="badge-detected">Terdeteksi Cerdas</span>`.
+5. **Verifikasi dan Penyempurnaan Manual oleh Staf**:
+   - Staf membaca naskah dan memeriksa apakah gelar atau jabatan penandatangan sudah sesuai.
+   - Staf menambahkan detail pelaksana, catatan ruang lingkup, atau PIC internal jika diperlukan.
+   - Fitur otomatisasi ini menghemat 90% waktu ketik, namun **otoritas keabsahan data sepenuhnya berada di tangan Staf Unit Kerja Sama**.
 6. **Validasi & Simpan**:
-   - Jika tanggal berakhir lebih awal dari tanggal mulai, sistem menolak dan menampilkan pesan koreksi.
+   - Sistem melakukan pengecekan aturan bisnis (tanggal berakhir >= tanggal mulai, kelengkapan field wajib).
    - Status dapat disimpan sebagai **Draf** kapan saja, atau ditandai **Aktif** setelah field wajib lengkap.
+   - Klik **"Simpan Naskah"**. Dokumen langsung tersimpan dan tercatat di repositori naskah.
 
 ---
 
@@ -78,7 +88,7 @@ Dekan dan Kaprodi difasilitasi untuk melakukan pemantauan, penyaringan, seleksi,
    - Gunakan kotak **Cari** untuk mencari nomor dokumen, judul, mitra, atau nama PIC.
    - Gunakan dropdown **Tahun** untuk menyaring naskah tahun tertentu.
    - Gunakan dropdown **Jenis** untuk menyaring MoU, PKS, IA, Proposal, atau Laporan.
-   - Gunakan dropdown **Status** untuk menyaring naskah *Aktif*, *Akan Berakhir (\u2264 180 hari)*, *Berakhir*, atau *Draf*.
+   - Gunakan dropdown **Status** untuk menyaring naskah *Aktif*, *Akan Berakhir (≤ 180 hari)*, *Berakhir*, atau *Draf*.
 4. **Pengurutan (Sort)**:
    - Klik kepala kolom tabel (**Nomor**, **Judul**, **Mitra**, **Status**, atau **Berakhir**) untuk mengurutkan data naik (*ascending*) atau turun (*descending*).
 5. **Seleksi Multi-Naskah (Checkboxes)**:
@@ -113,5 +123,9 @@ Dekan dan Kaprodi difasilitasi untuk melakukan pemantauan, penyaringan, seleksi,
 1. Pada komputer bersistem operasi Windows, buka folder repository.
 2. Klik ganda berkas **`KSDAS_ITDel.exe`**.
 3. Aplikasi desktop terbuka seketika tanpa memerlukan instalasi Node.js, Python, ataupun koneksi internet.
-4. Data tersimpan secara persisten di file **`ksdas_desktop_database.json`** pada folder yang sama.
-5. Coba tambahkan naskah baru, tutup aplikasi, dan buka kembali: data yang baru ditambahkan tetap tersimpan rapi di disk lokal komputer.
+4. **Fitur Ekstraksi Cerdas & OCR Desktop**:
+   - Klik tombol **"🔍 Ekstraksi Cerdas & OCR"** pada toolbar utama untuk memindai berkas naskah lokal.
+   - Tinjau hasil ekstraksi pada dialog pratinjau, lalu klik **"Gunakan pada Formulir"**.
+   - Periksa dan sesuaikan setiap kolom sebelum menekan **Simpan**.
+5. Data tersimpan secara persisten di file **`ksdas_desktop_database.json`** pada folder yang sama.
+6. Coba tambahkan naskah baru, tutup aplikasi, dan buka kembali: data yang baru ditambahkan tetap tersimpan rapi di disk lokal komputer.

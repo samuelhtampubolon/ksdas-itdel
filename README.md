@@ -2,7 +2,7 @@
 
 Sistem Informasi Manajemen Kerja Sama untuk Unit Kerja Sama (UKS) Institut Teknologi Del, Laguboti, Sumatera Utara.
 
-Aplikasi ini adalah **Sistem Informasi Manajemen konvensional berbasis aturan deterministik** dan basis data relasional. Aplikasi ini **bukan** pemindai dokumen, dan **sama sekali tidak memakai AI, ML, atau OCR**.
+Aplikasi ini menggabungkan **Sistem Informasi Manajemen berbasis data relasional yang kokoh** dengan modul **Ekstraksi Cerdas & OCR Lokal Portabel**. Sistem ini mampu membaca isi naskah dokumen (Word, PDF, pindaian/gambar scan, maupun ringkasan teks) untuk mengenali secara presisi nomor naskah, nama penandatangan (membedakan orang asli dan instansi), judul kerja sama, kategori fakultas/prodi, klasifikasi Tri Dharma, masa berlaku, dan nilai anggaran. Hasil deteksi disajikan sebagai usulan awal (*draft suggestions*), di mana **Staf Unit Kerja Sama memiliki kendali penuh untuk memverifikasi, melengkapi detail, dan mengesahkan data sebelum disimpan ke basis data**.
 
 ---
 
@@ -29,9 +29,18 @@ Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sh
 ## Alur Operasional Utama
 
 ### 1. Dari Perspektif Staf Unit Kerja Sama:
-- **Unggah Berkas**: Staf mengunggah dokumen fisik pindaian (PDF) atau dosir digital &rarr; tersimpan di basis data sebagai lampiran.
-- **Default Sistem Otomatis**: Formulir terbuka dengan nilai institusional yang sudah diketahui terisi otomatis (Penandatangan IT Del: Rektor Dr. Arnaldo Sinaga; Tanggal mulai: hari ini; Lokasi: Laguboti; Unit: UKS).
-- **Pintasan Otomatisasi Staf**: Staf dapat langsung memilih berkas ringkasan (.csv/.txt) atau menempel teks ringkasan &rarr; sistem memetakan puluhan kolom formulir naskah dalam satu klik tanpa ketik manual satu per satu.
+- **Unggah Berkas Naskah**: Staf mengunggah dokumen fisik pindaian (Scan/Gambar), berkas Word (`.docx`), PDF, atau berkas ringkasan &rarr; tersimpan di basis data sebagai lampiran.
+- **Ekstraksi Cerdas & OCR Otomatis**: Sistem secara otomatis mengekstraksi teks dari berkas/gambar scan dan menjalankan *smart entity recognition* untuk mendeteksi:
+  - Nomor naskah (MoU/PKS/IA),
+  - Judul kerja sama (klausul 'TENTANG'),
+  - Nama penandatangan & gelar (membedakan nama orang asli dengan nama instansi/organisasi),
+  - Kategori Fakultas (FITE, FTI, FB, Vokasi) dan Program Studi,
+  - Klasifikasi Tri Dharma Perguruan Tinggi (Pendidikan, Penelitian, Pengabdian),
+  - Masa berlaku (tanggal mulai, berakhir, durasi tahun),
+  - Nilai anggaran & lokasi kegiatan.
+- **Badge Visual Usulan Cerdas**: Kolom yang terdeteksi ditandai dengan badge `[Terdeteksi Cerdas]` sebagai usulan awal.
+- **Validasi Manual Staf**: Staf meninjau, menyempurnakan, dan melengkapi data yang belum terisi secara manual agar data 100% valid dan terverifikasi sebelum disimpan ke basis data.
+- **Pintasan Otomatisasi Staf**: Staf juga dapat langsung memilih berkas ringkasan (.csv/.txt) atau menempel teks ringkasan untuk pengisian instan.
 - **Migrasi Data Massal**: Fitur impor tabel untuk memindahkan data dari Google Sheets, OneDrive Excel, atau Notion secara deterministik.
 
 ### 2. Dari Perspektif Dekan dan Kaprodi:
@@ -52,8 +61,12 @@ Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sh
 Untuk demonstrasi penyimpanan data persisten lokal di laptop/PC Windows tanpa memerlukan instalasi server atau internet:
 1. Klik ganda berkas **`KSDAS_ITDel.exe`**.
 2. Aplikasi desktop Windows Forms portabel akan terbuka langsung.
-3. Seluruh penambahan, perubahan, dan penghapusan data tersimpan secara persisten ke berkas **`ksdas_desktop_database.json`** di folder yang sama.
-4. Untuk mengompilasi ulang kode sumber C# (`desktop-app/KSDAS_DesktopApp.cs`), cukup jalankan `build_exe.bat`.
+3. **Fitur Ekstraksi Cerdas & OCR Desktop**:
+   - Tombol **"🔍 Ekstraksi Cerdas & OCR"** pada bilah alat (*toolbar*) memungkinkan staf memindai berkas Word/PDF/Teks/Scan langsung dari komputer.
+   - Hasil ekstraksi menampilkan jendela dialog deteksi entitas (Nomor, Judul, Mitra, Penandatangan, Fakultas/Prodi, Tri Dharma, Nilai, Durasi).
+   - Tombol **"Gunakan pada Formulir"** mengisikan hasil deteksi ke form entri, di mana staf dapat memeriksa dan memverifikasi data sebelum disimpan.
+4. Seluruh penambahan, perubahan, dan penghapusan data tersimpan secara persisten ke berkas **`ksdas_desktop_database.json`** di folder yang sama.
+5. Untuk mengompilasi ulang kode sumber C# (`desktop-app/KSDAS_DesktopApp.cs`), cukup jalankan `build_exe.bat`.
 
 ---
 

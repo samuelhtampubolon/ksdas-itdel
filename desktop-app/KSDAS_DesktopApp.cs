@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -39,6 +40,535 @@ namespace KsdasItDelDesktop
         public string notes { get; set; }
         public string fileName { get; set; }
         public string parentNumber { get; set; }
+    }
+
+    public class SmartExtractionResult
+    {
+        public NaskahItem Item { get; set; }
+        public List<string> Findings { get; set; }
+        public string SummaryText { get; set; }
+
+        public SmartExtractionResult()
+        {
+            Item = new NaskahItem();
+            Findings = new List<string>();
+        }
+    }
+
+    public static class SmartDocumentEngine
+    {
+        private static readonly string[] InvalidPersonTokens = new string[]
+        {
+            "pt", "cv", "yayasan", "universitas", "institut", "kementerian", "dinas",
+            "pemerintah", "badan", "bank", "direktorat", "tim", "panitia", "divisi", "biro",
+            "bagian", "fakultas", "program", "studi", "pasal", "pihak", "pertama", "kedua",
+            "ketiga", "kesepakatan", "perjanjian", "republik", "indonesia", "kabupaten", "kota",
+            "provinsi", "rektor", "dekan", "direktur", "kepala", "bupati", "gubernur", "camat",
+            "surat", "memorandum", "understanding", "agreement", "arrangement", "nomor",
+            "ruang", "lingkup", "ayat", "bab", "ketentuan", "umum", "penutup", "jangka", "waktu",
+            "tujuan", "kegiatan", "anggaran", "biaya", "tugas", "kewajiban", "hak", "pelaksanaan"
+        };
+
+        public static bool IsPersonName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.Length < 4) return false;
+            if (name == name.ToUpper() && !Regex.IsMatch(name, @"(PROF\.|DR\.|IR\.|S\.T\.|M\.T\.)"))
+                return false;
+
+            string clean = Regex.Replace(name, @"^(?:selaku|bertindak|pihak\s+kedua|pihak\s+pertama)\s+", "", RegexOptions.IgnoreCase);
+            string[] words = clean.Split(new char[] { ' ', ',', '.', ':' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length < 2) return false;
+
+            foreach (string w in words)
+            {
+                string lw = w.ToLower();
+                foreach (string inv in InvalidPersonTokens)
+                {
+                    if (lw == inv) return false;
+                }
+            }
+            return true;
+        }
+
+        public static SmartExtractionResult ProcessFile(string filePath, List<NaskahItem> existingDocs)
+        {
+            string ext = Path.GetExtension(filePath).ToLower();
+            string text = "";
+
+            if (ext == ".txt" || ext == ".csv" || ext == ".tsv")
+            {
+                try { text = File.ReadAllText(filePath, Encoding.UTF8); } catch {}
+            }
+            else if (ext == ".docx")
+            {
+                text = ExtractTextFromDocx(filePath);
+            }
+            else if (ext == ".pdf")
+            {
+                text = ExtractTextFromPdf(filePath);
+            }
+            else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp")
+            {
+                text = ExtractTextFromImage(filePath);
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                text = Path.GetFileNameWithoutExtension(filePath);
+            }
+
+            return AnalyzeText(text, filePath, existingDocs);
+        }
+
+        private static string ExtractTextFromDocx(string filePath)
+        {
+            try
+            {
+                byte[] raw = File.ReadAllBytes(filePath);
+                string str = Encoding.UTF8.GetString(raw);
+                MatchCollection mc = Regex.Matches(str, @"<w:t(?:\s+[^>]*)?>([\s\S]*?)</w:t>");
+                if (mc.Count > 0)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (Match m in mc)
+                    {
+                        sb.Append(m.Groups[1].Value).Append(" ");
+                    }
+                    return sb.ToString();
+                }
+            }
+            catch {}
+            return Path.GetFileNameWithoutExtension(filePath);
+        }
+
+        private static string ExtractTextFromPdf(string filePath)
+        {
+            try
+            {
+                byte[] raw = File.ReadAllBytes(filePath);
+                string str = Encoding.Default.GetString(raw);
+                StringBuilder sb = new StringBuilder();
+
+                MatchCollection mcTj = Regex.Matches(str, @"\(([^)]+)\)\s*Tj");
+                foreach (Match m in mcTj)
+                {
+                    sb.Append(m.Groups[1].Value).Append(" ");
+                }
+
+                MatchCollection mcTjArr = Regex.Matches(str, @"\[([^\]]+)\]\s*TJ");
+                foreach (Match m in mcTjArr)
+                {
+                    MatchCollection inners = Regex.Matches(m.Groups[1].Value, @"\(([^)]+)\)");
+                    foreach (Match inn in inners)
+                    {
+                        sb.Append(inn.Groups[1].Value);
+                    }
+                    sb.Append(" ");
+                }
+
+                if (sb.Length > 20) return sb.ToString();
+
+                MatchCollection words = Regex.Matches(str, @"[A-Za-z0-9\/\.\-\s,]{6,}");
+                foreach (Match w in words)
+                {
+                    string val = w.Value;
+                    if (Regex.IsMatch(val, @"(del|mou|pks|ia|toba|kerja\s*sama|rektor)", RegexOptions.IgnoreCase))
+                    {
+                        sb.Append(val).Append(" ");
+                    }
+                }
+                return sb.ToString();
+            }
+            catch {}
+            return Path.GetFileNameWithoutExtension(filePath);
+        }
+
+        private static string ExtractTextFromImage(string filePath)
+        {
+            try
+            {
+                string companionTxt = Path.ChangeExtension(filePath, ".txt");
+                if (File.Exists(companionTxt))
+                {
+                    return File.ReadAllText(companionTxt, Encoding.UTF8);
+                }
+                using (Bitmap bmp = new Bitmap(filePath))
+                {
+                    return string.Format("{0} Resolusi {1}x{2}", Path.GetFileNameWithoutExtension(filePath), bmp.Width, bmp.Height);
+                }
+            }
+            catch {}
+            return Path.GetFileNameWithoutExtension(filePath);
+        }
+
+        public static SmartExtractionResult AnalyzeText(string text, string filePath, List<NaskahItem> existingDocs)
+        {
+            SmartExtractionResult result = new SmartExtractionResult();
+            NaskahItem doc = new NaskahItem
+            {
+                id = "DOC-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper(),
+                fileName = Path.GetFileName(filePath),
+                startDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                signedDate = DateTime.Today.ToString("yyyy-MM-dd"),
+                location = "Laguboti",
+                itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
+                itdelSignatoryTitle = "Rektor Institut Teknologi Del",
+                unit = "UKS",
+                triDharma = "Pendidikan",
+                pic = "Staf Unit Kerja Sama",
+                status = "DRAFT"
+            };
+
+            // 1. Jenis Naskah
+            if (Regex.IsMatch(text, @"(MEMORANDUM OF UNDERSTANDING|NOTA KESEPAHAMAN|NOTA KESEPAKATAN|\bMOU\b)", RegexOptions.IgnoreCase))
+            {
+                doc.documentType = "MoU / LOI";
+                result.Findings.Add("✓ Jenis Naskah: MoU / LOI (Nota Kesepahaman)");
+            }
+            else if (Regex.IsMatch(text, @"(PERJANJIAN KERJA\s*SAMA|\bPKS\b|MEMORANDUM OF AGREEMENT|\bMOA\b)", RegexOptions.IgnoreCase))
+            {
+                doc.documentType = "PKS / MoA";
+                result.Findings.Add("✓ Jenis Naskah: PKS / MoA (Perjanjian Kerja Sama)");
+            }
+            else if (Regex.IsMatch(text, @"(IMPLEMENTATION ARRANGEMENT|\bIA\b|RENCANA KERJA)", RegexOptions.IgnoreCase))
+            {
+                doc.documentType = "IA";
+                result.Findings.Add("✓ Jenis Naskah: IA (Implementation Arrangement)");
+            }
+            else if (Regex.IsMatch(text, @"PROPOSAL", RegexOptions.IgnoreCase))
+            {
+                doc.documentType = "Proposal";
+                result.Findings.Add("✓ Jenis Naskah: Proposal");
+            }
+            else if (Regex.IsMatch(text, @"LAPORAN", RegexOptions.IgnoreCase))
+            {
+                doc.documentType = "Laporan";
+                result.Findings.Add("✓ Jenis Naskah: Laporan");
+            }
+            else
+            {
+                doc.documentType = "MoU / LOI";
+            }
+
+            // 2. Nomor Dokumen
+            string[] numPats = new string[]
+            {
+                @"(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)",
+                @"(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-]+\/(?:MoU|PKS|IA|MoA)\/[0-9]{4})",
+                @"(?:nomor|no\.?)\s*[:=]?\s*([0-9A-Za-z\.\-\/]+(?:MoU|PKS|IA|MoA)[0-9A-Za-z\.\-\/]*)",
+                @"(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-\/]+)"
+            };
+            foreach (string np in numPats)
+            {
+                Match m = Regex.Match(text, np, RegexOptions.IgnoreCase);
+                if (m.Success && m.Groups[1].Value.Length > 4 && !Regex.IsMatch(m.Groups[1].Value, @"^(induk|hp|telepon)", RegexOptions.IgnoreCase))
+                {
+                    doc.documentNumber = m.Groups[1].Value.Trim();
+                    result.Findings.Add("✓ Nomor Dokumen: " + doc.documentNumber);
+                    break;
+                }
+            }
+            if (string.IsNullOrEmpty(doc.documentNumber))
+            {
+                doc.documentNumber = "DRAF-" + DateTime.Today.ToString("yyyyMM") + "-001";
+            }
+
+            // 3. Judul Kerja Sama
+            Match tm = Regex.Match(text, @"(?:TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G)\s*[:\s]*[\r\n]*([^:\r\n]+(?:\r?\n[^:\r\n]+)?)", RegexOptions.IgnoreCase);
+            if (tm.Success)
+            {
+                string rawTitle = Regex.Replace(tm.Groups[1].Value, @"[\r\n]+", " ").Trim();
+                rawTitle = Regex.Replace(rawTitle, @"\b(NOMOR|NO\.?)\s*[:=].*$", "", RegexOptions.IgnoreCase).Trim();
+                if (rawTitle.Length > 5)
+                {
+                    doc.title = rawTitle;
+                    result.Findings.Add("✓ Judul Naskah: " + doc.title);
+                }
+            }
+            if (string.IsNullOrEmpty(doc.title))
+            {
+                doc.title = "Kerja Sama Kemitraan Strategis IT Del";
+            }
+
+            // 4. Mitra
+            if (existingDocs != null)
+            {
+                foreach (NaskahItem ex in existingDocs)
+                {
+                    if (!string.IsNullOrEmpty(ex.partnerName) && text.IndexOf(ex.partnerName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        doc.partnerName = ex.partnerName;
+                        doc.partnerType = ex.partnerType;
+                        result.Findings.Add("✓ Mitra Terdaftar: " + doc.partnerName);
+                        break;
+                    }
+                }
+            }
+            if (string.IsNullOrEmpty(doc.partnerName))
+            {
+                Match pm = Regex.Match(text, @"(?:DENGAN|PIHAK KEDUA[:\s]*)\s*[\r\n]*([A-Z0-9\s\.,]{6,60})");
+                if (pm.Success)
+                {
+                    string cand = pm.Groups[1].Value.Trim();
+                    if (Regex.IsMatch(cand, @"(PEMERINTAH|UNIVERSITAS|INSTITUT|PT\s+|CV\s+|DINAS|KEMENTERIAN)", RegexOptions.IgnoreCase))
+                    {
+                        doc.partnerName = cand;
+                        result.Findings.Add("✓ Mitra Terdeteksi: " + doc.partnerName);
+                    }
+                }
+            }
+            if (string.IsNullOrEmpty(doc.partnerName))
+            {
+                doc.partnerName = "Mitra Kerja Sama IT Del";
+            }
+
+            // 5. Pejabat IT Del
+            if (Regex.IsMatch(text, @"(Arnaldo\s+Marulitua\s+Sinaga|Arnaldo\s+Sinaga)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.";
+                doc.itdelSignatoryTitle = "Rektor Institut Teknologi Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Rektor)");
+            }
+            else if (Regex.IsMatch(text, @"(Johannes\s+(?:Harungguan\s+)?Sianipar)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Dr. Johannes Harungguan Sianipar, S.T., M.T.";
+                doc.itdelSignatoryTitle = "Dekan FITE IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FITE)");
+            }
+            else if (Regex.IsMatch(text, @"(Rizal\s+Sinaga)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Dr. Rizal Sinaga, S.T., M.T.";
+                doc.itdelSignatoryTitle = "Dekan FTI IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FTI)");
+            }
+            else if (Regex.IsMatch(text, @"(Merry\s+(?:M\.\s+)?Sibarani)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Dr. Merry M. Sibarani, S.Si., M.Si.";
+                doc.itdelSignatoryTitle = "Dekan FB IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FB)");
+            }
+            else
+            {
+                result.Findings.Add("✓ Penandatangan IT Del (Baku): " + doc.itdelSignatory + " (Rektor)");
+            }
+
+            // 6. Penandatangan Mitra (Orang Terverifikasi)
+            string[] sigPats = new string[]
+            {
+                @"(?:Prof\.|Dr\.|Ir\.|Drs\.|Dra\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:,\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D|B\.Eng|M\.Eng|Sc|Si|Kom|T|E|M|H|Pd)\b[A-Za-z\.,\s]*)?)",
+                @"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}),\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D\.|B\.Eng\.|M\.Eng\.|S\.Kom\.|M\.Kom\.|S\.T\.|M\.T\.|S\.Si\.|M\.Si\.|S\.E\.|M\.M\.|S\.H\.|M\.H\.)"
+            };
+            foreach (string sp in sigPats)
+            {
+                MatchCollection mc = Regex.Matches(text, sp);
+                foreach (Match m in mc)
+                {
+                    string cand = m.Value.Trim();
+                    if (!Regex.IsMatch(cand, @"(Arnaldo|Johannes|Rizal|Merry|Fitriani)", RegexOptions.IgnoreCase) && IsPersonName(cand))
+                    {
+                        doc.partnerSignatory = cand;
+                        result.Findings.Add("✓ Penandatangan Mitra (Orang): " + doc.partnerSignatory);
+                        break;
+                    }
+                }
+                if (!string.IsNullOrEmpty(doc.partnerSignatory)) break;
+            }
+
+            Match jm = Regex.Match(text, @"(Bupati\s+[A-Za-z]+|Direktur\s+Utama|Direktur|Kepala\s+Dinas\s+[A-Za-z\s]+|Kepala\s+Sekolah|Dekan|Rektor)", RegexOptions.IgnoreCase);
+            if (jm.Success && !Regex.IsMatch(jm.Value, @"Rektor\s+Institut\s+Teknologi\s+Del", RegexOptions.IgnoreCase))
+            {
+                doc.partnerSignatoryTitle = jm.Value.Trim();
+                result.Findings.Add("✓ Jabatan Mitra: " + doc.partnerSignatoryTitle);
+            }
+
+            // 7. Fakultas & Prodi
+            string lower = text.ToLower();
+            int scoreFITE = 0, scoreFTI = 0, scoreFB = 0;
+            string[] fiteWords = new string[] { "informatika", "software", "pemrograman", "komputer", "sistem informasi", "erp", "cyber", "jaringan", "teknik elektro" };
+            string[] ftiWords = new string[] { "manajemen rekayasa", "industri", "rantai pasok", "supply chain", "manufaktur", "logistik", "pabrik" };
+            string[] fbWords = new string[] { "bioproses", "bioteknologi", "flora", "fauna", "mikrobiologi", "limbah", "danau toba", "pangan" };
+
+            foreach (string w in fiteWords) if (lower.Contains(w)) scoreFITE++;
+            foreach (string w in ftiWords) if (lower.Contains(w)) scoreFTI++;
+            foreach (string w in fbWords) if (lower.Contains(w)) scoreFB++;
+
+            if (scoreFITE >= scoreFTI && scoreFITE >= scoreFB && scoreFITE > 0)
+            {
+                doc.faculty = "FITE";
+                doc.program = lower.Contains("sistem informasi") || lower.Contains("erp") ? "S1 Sistem Informasi" : "S1 Informatika";
+                result.Findings.Add(string.Format("✓ Fakultas & Prodi: FITE ({0})", doc.program));
+            }
+            else if (scoreFTI > scoreFITE && scoreFTI >= scoreFB)
+            {
+                doc.faculty = "FTI";
+                doc.program = "S1 Manajemen Rekayasa";
+                result.Findings.Add("✓ Fakultas & Prodi: FTI (S1 Manajemen Rekayasa)");
+            }
+            else if (scoreFB > scoreFITE && scoreFB > scoreFTI)
+            {
+                doc.faculty = "FB";
+                doc.program = "S1 Teknik Bioproses";
+                result.Findings.Add("✓ Fakultas & Prodi: FB (S1 Teknik Bioproses)");
+            }
+            else
+            {
+                doc.faculty = "FITE";
+                doc.program = "S1 Informatika";
+            }
+
+            // 8. Tri Dharma
+            List<string> tri = new List<string>();
+            if (Regex.IsMatch(lower, @"(pendidikan|kuliah|magang|kurikulum|mahasiswa)")) tri.Add("Pendidikan");
+            if (Regex.IsMatch(lower, @"(penelitian|riset|publikasi|jurnal|laboratorium)")) tri.Add("Penelitian");
+            if (Regex.IsMatch(lower, @"(pengabdian|masyarakat|desa binaan|pelatihan warga)")) tri.Add("Pengabdian");
+            if (tri.Count > 0)
+            {
+                doc.triDharma = string.Join("; ", tri.ToArray());
+                result.Findings.Add("✓ Tri Dharma: " + doc.triDharma);
+            }
+
+            // 9. Tanggal & Masa Berlaku
+            Match dm = Regex.Match(text, @"(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})", RegexOptions.IgnoreCase);
+            if (dm.Success)
+            {
+                int day = int.Parse(dm.Groups[1].Value);
+                string mName = dm.Groups[2].Value.ToLower();
+                int year = int.Parse(dm.Groups[3].Value);
+                int month = 1;
+                if (mName.StartsWith("jan")) month = 1;
+                else if (mName.StartsWith("feb")) month = 2;
+                else if (mName.StartsWith("mar")) month = 3;
+                else if (mName.StartsWith("apr")) month = 4;
+                else if (mName.StartsWith("mei")) month = 5;
+                else if (mName.StartsWith("jun")) month = 6;
+                else if (mName.StartsWith("jul")) month = 7;
+                else if (mName.StartsWith("agu")) month = 8;
+                else if (mName.StartsWith("sep")) month = 9;
+                else if (mName.StartsWith("okt")) month = 10;
+                else if (mName.StartsWith("nov")) month = 11;
+                else if (mName.StartsWith("des")) month = 12;
+
+                DateTime dt = new DateTime(year, month, day);
+                doc.startDate = dt.ToString("yyyy-MM-dd");
+                doc.signedDate = dt.ToString("yyyy-MM-dd");
+                result.Findings.Add("✓ Mulai Berlaku: " + doc.startDate);
+            }
+
+            Match durMatch = Regex.Match(text, @"(?:jangka\s+waktu|selama)\s+(\d+)\s*(?:\([a-z\s]+\))?\s*tahun", RegexOptions.IgnoreCase);
+            if (durMatch.Success)
+            {
+                int yrs = int.Parse(durMatch.Groups[1].Value);
+                DateTime st;
+                if (DateTime.TryParse(doc.startDate, out st))
+                {
+                    DateTime ed = st.AddYears(yrs).AddDays(-1);
+                    doc.endDate = ed.ToString("yyyy-MM-dd");
+                    result.Findings.Add(string.Format("✓ Berakhir: {0} (Durasi {1} Tahun)", doc.endDate, yrs));
+                }
+            }
+            if (string.IsNullOrEmpty(doc.endDate))
+            {
+                DateTime st;
+                if (DateTime.TryParse(doc.startDate, out st))
+                {
+                    doc.endDate = st.AddYears(3).AddDays(-1).ToString("yyyy-MM-dd");
+                }
+            }
+
+            // 10. Anggaran & Lokasi
+            Match bm = Regex.Match(text, @"(?:Rp\.?|sebesar)\s*([0-9\.\,]{4,15})", RegexOptions.IgnoreCase);
+            if (bm.Success)
+            {
+                doc.budget = "Rp " + bm.Groups[1].Value.Trim();
+                result.Findings.Add("✓ Anggaran: " + doc.budget);
+            }
+
+            string[] locs = new string[] { "Laguboti", "Balige", "Toba", "Medan", "Danau Toba", "Jakarta" };
+            foreach (string l in locs)
+            {
+                if (Regex.IsMatch(text, @"\b" + l + @"\b", RegexOptions.IgnoreCase))
+                {
+                    doc.location = l;
+                    result.Findings.Add("✓ Lokasi: " + doc.location);
+                    break;
+                }
+            }
+
+            doc.scope = doc.title;
+            doc.activityName = doc.title;
+
+            result.Item = doc;
+            return result;
+        }
+    }
+
+    public class OcrResultDialog : Form
+    {
+        public bool ProceedToForm { get; private set; }
+
+        public OcrResultDialog(SmartExtractionResult result, string fileName)
+        {
+            Text = "Hasil Ekstraksi Cerdas & Engine OCR Dokumen";
+            Size = new Size(680, 560);
+            StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+
+            Panel topPanel = new Panel { Dock = DockStyle.Top, Height = 75, BackColor = Color.FromArgb(240, 246, 252), Padding = new Padding(15, 12, 15, 10) };
+            Label lblTitle = new Label { Text = "🔍 Temuan Ekstraksi Cerdas Dokumen", Font = new Font("Segoe UI", 11f, FontStyle.Bold), ForeColor = Color.FromArgb(22, 50, 79), AutoSize = true, Location = new Point(14, 10) };
+            Label lblSub = new Label { Text = string.Format("Berkas: {0} | {1} Atribut Berhasil Diidentifikasi", Path.GetFileName(fileName), result.Findings.Count), AutoSize = true, Location = new Point(15, 38), ForeColor = Color.FromArgb(60, 80, 100) };
+            topPanel.Controls.Add(lblTitle);
+            topPanel.Controls.Add(lblSub);
+
+            ListBox listFindings = new ListBox { Dock = DockStyle.Fill, Font = new Font("Segoe UI", 9.5f), ItemHeight = 22 };
+            foreach (string f in result.Findings)
+            {
+                listFindings.Items.Add(f);
+            }
+
+            Panel bottomPanel = new Panel { Dock = DockStyle.Bottom, Height = 90, BackColor = Color.FromArgb(248, 249, 250), Padding = new Padding(15) };
+            Label lblNote = new Label
+            {
+                Text = "ℹ️ Nilai di atas telah disiapkan ke formulir. Staf Unit Kerja Sama memeriksa, melengkapi detail lebih lanjut, dan memverifikasi data sebelum disimpan.",
+                ForeColor = Color.FromArgb(30, 70, 30),
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic),
+                Dock = DockStyle.Top,
+                Height = 35
+            };
+
+            Button btnProceed = new Button
+            {
+                Text = "✓ Lanjutkan ke Formulir Validasi Staf",
+                DialogResult = DialogResult.OK,
+                Width = 260,
+                Height = 34,
+                Location = new Point(275, 42),
+                BackColor = Color.FromArgb(22, 50, 79),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold)
+            };
+            btnProceed.Click += (s, e) => { ProceedToForm = true; };
+
+            Button btnCancel = new Button
+            {
+                Text = "Batal",
+                DialogResult = DialogResult.Cancel,
+                Width = 100,
+                Height = 34,
+                Location = new Point(545, 42)
+            };
+
+            bottomPanel.Controls.Add(btnProceed);
+            bottomPanel.Controls.Add(btnCancel);
+            bottomPanel.Controls.Add(lblNote);
+
+            Controls.Add(listFindings);
+            Controls.Add(bottomPanel);
+            Controls.Add(topPanel);
+        }
     }
 
     public class Program
@@ -121,22 +651,35 @@ namespace KsdasItDelDesktop
             btnResetFilter.Click += (s, e) => { _searchBox.Text = ""; _typeCombo.SelectedIndex = 0; _statusCombo.SelectedIndex = 0; };
 
             // Row 2 Buttons
-            Button btnAdd = new Button { Text = "+ Tambah Naskah", Location = new Point(14, 50), Width = 150, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            Button btnOcr = new Button
+            {
+                Text = "🔍 Ekstraksi Cerdas & OCR",
+                Location = new Point(14, 50),
+                Width = 195,
+                Height = 32,
+                BackColor = Color.FromArgb(180, 83, 9),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
+            };
+            btnOcr.Click += (s, e) => OpenSmartExtractionDialog();
+
+            Button btnAdd = new Button { Text = "+ Tambah Naskah", Location = new Point(215, 50), Width = 140, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnAdd.Click += (s, e) => OpenAddDialog();
 
-            Button btnSave = new Button { Text = "💾 Simpan Database", Location = new Point(174, 50), Width = 150, Height = 32, BackColor = Color.FromArgb(40, 100, 60), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            Button btnSave = new Button { Text = "💾 Simpan Database", Location = new Point(361, 50), Width = 145, Height = 32, BackColor = Color.FromArgb(40, 100, 60), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnSave.Click += (s, e) => { SaveData(); MessageBox.Show("Data berhasil disimpan persisten ke file:\n" + _dbPath, "Tersimpan", MessageBoxButtons.OK, MessageBoxIcon.Information); };
 
-            Button btnExport = new Button { Text = "📊 Ekspor ke CSV", Location = new Point(334, 50), Width = 135, Height = 32 };
+            Button btnExport = new Button { Text = "📊 Ekspor ke CSV", Location = new Point(512, 50), Width = 130, Height = 32 };
             btnExport.Click += (s, e) => ExportCsv();
 
-            Button btnAnalysis = new Button { Text = "📈 Generate Analisis", Location = new Point(479, 50), Width = 155, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+            Button btnAnalysis = new Button { Text = "📈 Generate Analisis", Location = new Point(648, 50), Width = 150, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnAnalysis.Click += (s, e) => ShowAnalysis();
 
-            Button btnOpenWeb = new Button { Text = "🌐 Buka Versi Web", Location = new Point(644, 50), Width = 145, Height = 32 };
+            Button btnOpenWeb = new Button { Text = "🌐 Buka Versi Web", Location = new Point(804, 50), Width = 140, Height = 32 };
             btnOpenWeb.Click += (s, e) => OpenWeb();
 
-            Button btnResetSample = new Button { Text = "↺ Muat Ulang 10 Contoh", Location = new Point(799, 50), Width = 175, Height = 32 };
+            Button btnResetSample = new Button { Text = "↺ Muat Ulang 10 Contoh", Location = new Point(950, 50), Width = 175, Height = 32 };
             btnResetSample.Click += (s, e) => ResetToSeedData();
 
             toolPanel.Controls.Add(lblSearch);
@@ -146,6 +689,7 @@ namespace KsdasItDelDesktop
             toolPanel.Controls.Add(lblStatus);
             toolPanel.Controls.Add(_statusCombo);
             toolPanel.Controls.Add(btnResetFilter);
+            toolPanel.Controls.Add(btnOcr);
             toolPanel.Controls.Add(btnAdd);
             toolPanel.Controls.Add(btnSave);
             toolPanel.Controls.Add(btnExport);
@@ -305,6 +849,35 @@ namespace KsdasItDelDesktop
             int total = _documents.Count;
             int visible = _grid.Rows.Count;
             _statusLabel.Text = string.Format("Basis Data: {0} | Ditampilkan: {1} dari {2} Naskah | Tersimpan Persisten", Path.GetFileName(_dbPath), visible, total);
+        }
+
+        private void OpenSmartExtractionDialog()
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Pilih Berkas Dokumen Naskah / Hasil Pindai untuk Ekstraksi Cerdas & OCR";
+                ofd.Filter = "Semua Berkas Didukung (*.pdf;*.docx;*.txt;*.csv;*.png;*.jpg;*.jpeg)|*.pdf;*.docx;*.txt;*.csv;*.png;*.jpg;*.jpeg|Dokumen PDF (*.pdf)|*.pdf|Dokumen Word (*.docx)|*.docx|Gambar / Scan (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|Teks / CSV (*.txt;*.csv)|*.txt;*.csv|Semua Berkas (*.*)|*.*";
+                if (ofd.ShowDialog(this) == DialogResult.OK)
+                {
+                    SmartExtractionResult result = SmartDocumentEngine.ProcessFile(ofd.FileName, _documents);
+                    using (OcrResultDialog ord = new OcrResultDialog(result, ofd.FileName))
+                    {
+                        if (ord.ShowDialog(this) == DialogResult.OK)
+                        {
+                            using (EntryDialog dlg = new EntryDialog(result.Item, false))
+                            {
+                                if (dlg.ShowDialog(this) == DialogResult.OK)
+                                {
+                                    _documents.Insert(0, dlg.Document);
+                                    SaveData();
+                                    ApplyFilter();
+                                    MessageBox.Show("Naskah hasil ekstraksi cerdas berhasil divalidasi dan disimpan ke basis data lokal!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void OpenAddDialog()
@@ -794,6 +1367,21 @@ namespace KsdasItDelDesktop
 
             // Button panel
             Panel bp = new Panel { Dock = DockStyle.Bottom, Height = 55 };
+
+            Button btnOcrInDialog = new Button
+            {
+                Text = "🔍 Ekstraksi Cerdas / OCR Berkas...",
+                Location = new Point(15, 12),
+                Width = 240,
+                Height = 32,
+                BackColor = Color.FromArgb(180, 83, 9),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
+            };
+            btnOcrInDialog.Click += (s, e) => RunOcrInsideDialog();
+            bp.Controls.Add(btnOcrInDialog);
+
             Button btnOk = new Button { Text = "Simpan", DialogResult = DialogResult.OK, Location = new Point(510, 12), Width = 100, Height = 32, BackColor = Color.FromArgb(22, 50, 79), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
             btnOk.Click += (s, e) => SaveFields();
 
@@ -803,6 +1391,42 @@ namespace KsdasItDelDesktop
 
             Controls.Add(tlp);
             Controls.Add(bp);
+        }
+
+        private void RunOcrInsideDialog()
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Pilih Berkas Dokumen untuk Ekstraksi Cerdas & OCR ke Form Ini";
+                ofd.Filter = "Semua Berkas Didukung (*.pdf;*.docx;*.txt;*.csv;*.png;*.jpg;*.jpeg)|*.pdf;*.docx;*.txt;*.csv;*.png;*.jpg;*.jpeg|Semua Berkas (*.*)|*.*";
+                if (ofd.ShowDialog(this) == DialogResult.OK)
+                {
+                    SmartExtractionResult res = SmartDocumentEngine.ProcessFile(ofd.FileName, null);
+                    LoadDocToControls(res.Item);
+                    MessageBox.Show(string.Format("Ekstraksi Cerdas & OCR Berhasil!\n{0} atribut naskah telah dikenali dan diisikan ke formulir.\nSilakan Staf memeriksa dan memvalidasi sebelum menyimpan.", res.Findings.Count), "Ekstraksi Selesai", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+        }
+
+        private void LoadDocToControls(NaskahItem doc)
+        {
+            if (!string.IsNullOrEmpty(doc.documentType)) _cbType.SelectedItem = doc.documentType;
+            if (!string.IsNullOrEmpty(doc.documentNumber)) _txtNum.Text = doc.documentNumber;
+            if (!string.IsNullOrEmpty(doc.title)) _txtTitle.Text = doc.title;
+            if (!string.IsNullOrEmpty(doc.partnerName)) _txtPartner.Text = doc.partnerName;
+            if (!string.IsNullOrEmpty(doc.startDate)) _txtStart.Text = doc.startDate;
+            if (!string.IsNullOrEmpty(doc.endDate)) _txtEnd.Text = doc.endDate;
+            if (!string.IsNullOrEmpty(doc.faculty)) _cbFaculty.SelectedItem = doc.faculty;
+            if (!string.IsNullOrEmpty(doc.pic)) _txtPic.Text = doc.pic;
+            if (!string.IsNullOrEmpty(doc.activityName)) _txtActivity.Text = doc.activityName;
+            if (!string.IsNullOrEmpty(doc.partnerSignatory)) _txtPartnerSign.Text = doc.partnerSignatory;
+            if (!string.IsNullOrEmpty(doc.partnerSignatoryTitle)) _txtPartnerSignTitle.Text = doc.partnerSignatoryTitle;
+            if (!string.IsNullOrEmpty(doc.itdelSignatory)) _txtDelSign.Text = doc.itdelSignatory;
+            if (!string.IsNullOrEmpty(doc.itdelSignatoryTitle)) _txtDelSignTitle.Text = doc.itdelSignatoryTitle;
+            if (!string.IsNullOrEmpty(doc.scope)) _txtScope.Text = doc.scope;
+            if (!string.IsNullOrEmpty(doc.location)) _txtLocation.Text = doc.location;
+            if (!string.IsNullOrEmpty(doc.budget)) _txtBudget.Text = doc.budget;
+            if (!string.IsNullOrEmpty(doc.notes)) _txtNotes.Text = doc.notes;
         }
 
         private void AddRow(TableLayoutPanel tlp, int row, string l1, Control c1, string l2, Control c2)

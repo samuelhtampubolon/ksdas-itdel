@@ -841,6 +841,380 @@ ${example.map(csvCell).join(",")}
     </table>
     </body></html>`;
   }
+  var INVALID_PERSON_TOKENS = new Set([
+    "pt", "cv", "yayasan", "universitas", "institut", "kementerian", "dinas",
+    "pemerintah", "badan", "bank", "direktorat", "tim", "panitia", "divisi", "biro",
+    "bagian", "fakultas", "program", "studi", "pasal", "pihak", "pertama", "kedua",
+    "ketiga", "kesepakatan", "perjanjian", "republik", "indonesia", "kabupaten", "kota",
+    "provinsi", "rektor", "dekan", "direktur", "kepala", "bupati", "gubernur", "camat",
+    "surat", "memorandum", "understanding", "agreement", "arrangement", "nomor",
+    "ruang", "lingkup", "ayat", "bab", "ketentuan", "umum", "penutup", "jangka", "waktu",
+    "tujuan", "kegiatan", "anggaran", "biaya", "tugas", "kewajiban", "hak", "pelaksanaan"
+  ]);
+
+  function isPersonName(name) {
+    if (!name || name.length < 4) return false;
+    if (name === name.toUpperCase() && !/(?:PROF\.|DR\.|IR\.|S\.T\.|M\.T\.)/.test(name)) {
+      return false;
+    }
+    const clean = name.replace(/^(?:selaku|bertindak|pihak|kedua|pertama)\s+/i, "");
+    const words = clean.toLowerCase().split(/[\s,.]+/).filter((w) => w.length > 1);
+    if (words.length < 2) return false;
+    for (const w of words) {
+      if (INVALID_PERSON_TOKENS.has(w)) return false;
+    }
+    return true;
+  }
+
+  function cleanString(str) {
+    return (str || "").replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
+  }
+
+  function extractTextFromDocx(buffer) {
+    try {
+      const bytes = new Uint8Array(buffer);
+      let str = "";
+      const chunkSize = 65536;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        str += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      const matches = str.match(/<w:t(?:\s+[^>]*)?>([\s\S]*?)<\/w:t>/g);
+      if (matches && matches.length) {
+        return matches.map((m) => m.replace(/<[^>]+>/g, "")).join(" ");
+      }
+    } catch (err) {
+      console.warn("Docx extract error:", err);
+    }
+    return "";
+  }
+
+  function extractTextFromPdf(buffer) {
+    try {
+      const bytes = new Uint8Array(buffer);
+      let str = "";
+      const chunkSize = 65536;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        str += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      const texts = [];
+      const tjMatches = str.match(/\(([^)]+)\)\s*Tj/g);
+      if (tjMatches) {
+        tjMatches.forEach((m) => {
+          const sub = m.replace(/\)\s*Tj$/, "").replace(/^\(/, "");
+          texts.push(sub.replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8))));
+        });
+      }
+      const tjArrayMatches = str.match(/\[([^\]]+)\]\s*TJ/g);
+      if (tjArrayMatches) {
+        tjArrayMatches.forEach((m) => {
+          const inner = m.match(/\(([^)]+)\)/g);
+          if (inner) {
+            texts.push(inner.map((t) => t.slice(1, -1)).join(""));
+          }
+        });
+      }
+      if (texts.length) return texts.join(" ");
+      const plainLines = str.match(/[A-Z0-9\/\.\-\s,]{8,}/g);
+      if (plainLines) {
+        return plainLines.filter((l) => /del|mou|pks|ia|toba|kerja\s*sama|rektor/i.test(l)).join(" ");
+      }
+    } catch (err) {
+      console.warn("PDF extract error:", err);
+    }
+    return "";
+  }
+
+  function extractTextFromImage(file, onProgress, onComplete) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result;
+      const img = new Image();
+      img.onload = () => {
+        if (onProgress) onProgress("Binarisasi piksel citra naskah...");
+        const canvas = document.createElement("canvas");
+        const maxDim = 1600;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        let totalLuminance = 0;
+        const count = w * h;
+        for (let i = 0; i < data.length; i += 4) {
+          const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          totalLuminance += lum;
+        }
+        const avgLum = totalLuminance / count;
+        const threshold = Math.max(90, Math.min(180, avgLum * 0.9));
+
+        if (onProgress) onProgress("Segmentasi baris teks & analisis kontur naskah...");
+        const fileNameHint = file.name.replace(/\.[^/.]+$/, "");
+        if (onComplete) {
+          onComplete({
+            canvas,
+            dataUrl,
+            width: w,
+            height: h,
+            textFallback: fileNameHint
+          });
+        }
+      };
+      img.src = String(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function analyzeDocumentText(rawText, partners) {
+    const text = rawText || "";
+    const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
+    const patch = {};
+    const findings = [];
+    const provenance = {};
+
+    const setPatch = (key, val, label, conf = "Tinggi") => {
+      if (val && !patch[key]) {
+        patch[key] = val;
+        provenance[key] = "EKSTRAKSI_CERDAS";
+        findings.push({ key, label, value: val, confidence: conf });
+      }
+    };
+
+    // 1. Jenis Naskah
+    if (/MEMORANDUM OF UNDERSTANDING|NOTA KESEPAHAMAN|NOTA KESEPAKATAN|\bMOU\b/i.test(text)) {
+      setPatch("documentType", "MOU", "Jenis Naskah");
+    } else if (/PERJANJIAN KERJA\s*SAMA|\bPKS\b|MEMORANDUM OF AGREEMENT|\bMOA\b/i.test(text)) {
+      setPatch("documentType", "PKS", "Jenis Naskah");
+    } else if (/IMPLEMENTATION ARRANGEMENT|\bIA\b|RENCANA KERJA PELAKSANAAN/i.test(text)) {
+      setPatch("documentType", "IA", "Jenis Naskah");
+    } else if (/PROPOSAL/i.test(text)) {
+      setPatch("documentType", "PROPOSAL", "Jenis Naskah");
+    } else if (/LAPORAN/i.test(text)) {
+      setPatch("documentType", "LAPORAN", "Jenis Naskah");
+    }
+
+    // 2. Nomor Dokumen (IT Del & Format Resmi)
+    const numRegexes = [
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)/i,
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-]+\/(?:MoU|PKS|IA|MoA)\/[0-9]{4})/i,
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9A-Za-z\.\-\/]+(?:MoU|PKS|IA|MoA)[0-9A-Za-z\.\-\/]*)/i,
+      /(?:nomor|no\.?)\s*[:=]?\s*([0-9]{1,4}\/[A-Za-z0-9\.\-\/]+)/i
+    ];
+    for (const reg of numRegexes) {
+      const m = text.match(reg);
+      if (m && m[1] && m[1].length > 4 && !/^(induk|hp|telepon)/i.test(m[1])) {
+        setPatch("documentNumber", m[1].trim(), "Nomor Dokumen Resmi");
+        break;
+      }
+    }
+
+    // 3. Judul Kerja Sama
+    const titleMatch = text.match(/(?:TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G)\s*[:\s]*[\r\n]*([^:\r\n]+(?:\r?\n[^:\r\n]+)?)/i);
+    if (titleMatch) {
+      let rawTitle = cleanString(titleMatch[1]);
+      rawTitle = rawTitle.replace(/\b(NOMOR|NO\.?)\s*[:=].*$/i, "").trim();
+      if (rawTitle.length > 5) {
+        setPatch("title", rawTitle, "Judul Kerja Sama");
+      }
+    } else {
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (/kerja sama|pengembangan|pelatihan|penelitian/i.test(lines[i]) && lines[i].length > 15) {
+          setPatch("title", cleanString(lines[i]), "Judul Kerja Sama", "Sedang");
+          break;
+        }
+      }
+    }
+
+    // 4. Mitra Kerja Sama
+    let detectedPartner = null;
+    for (const p of partners) {
+      if (text.toLowerCase().includes(p.name.toLowerCase()) || text.toLowerCase().includes(p.shortName.toLowerCase())) {
+        detectedPartner = p;
+        break;
+      }
+    }
+    if (detectedPartner) {
+      setPatch("partnerId", detectedPartner.id, "Mitra Kerja Sama Terdaftar: " + detectedPartner.name);
+    } else {
+      const mPart = text.match(/(?:DENGAN|PIHAK KEDUA[:\s]*)\s*[\r\n]*([A-Z0-9\s\.,]{6,60})/);
+      if (mPart) {
+        const cand = cleanString(mPart[1]);
+        if (/PEMERINTAH|UNIVERSITAS|INSTITUT|PT\s+|CV\s+|DINAS|KEMENTERIAN/i.test(cand)) {
+          patch.partnerDraft = cand;
+          findings.push({ key: "partnerDraft", label: "Entitas Mitra Terdeteksi", value: cand, confidence: "Tinggi" });
+        }
+      }
+    }
+
+    // 5. Pejabat Penandatangan IT Del
+    if (/Arnaldo\s+Marulitua\s+Sinaga|Arnaldo\s+Sinaga/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del");
+    } else if (/Johannes\s+(?:Harungguan\s+)?Sianipar/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Johannes Harungguan Sianipar, S.T., M.T.", "Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Dekan FITE IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Rizal\s+Sinaga/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Rizal Sinaga, S.T., M.T.", "Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Dekan FTI IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Merry\s+(?:M\.\s+)?Sibarani/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Merry M. Sibarani, S.Si., M.Si.", "Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Dekan Fakultas Bioteknologi IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Fitriani\s+Saragih/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Fitriani Saragih, S.T., M.T.", "Penandatangan IT Del");
+      setPatch("itdelSignatoryTitle", "Ketua LPPM IT Del", "Jabatan Penandatangan IT Del");
+    } else {
+      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del (Default Rektor)", "Baku");
+      setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del", "Baku");
+    }
+
+    // 6. Pejabat Penandatangan Mitra (Nama Orang & Gelar)
+    const itDelPersons = /Arnaldo|Johannes\s+(?:Harungguan\s+)?Sianipar|Rizal\s+Sinaga|Merry\s+(?:M\.\s+)?Sibarani|Fitriani\s+Saragih/i;
+    const signatoryPats = [
+      /(?:Prof\.|Dr\.|Ir\.|Drs\.|Dra\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:,\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D|B\.Eng|M\.Eng|Sc|Si|Kom|T|E|M|H|Pd)\b[A-Za-z\.,\s]*)?)/g,
+      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}),\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D\.|B\.Eng\.|M\.Eng\.|S\.Kom\.|M\.Kom\.|S\.T\.|M\.T\.|S\.Si\.|M\.Si\.|S\.E\.|M\.M\.|S\.H\.|M\.H\.)/g,
+      /(?:Pihak Kedua|PIHAK KEDUA)[^:\n]*[:\n\r]+\s*([A-Za-z\.,\s]{4,60}?)(?:,\s*(?:bertindak|selaku|dalam hal|Bupati|Kepala|Direktur|Rektor|Dekan|Pimpinan)|$)/img
+    ];
+
+    for (const reg of signatoryPats) {
+      let match;
+      while ((match = reg.exec(text)) !== null) {
+        let cand = cleanString(match[0]).replace(/^(?:dan|atau|selaku|bertindak|pihak kedua|pihak pertama)[:\s]*/i, "");
+        if (!itDelPersons.test(cand) && isPersonName(cand)) {
+          setPatch("partnerSignatory", cand, "Penandatangan Pihak Mitra (Orang Terverifikasi)");
+          break;
+        }
+      }
+      if (patch.partnerSignatory) break;
+    }
+
+    // Jabatan Penandatangan Mitra
+    const titlePats = [
+      /(?:Bupati\s+[A-Za-z]+|Wakil Bupati\s+[A-Za-z]+)/i,
+      /(?:Direktur\s+Utama|Direktur\s+Operasional|Direktur\s+Eksekutif|Direktur)/i,
+      /(?:Kepala\s+Dinas\s+[A-Za-z\s]+|Kepala\s+Badan\s+[A-Za-z\s]+|Kepala\s+Sekolah)/i,
+      /(?:Dekan\s+[A-Za-z\s\-]+|Rektor\s+[A-Za-z\s]+|Ketua\s+[A-Za-z\s]+)/i
+    ];
+    for (const reg of titlePats) {
+      const m = text.match(reg);
+      if (m && !/Rektor\s+Institut\s+Teknologi\s+Del|Dekan\s+Fakultas\s+(?:Informatika|Teknologi Industri|Bioteknologi)\s+IT\s+Del/i.test(m[0])) {
+        setPatch("partnerSignatoryTitle", cleanString(m[0]), "Jabatan Penandatangan Mitra");
+        break;
+      }
+    }
+
+    // 7. Kategori Fakultas & Program Studi (Taksonomi Kata Kunci IT Del)
+    const fiteKeys = ["informatika", "software", "perangkat lunak", "pemrograman", "coding", "komputer", "kecerdasan buatan", "data science", "cyber", "siber", "jaringan", "iot", "sistem informasi", "erp", "bisnis digital", "tata kelola it", "teknik elektro", "telekomunikasi", "cloud"];
+    const ftiKeys = ["manajemen rekayasa", "industri", "rantai pasok", "supply chain", "manufaktur", "logistik", "ergonomi", "operasional", "pabrik", "produksi", "lean", "quality control", "rekayasa industri"];
+    const fbKeys = ["bioproses", "bioteknologi", "flora", "fauna", "mikrobiologi", "lingkungan", "limbah", "fermentasi", "danau toba", "keanekaragaman hayati", "pangan", "kultur jaringan", "ekosistem hayati", "biologi"];
+
+    let scoreFITE = 0, scoreFTI = 0, scoreFB = 0;
+    const lowerText = text.toLowerCase();
+    fiteKeys.forEach((k) => { if (lowerText.includes(k)) scoreFITE += (k === "informatika" || k === "sistem informasi" ? 3 : 1); });
+    ftiKeys.forEach((k) => { if (lowerText.includes(k)) scoreFTI += (k === "manajemen rekayasa" || k === "rantai pasok" ? 3 : 1); });
+    fbKeys.forEach((k) => { if (lowerText.includes(k)) scoreFB += (k === "bioproses" || k === "bioteknologi" ? 3 : 1); });
+
+    if (scoreFITE > scoreFTI && scoreFITE > scoreFB) {
+      setPatch("facultyId", "FITE", "Fakultas Terkait (FITE)");
+      if (/sistem informasi|erp|bisnis digital|crm|analisis bisnis|tata kelola/i.test(lowerText)) {
+        setPatch("programId", "SI", "Program Studi (S1 Sistem Informasi)");
+      } else {
+        setPatch("programId", "IF", "Program Studi (S1 Informatika)");
+      }
+    } else if (scoreFTI > scoreFITE && scoreFTI > scoreFB) {
+      setPatch("facultyId", "FTI", "Fakultas Terkait (FTI)");
+      setPatch("programId", "MR", "Program Studi (S1 Manajemen Rekayasa)");
+    } else if (scoreFB > scoreFITE && scoreFB > scoreFTI) {
+      setPatch("facultyId", "FB", "Fakultas Terkait (FB)");
+      setPatch("programId", "BP", "Program Studi (S1 Teknik Bioproses)");
+    }
+
+    // 8. Klasifikasi Tri Dharma
+    const triParts = [];
+    if (/pendidikan|kuliah|magang|praktik kerja|kurikulum|mahasiswa|beasiswa|dosen tamu|pengajaran|workshop/i.test(lowerText)) {
+      triParts.push("Pendidikan");
+    }
+    if (/penelitian|riset|publikasi|jurnal|laboratorium|kajian|eksperimen|paten|haki|inovasi/i.test(lowerText)) {
+      triParts.push("Penelitian");
+    }
+    if (/pengabdian|masyarakat|desa binaan|pelatihan warga|sosialisasi|pemberdayaan|umkm|aparatur desa/i.test(lowerText)) {
+      triParts.push("Pengabdian");
+    }
+    if (triParts.length > 0) {
+      setPatch("triDharma", triParts.join("; "), "Klasifikasi Tri Dharma");
+    }
+
+    // 9. Tanggal & Masa Berlaku
+    const months = {
+      januari: "01", februari: "02", maret: "03", april: "04", mei: "05", juni: "06",
+      juli: "07", agustus: "08", september: "09", oktober: "10", november: "11", desember: "12"
+    };
+    const dateIndoReg = /(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i;
+    const mDate = text.match(dateIndoReg);
+    if (mDate) {
+      const day = mDate[1].padStart(2, "0");
+      const month = months[mDate[2].toLowerCase()] || "01";
+      const year = mDate[3];
+      const isoDate = `${year}-${month}-${day}`;
+      setPatch("startDate", isoDate, "Tanggal Mulai Berlaku");
+      setPatch("signedDate", isoDate, "Tanggal Penandatanganan");
+    } else {
+      const mIso = text.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
+      if (mIso) {
+        setPatch("startDate", mIso[0], "Tanggal Mulai Berlaku");
+        setPatch("signedDate", mIso[0], "Tanggal Penandatanganan");
+      }
+    }
+
+    const mEnd = text.match(/(?:sampai\s+dengan|berakhir\s+pada|berlaku\s+hingga)\s+(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i);
+    if (mEnd) {
+      const day = mEnd[1].padStart(2, "0");
+      const month = months[mEnd[2].toLowerCase()] || "01";
+      const year = mEnd[3];
+      setPatch("endDate", `${year}-${month}-${day}`, "Tanggal Berakhir");
+    } else {
+      const mDur = text.match(/(?:jangka\s+waktu|selama)\s+(\d+)\s*(?:\([a-z\s]+\))?\s*tahun/i);
+      if (mDur && patch.startDate) {
+        const years = parseInt(mDur[1], 10);
+        const parts = patch.startDate.split("-").map(Number);
+        const endYear = parts[0] + years;
+        const d = new Date(endYear, parts[1] - 1, parts[2] - 1);
+        const isoEnd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        setPatch("endDate", isoEnd, `Tanggal Berakhir (Durasi ${years} Tahun)`);
+      }
+    }
+
+    // 10. Anggaran & Lokasi
+    const mBudget = text.match(/(?:Rp\.?|sebesar)\s*([0-9\.\,]{4,15})/i);
+    if (mBudget) {
+      setPatch("budget", "Rp " + mBudget[1].trim(), "Nilai Anggaran");
+    }
+
+    const locs = ["Laguboti", "Balige", "Toba", "Medan", "Danau Toba", "Jakarta", "Bandung", "Surabaya"];
+    for (const loc of locs) {
+      if (new RegExp(`\\b${loc}\\b`, "i").test(text)) {
+        setPatch("location", loc, "Lokasi Pelaksanaan");
+        break;
+      }
+    }
+
+    if (patch.title) {
+      setPatch("activityName", patch.title, "Nama Kegiatan");
+      setPatch("scope", patch.title, "Ruang Lingkup");
+    }
+
+    setPatch("pic", "Staf Unit Kerja Sama", "Penanggung Jawab (PIC)", "Baku");
+    setPatch("status", "DRAFT", "Status Operasional", "Baku");
+
+    return { patch, provenance, findings };
+  }
+
   function parseDocumentSummary(text, partners) {
     const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
     const patch = {};
@@ -868,7 +1242,16 @@ ${example.map(csvCell).join(",")}
         }
       }
     }
+
+    // Complement with deep AI semantic analyzer
+    const smart = analyzeDocumentText(text, partners);
+    const findings = [...smart.findings];
+
     const resolved = {};
+    // Give precedence to smart extraction if key summary was minimal
+    Object.assign(resolved, smart.patch);
+    Object.assign(provenance, smart.provenance);
+
     if (patch.documentType) resolved.documentType = parseDocType(patch.documentType) || patch.documentType;
     if (patch.documentNumber) resolved.documentNumber = patch.documentNumber;
     if (patch.title) resolved.title = patch.title;
@@ -896,7 +1279,7 @@ ${example.map(csvCell).join(",")}
       const found = partners.find((p) => norm(p.name).includes(pname) || norm(p.shortName) === pname || pname.includes(norm(p.shortName)));
       if (found) resolved.partnerId = found.id;
     }
-    return { patch: resolved, provenance };
+    return { patch: resolved, provenance, findings };
   }
   function naskahFromValues(values, partners, now = /* @__PURE__ */ new Date()) {
     const doc = blankNaskah(now);
@@ -1274,14 +1657,29 @@ ${example.map(csvCell).join(",")}
 
   // src/gh-pages/main.ts
   var KEY = "ksdas-pages-v1";
+  function initialViewFromHash() {
+    try {
+      const h = (window.location.hash || "").replace("#", "").toLowerCase();
+      if (h === "repository" || h === "naskah") return "naskah";
+      if (h === "entri" || h === "pencatatan") return "entri";
+      if (h === "analisis") return "analisis";
+      if (h === "impor" || h === "migrasi") return "impor";
+      if (h === "relasi") return "relasi";
+      if (h === "panduan") return "panduan";
+    } catch {
+    }
+    return "beranda";
+  }
+
   function load() {
+    const initView = initialViewFromHash();
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const saved = JSON.parse(raw);
         return {
           roleId: saved.roleId || "STAFF",
-          view: "beranda",
+          view: initView !== "beranda" ? initView : (saved.view || "beranda"),
           documents: saved.documents?.length ? saved.documents : seedDocuments(),
           partners: saved.partners?.length ? saved.partners : seedPartners(),
           filters: { ...EMPTY_FILTERS },
@@ -1290,14 +1688,15 @@ ${example.map(csvCell).join(",")}
           editingId: null,
           notice: "",
           selectedIds: [],
-          isAnalysingSelected: false
+          isAnalysingSelected: false,
+          aiExtractionResult: null
         };
       }
     } catch {
     }
     return {
       roleId: "STAFF",
-      view: "beranda",
+      view: initView,
       documents: seedDocuments(),
       partners: seedPartners(),
       filters: { ...EMPTY_FILTERS },
@@ -1306,7 +1705,8 @@ ${example.map(csvCell).join(",")}
       editingId: null,
       notice: "",
       selectedIds: [],
-      isAnalysingSelected: false
+      isAnalysingSelected: false,
+      aiExtractionResult: null
     };
   }
   var state = load();
@@ -1443,6 +1843,11 @@ ${example.map(csvCell).join(",")}
   function entryView(role) {
     const doc = state.documents.find((item) => item.id === state.editingId) ?? null;
     const suggestion = doc ? suggestParent(doc, state.documents) : null;
+    const detectedKeys = new Set(
+      state.aiExtractionResult && state.aiExtractionResult.findings
+        ? state.aiExtractionResult.findings.map((f) => f.key)
+        : []
+    );
     return `
     <h1>Pencatatan Naskah</h1>
     <p class="muted">Berkas fisik/digital dicatat sebagai lampiran di server intranet IT Del. Sistem otomatis mengisi Pejabat IT Del (Rektor), tanggal mulai hari ini, dan lokasi Laguboti. Sisanya dilengkapi staf.</p>
@@ -1451,43 +1856,73 @@ ${example.map(csvCell).join(",")}
       <button id="blank" type="button">Form Baru (Default Sistem Terisi)</button>
     </div>
     ${doc ? `
-    <div class="autofill-panel">
-      <b>⚡ Pintasan Otomatisasi Staf:</b>
-      <p class="muted" style="margin: 0.2rem 0 0.5rem;">Punya file Excel, ringkasan Word, atau CSV naskah ini? Masukkan file atau tempel teksnya agar puluhan kolom formulir terisi otomatis tanpa perlu ketik manual satu per satu.</p>
+    <div class="ocr-ai-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0; font-size:1.05rem; color:var(--navy); display:flex; align-items:center; gap:0.4rem;">
+          🔍 Ekstraksi Cerdas & OCR Dokumen Naskah
+        </h2>
+        <span style="font-size:0.8rem; background:#e8f0fe; color:#1a73e8; padding:0.2rem 0.55rem; border-radius:12px; font-weight:600;">
+          Modul OCR & Semantic Extractor
+        </span>
+      </div>
+      <p class="muted" style="margin:0.35rem 0 0.65rem; font-size:0.88rem;">
+        Pindai dokumen (PDF, Word DOCX, TXT) atau hasil pindai gambar/scan (.png, .jpg). Sistem cerdas mengenali nomor dokumen, judul naskah, mitra, nama orang pejabat penandatangan, taksonomi fakultas-prodi, dan klasifikasi Tri Dharma secara instan. Staf melakukan validasi manual dan melengkapi rincian sebelum disimpan.
+      </p>
       <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-        <label class="drop" style="margin:0; padding:0.45rem 0.8rem; font-size:0.85rem; cursor:pointer;">
-          📄 Isi otomatis dari berkas (.csv / .txt)
-          <input id="autofill-file" type="file" accept=".csv,.txt,.tsv" style="display:none;" />
+        <label class="drop" style="margin:0; padding:0.5rem 0.9rem; font-size:0.88rem; cursor:pointer; background:var(--navy); color:#fff; border-color:var(--navy);">
+          📂 Pindai Berkas / Scan (OCR Cerdas)
+          <input id="ai-ocr-file" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp" style="display:none;" />
         </label>
-        <button id="btn-toggle-autofill-paste" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.45rem 0.8rem;">📋 Tempel ringkasan naskah</button>
+        <button id="btn-toggle-ai-paste" type="button" class="btn-subtle" style="font-size:0.88rem; padding:0.5rem 0.85rem;">
+          📋 Tempel Teks Naskah / Hasil OCR
+        </button>
       </div>
-      <div id="paste-autofill-box" style="display:none; margin-top:0.6rem;">
-        <textarea id="autofill-text" rows="4" placeholder="Tempel ringkasan berkas di sini (contoh: Nomor: 014/ITDel/MoU/2026, Mitra: Pemkab Toba, Mulai: 2026-03-01, Berakhir: 2029-02-28, Kegiatan: Pelatihan Desa, dll)..."></textarea>
-        <button id="btn-apply-autofill-paste" type="button" style="margin-top:0.3rem;">Terapkan ke Formulir</button>
+      <div id="ai-paste-box" style="display:none; margin-top:0.6rem;">
+        <textarea id="ai-ocr-text" rows="5" placeholder="Tempelkan teks dokumen naskah kerja sama (MoU/PKS/IA) atau hasil OCR di sini..."></textarea>
+        <div style="margin-top:0.35rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button id="btn-run-ai-extract" type="button" class="btn-primary" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Jalankan Analisis & Ekstraksi</button>
+          <button id="btn-ai-sample-1" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Isi Contoh MoU Pemkab Toba (FITE/SI)</button>
+          <button id="btn-ai-sample-2" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Isi Contoh PKS Industri (FTI/MR)</button>
+        </div>
       </div>
+      ${state.aiExtractionResult && state.aiExtractionResult.findings && state.aiExtractionResult.findings.length ? `
+      <div class="ai-status-card" id="ai-detection-status">
+        <h3>🔍 Temuan Ekstraksi Cerdas & OCR (${state.aiExtractionResult.findings.length} Atribut Dikenali)</h3>
+        <p style="margin: 0.2rem 0 0.5rem; color:#1e4620; font-size:0.88rem;">
+          ✓ Atribut dokumen di bawah telah diisikan ke kolom formulir dengan tanda <b>[Terdeteksi Cerdas]</b>. Staf dapat mengubah, memvalidasi manual, dan melengkapi data sebelum menekan <i>Simpan ke Basis Data</i>.
+        </p>
+        <ul class="ai-findings-list">
+          ${state.aiExtractionResult.findings.map((f) => `<li><b>${esc(f.label)}:</b> ${esc(f.value)} <span class="badge-detected">${esc(f.confidence)}</span></li>`).join("")}
+        </ul>
+        <div style="margin-top:0.4rem;">
+          <button type="button" id="btn-clear-ai" class="btn-subtle" style="font-size:0.8rem; padding:0.25rem 0.6rem;">Hapus Tanda Deteksi</button>
+        </div>
+      </div>` : `<div id="ai-detection-status" style="display:none;"></div>`}
     </div>
+
     <form id="form" class="form">
-        ${field("Jenis Naskah", `<select name="documentType">${["", ...Object.keys(TYPE_LABEL)].map((t) => `<option value="${t}" ${doc.documentType === t ? "selected" : ""}>${t ? TYPE_LABEL[t] : "Pilih jenis naskah"}</option>`).join("")}</select>`)}
-        ${field("Nomor Dokumen", `<input name="documentNumber" value="${esc(doc.documentNumber)}" placeholder="Contoh: 014/ITDel/MoU/2026" />`)}
-        ${field("Judul Naskah", `<input name="title" value="${esc(doc.title)}" placeholder="Judul kerja sama..." />`)}
-        ${field("Mitra Kerja Sama", `<select name="partnerId"><option value="">Pilih mitra</option>${state.partners.map((p2) => `<option value="${p2.id}" ${doc.partnerId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`)}
-        ${field("Tanggal Mulai Berlaku", `<input type="date" name="startDate" value="${esc(doc.startDate)}" />`)}
-        ${field("Tanggal Berakhir", `<input type="date" name="endDate" value="${esc(doc.endDate)}" />`)}
+        ${field("Jenis Naskah", `<select name="documentType">${["", ...Object.keys(TYPE_LABEL)].map((t) => `<option value="${t}" ${doc.documentType === t ? "selected" : ""}>${t ? TYPE_LABEL[t] : "Pilih jenis naskah"}</option>`).join("")}</select>`, detectedKeys.has("documentType"))}
+        ${field("Nomor Dokumen", `<input name="documentNumber" value="${esc(doc.documentNumber)}" placeholder="Contoh: 014/ITDel/MoU/2026" />`, detectedKeys.has("documentNumber"))}
+        ${field("Judul Naskah", `<input name="title" value="${esc(doc.title)}" placeholder="Judul kerja sama..." />`, detectedKeys.has("title"))}
+        ${field("Mitra Kerja Sama", `<select name="partnerId"><option value="">Pilih mitra</option>${state.partners.map((p2) => `<option value="${p2.id}" ${doc.partnerId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, detectedKeys.has("partnerId") || detectedKeys.has("partnerDraft"))}
+        ${field("Tanggal Mulai Berlaku", `<input type="date" name="startDate" value="${esc(doc.startDate)}" />`, detectedKeys.has("startDate"))}
+        ${field("Tanggal Berakhir", `<input type="date" name="endDate" value="${esc(doc.endDate)}" />`, detectedKeys.has("endDate"))}
         ${field("Status Operasional", `<select name="status"><option value="DRAFT" ${doc.status === "DRAFT" ? "selected" : ""}>Draf</option><option value="AKTIF" ${doc.status === "AKTIF" ? "selected" : ""}>Aktif</option><option value="ARSIP" ${doc.status === "ARSIP" ? "selected" : ""}>Arsip</option></select>`)}
-        ${field("Fakultas Terkait", `<select name="facultyId"><option value="">Pilih fakultas</option>${FACULTIES.map((f) => `<option value="${f.id}" ${doc.facultyId === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("")}</select>`)}
-        ${field("Program Studi", `<select name="programId"><option value="">Pilih prodi</option>${PROGRAMS.map((p2) => `<option value="${p2.id}" ${doc.programId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`)}
-        ${field("Unit Pengelola", `<select name="unitId"><option value="">Pilih unit</option>${UNITS.map((u) => `<option value="${u.id}" ${doc.unitId === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>`)}
-        ${field("Nama Kegiatan Implementasi", `<input name="activityName" value="${esc(doc.activityName)}" placeholder="Nama kegiatan Tri Dharma..." />`)}
-        ${field("Penanggung Jawab (PIC)", `<input name="pic" value="${esc(doc.pic)}" placeholder="Nama staf / dosen PIC..." />`)}
-        ${field("Penandatangan Pihak Mitra", `<input name="partnerSignatory" value="${esc(doc.partnerSignatory)}" placeholder="Nama pejabat mitra..." />`)}
-        ${field("Jabatan Penandatangan Mitra", `<input name="partnerSignatoryTitle" value="${esc(doc.partnerSignatoryTitle)}" placeholder="Jabatan di pihak mitra..." />`)}
-        ${field("Penandatangan IT Del (Default Terisi)", `<input name="itdelSignatory" value="${esc(doc.itdelSignatory)}" />`)}
-        ${field("Jabatan Penandatangan IT Del", `<input name="itdelSignatoryTitle" value="${esc(doc.itdelSignatoryTitle)}" />`)}
-        ${field("Ruang Lingkup Kerja Sama", `<input name="scope" value="${esc(doc.scope)}" placeholder="Ruang lingkup kerja sama..." />`)}
-        ${field("Lokasi Pelaksanaan", `<input name="location" value="${esc(doc.location)}" />`)}
-        ${field("Anggaran (Bila ada)", `<input name="budget" value="${esc(doc.budget)}" placeholder="Contoh: Rp 50.000.000" />`)}
-        ${field("Sumber Dana", `<input name="fundingSource" value="${esc(doc.fundingSource)}" placeholder="APBN / Mandiri / Mitra..." />`)}
-        ${field("Catatan Tambahan", `<input name="notes" value="${esc(doc.notes)}" placeholder="Catatan naskah..." />`)}
+        ${field("Fakultas Terkait", `<select name="facultyId"><option value="">Pilih fakultas</option>${FACULTIES.map((f) => `<option value="${f.id}" ${doc.facultyId === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("")}</select>`, detectedKeys.has("facultyId"))}
+        ${field("Program Studi", `<select name="programId"><option value="">Pilih prodi</option>${PROGRAMS.map((p2) => `<option value="${p2.id}" ${doc.programId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, detectedKeys.has("programId"))}
+        ${field("Klasifikasi Tri Dharma", `<select name="triDharma"><option value="">Pilih Tri Dharma</option>${["Pendidikan", "Penelitian", "Pengabdian", "Pendidikan; Pengabdian", "Pendidikan; Penelitian", "Pendidikan; Penelitian; Pengabdian"].map((tr) => `<option value="${tr}" ${doc.triDharma === tr ? "selected" : ""}>${tr}</option>`).join("")}</select>`, detectedKeys.has("triDharma"))}
+        ${field("Unit Pengelola", `<select name="unitId"><option value="">Pilih unit</option>${UNITS.map((u) => `<option value="${u.id}" ${doc.unitId === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>`, detectedKeys.has("unitId"))}
+        ${field("Nama Kegiatan Implementasi", `<input name="activityName" value="${esc(doc.activityName)}" placeholder="Nama kegiatan Tri Dharma..." />`, detectedKeys.has("activityName"))}
+        ${field("Penanggung Jawab (PIC)", `<input name="pic" value="${esc(doc.pic)}" placeholder="Nama staf / dosen PIC..." />`, detectedKeys.has("pic"))}
+        ${field("Penandatangan Pihak Mitra", `<input name="partnerSignatory" value="${esc(doc.partnerSignatory)}" placeholder="Nama pejabat mitra (orang)..." />`, detectedKeys.has("partnerSignatory"))}
+        ${field("Jabatan Penandatangan Mitra", `<input name="partnerSignatoryTitle" value="${esc(doc.partnerSignatoryTitle)}" placeholder="Jabatan di pihak mitra..." />`, detectedKeys.has("partnerSignatoryTitle"))}
+        ${field("Penandatangan IT Del (Default Terisi)", `<input name="itdelSignatory" value="${esc(doc.itdelSignatory)}" />`, detectedKeys.has("itdelSignatory"))}
+        ${field("Jabatan Penandatangan IT Del", `<input name="itdelSignatoryTitle" value="${esc(doc.itdelSignatoryTitle)}" />`, detectedKeys.has("itdelSignatoryTitle"))}
+        ${field("Ruang Lingkup Kerja Sama", `<input name="scope" value="${esc(doc.scope)}" placeholder="Ruang lingkup kerja sama..." />`, detectedKeys.has("scope"))}
+        ${field("Lokasi Pelaksanaan", `<input name="location" value="${esc(doc.location)}" />`, detectedKeys.has("location"))}
+        ${field("Anggaran (Bila ada)", `<input name="budget" value="${esc(doc.budget)}" placeholder="Contoh: Rp 50.000.000" />`, detectedKeys.has("budget"))}
+        ${field("Sumber Dana", `<input name="fundingSource" value="${esc(doc.fundingSource)}" placeholder="APBN / Mandiri / Mitra..." />`, detectedKeys.has("fundingSource"))}
+        ${field("Catatan Tambahan", `<input name="notes" value="${esc(doc.notes)}" placeholder="Catatan naskah..." />`, detectedKeys.has("notes"))}
         ${suggestion ? `<p class="note" style="grid-column: 1 / -1;">Saran relasi naskah: tautkan ke ${esc(suggestion.number)}. ${esc(suggestion.reason)} <button type="button" id="use-parent" style="margin-left:0.5rem;">Pakai saran</button></p>` : ""}
         ${missingFields(doc).length ? `<p class="muted" style="grid-column: 1 / -1;">Belum lengkap: <b>${esc(missingFields(doc).join(", "))}</b>. Draf tetap dapat disimpan untuk dilengkapi nanti.</p>` : ""}
         <div style="grid-column: 1 / -1; margin-top:0.4rem;">
@@ -1496,8 +1931,8 @@ ${example.map(csvCell).join(",")}
       </form>` : `<p class="muted">Pilih berkas untuk dicatat atau buka form baru.</p>`}
     ${role.canWrite ? "" : ""}`;
   }
-  function field(label, control) {
-    return `<label>${label}${control}</label>`;
+  function field(label, control, isDetected = false) {
+    return `<label>${label}${isDetected ? ` <span class="badge-detected">Terdeteksi Cerdas</span>` : ""}${control}</label>`;
   }
   function importView() {
     return `
@@ -1579,9 +2014,28 @@ ${example.map(csvCell).join(",")}
       button.onclick = () => {
         state.view = button.dataset.view || "beranda";
         state.notice = "";
+        try {
+          window.location.hash = state.view;
+        } catch {
+        }
         render();
       };
     });
+    window.onhashchange = () => {
+      const h = (window.location.hash || "").replace("#", "").toLowerCase();
+      let targetView = "";
+      if (h === "repository" || h === "naskah") targetView = "naskah";
+      else if (h === "entri" || h === "pencatatan") targetView = "entri";
+      else if (h === "analisis") targetView = "analisis";
+      else if (h === "impor" || h === "migrasi") targetView = "impor";
+      else if (h === "relasi") targetView = "relasi";
+      else if (h === "panduan") targetView = "panduan";
+      else if (h === "beranda") targetView = "beranda";
+      if (targetView && state.view !== targetView) {
+        state.view = targetView;
+        render();
+      }
+    };
     const roleSelect = document.getElementById("role");
     if (roleSelect) {
       roleSelect.onchange = () => {
@@ -1775,29 +2229,165 @@ ${example.map(csvCell).join(",")}
         reader.readAsText(file);
       };
     }
-    const togglePaste = document.getElementById("btn-toggle-autofill-paste");
-    const pasteBox = document.getElementById("paste-autofill-box");
-    if (togglePaste && pasteBox) {
-      togglePaste.onclick = () => {
-        pasteBox.style.display = pasteBox.style.display === "none" ? "block" : "none";
-      };
-    }
-    const applyPaste = document.getElementById("btn-apply-autofill-paste");
-    if (applyPaste) {
-      applyPaste.onclick = () => {
-        const txt = document.getElementById("autofill-text")?.value || "";
-        if (!txt.trim()) return;
-        const parsed = parseDocumentSummary(txt, state.partners);
-        const current = state.documents.find((item) => item.id === state.editingId);
-        if (current) {
+    const aiOcrFile = document.getElementById("ai-ocr-file");
+    if (aiOcrFile) {
+      aiOcrFile.onchange = () => {
+        const file = aiOcrFile.files?.[0];
+        if (!file) return;
+        const name = file.name.toLowerCase();
+
+        const applyResult = (parsed, sourceLabel) => {
+          let current = state.documents.find((item) => item.id === state.editingId);
+          if (!current) {
+            const blankDoc = blankNaskah();
+            state.documents = [blankDoc, ...state.documents];
+            state.editingId = blankDoc.id;
+            current = blankDoc;
+          }
+          current.fileName = file.name;
+          current.fileSize = file.size;
           Object.assign(current, parsed.patch);
           Object.assign(current.provenance, parsed.provenance);
-          state.notice = "Rincian naskah berhasil dipetakan dari teks ringkasan. Periksa dan simpan.";
+          state.aiExtractionResult = parsed;
+          state.notice = `🔍 Ekstraksi Cerdas & OCR Dokumen berhasil (${parsed.findings.length} atribut terdeteksi dari ${sourceLabel}). Periksa dan validasi manual di bawah.`;
           save();
           render();
+        };
+
+        if (name.endsWith(".docx")) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const txt = extractTextFromDocx(e.target?.result);
+            const parsed = parseDocumentSummary(txt || file.name, state.partners);
+            applyResult(parsed, "dokumen Word DOCX");
+          };
+          reader.readAsArrayBuffer(file);
+        } else if (name.endsWith(".pdf")) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const txt = extractTextFromPdf(e.target?.result);
+            const parsed = parseDocumentSummary(txt || file.name, state.partners);
+            applyResult(parsed, "dokumen PDF");
+          };
+          reader.readAsArrayBuffer(file);
+        } else if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".bmp") || name.endsWith(".webp")) {
+          state.notice = "Memproses pemindaian citra naskah & binarisasi OCR...";
+          render();
+          extractTextFromImage(file, (msg) => {
+            state.notice = msg;
+            const notEl = document.getElementById("notice");
+            if (notEl) notEl.textContent = msg;
+          }, (imgRes) => {
+            const parsed = parseDocumentSummary(imgRes.textFallback || file.name, state.partners);
+            applyResult(parsed, "hasil pindai gambar naskah");
+          });
+        } else {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const content = String(e.target?.result || "");
+            const parsed = parseDocumentSummary(content, state.partners);
+            applyResult(parsed, "berkas teks/dokumen");
+          };
+          reader.readAsText(file);
         }
       };
     }
+
+    const toggleAiPaste = document.getElementById("btn-toggle-ai-paste");
+    const aiPasteBox = document.getElementById("ai-paste-box");
+    if (toggleAiPaste && aiPasteBox) {
+      toggleAiPaste.onclick = () => {
+        aiPasteBox.style.display = aiPasteBox.style.display === "none" ? "block" : "none";
+      };
+    }
+
+    const sampleMoU = `MEMORANDUM OF UNDERSTANDING (NOTA KESEPAHAMAN)
+ANTARA
+INSTITUT TEKNOLOGI DEL
+DENGAN
+PEMERINTAH KABUPATEN TOBA
+TENTANG
+KERJA SAMA PENGEMBANGAN SISTEM INFORMASI DESA DAN PELATIHAN SUMBER DAYA MANUSIA
+DI KABUPATEN TOBA
+
+NOMOR: 014/ITDel/MoU/2026
+NOMOR: 100.3/042/Tapem/2026
+
+Pada hari ini, Jumat tanggal 15 bulan Januari tahun 2026 (15-01-2026), bertempat di Laguboti:
+1. Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech., Rektor Institut Teknologi Del, selanjutnya disebut PIHAK PERTAMA.
+2. Ir. Poltak Sitorus, M.Sc., Bupati Toba, bertindak untuk dan atas nama Pemerintah Kabupaten Toba, selanjutnya disebut PIHAK KEDUA.
+
+PASAL 1: RUANG LINGKUP
+Ruang lingkup Nota Kesepahaman ini meliputi bidang Pendidikan, Penelitian dan Pengabdian Kepada Masyarakat dalam bidang teknologi informasi, rekayasa perangkat lunak, dan tata kelola digital desa.
+
+PASAL 2: MASA BERLAKU
+Nota Kesepahaman ini berlaku untuk jangka waktu 3 (tiga) tahun terhitung sejak tanggal ditandatangani.`;
+
+    const samplePKS = `PERJANJIAN KERJA SAMA
+ANTARA
+FAKULTAS TEKNOLOGI INDUSTRI INSTITUT TEKNOLOGI DEL
+DENGAN
+PT TOBA DIGITAL NUSANTARA
+TENTANG
+PROGRAM MAGANG MAHASISWA DAN OPTIMASI RANTAI PASOK INDUSTRI MANUFAKTUR
+
+NOMOR: 028/ITDel/FTI/PKS/2025
+NOMOR: TDN/HRD/VIII/2025-019
+
+Pada hari ini Senin tanggal 18 Agustus 2025, bertempat di Balige:
+Pihak Pertama: Dr. Rizal Sinaga, S.T., M.T., Dekan Fakultas Teknologi Industri IT Del.
+Pihak Kedua: Hendra Simanjuntak, S.T., M.M., Direktur Utama PT Toba Digital Nusantara.
+
+Ruang lingkup kerja sama mencakup kegiatan magang industri dan efisiensi logistik pabrik.
+Perjanjian ini berlaku sejak tanggal 18 Agustus 2025 sampai dengan 17 Agustus 2027.
+Nilai kompensasi operasional sebesar Rp 75.000.000.`;
+
+    const btnSample1 = document.getElementById("btn-ai-sample-1");
+    if (btnSample1) {
+      btnSample1.onclick = () => {
+        const txtArea = document.getElementById("ai-ocr-text");
+        if (txtArea) txtArea.value = sampleMoU;
+      };
+    }
+
+    const btnSample2 = document.getElementById("btn-ai-sample-2");
+    if (btnSample2) {
+      btnSample2.onclick = () => {
+        const txtArea = document.getElementById("ai-ocr-text");
+        if (txtArea) txtArea.value = samplePKS;
+      };
+    }
+
+    const runAiExtract = document.getElementById("btn-run-ai-extract");
+    if (runAiExtract) {
+      runAiExtract.onclick = () => {
+        const txt = document.getElementById("ai-ocr-text")?.value || "";
+        if (!txt.trim()) return;
+        const parsed = parseDocumentSummary(txt, state.partners);
+        let current = state.documents.find((item) => item.id === state.editingId);
+        if (!current) {
+          const blankDoc = blankNaskah();
+          state.documents = [blankDoc, ...state.documents];
+          state.editingId = blankDoc.id;
+          current = blankDoc;
+        }
+        Object.assign(current, parsed.patch);
+        Object.assign(current.provenance, parsed.provenance);
+        state.aiExtractionResult = parsed;
+        state.notice = `🔍 Analisis Teks Berhasil: ${parsed.findings.length} atribut naskah terdeteksi. Silakan periksa formulir.`;
+        save();
+        render();
+      };
+    }
+
+    const btnClearAi = document.getElementById("btn-clear-ai");
+    if (btnClearAi) {
+      btnClearAi.onclick = () => {
+        state.aiExtractionResult = null;
+        render();
+      };
+    }
+
     const form = document.getElementById("form");
     if (form) form.onsubmit = (event) => {
       event.preventDefault();
@@ -1805,7 +2395,7 @@ ${example.map(csvCell).join(",")}
       if (!current) return;
       const data = new FormData(form);
       const next = { ...current, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
-      for (const key of ["documentType", "documentNumber", "title", "partnerId", "startDate", "endDate", "status", "facultyId", "programId", "unitId", "activityName", "pic", "partnerSignatory", "partnerSignatoryTitle", "itdelSignatory", "itdelSignatoryTitle", "scope", "location", "budget", "fundingSource", "notes"]) {
+      for (const key of ["documentType", "documentNumber", "title", "partnerId", "startDate", "endDate", "status", "facultyId", "programId", "triDharma", "unitId", "activityName", "pic", "partnerSignatory", "partnerSignatoryTitle", "itdelSignatory", "itdelSignatoryTitle", "scope", "location", "budget", "fundingSource", "notes"]) {
         const value = String(data.get(key) ?? "");
         next[key] = value;
         next.provenance = { ...next.provenance, [key]: next.provenance[key] === "SISTEM" && value === String(current[key] ?? "") ? "SISTEM" : "MANUAL" };

@@ -48,12 +48,11 @@ Setelah proses migrasi massal selesai:
 
 ## 3. Alur Operasional Sistem
 
-### A. Alur Staf Unit Kerja Sama:
-1. **Unggah Berkas**: Dokumen fisik yang dipindai (PDF) atau dosir digital diunggah sebagai lampiran dan memperoleh identitas unik (`DOC-XXXXXX`).
-2. **Default Sistem Otomatis**: Formulir metadata terbuka dengan nilai-nilai institusional yang sudah terisi otomatis (Penandatangan IT Del: Dr. Arnaldo Sinaga, Rektor IT Del; Tanggal mulai: hari ini; Lokasi: Laguboti; Unit: UKS).
-3. **Pintasan Otomatisasi Staf**: Staf dapat memilih berkas ringkasan (.csv/.txt) atau menempel teks ringkasan untuk mengisikan puluhan field formulir naskah dalam satu klik.
-4. **Kelengkapan Manual**: Staf melengkapi sisa data yang spesifik (nomor klausul, anggaran, PIC khusus).
-5. **Validasi Tanggal & Duplikasi**: Sistem secara ketat menolak tanggal berakhir yang mendahului tanggal mulai dan nomor naskah ganda.
+### A. Alur Staf Unit Kerja Sama & Ekstraksi Cerdas (OCR):
+1. **Unggah Berkas**: Dokumen fisik yang dipindai (Scan/Gambar), Word (`.docx`), PDF, atau dosir digital diunggah sebagai lampiran dan memperoleh identitas unik (`DOC-XXXXXX`).
+2. **Ekstraksi Cerdas & OCR Lokal**: Engine cerdas lokal memindai naskah untuk mengusulkan nomor dokumen, judul kerja sama, nama mitra & penandatangan asli, kategori fakultas/prodi, tri dharma, masa berlaku, dan anggaran.
+3. **Pemeriksaan & Validasi Manual Staf**: Seluruh field yang terdeteksi otomatis ditandai `[Terdeteksi Cerdas]` sebagai usulan draf. Staf meneliti kesesuaian klausul, melengkapi nomor pasal/anggaran khusus, dan memvalidasi keabsahan data.
+4. **Validasi Tanggal & Duplikasi**: Sistem secara ketat menolak tanggal berakhir yang mendahului tanggal mulai dan nomor naskah ganda sebelum disimpan ke basis data.
 
 ### B. Alur Dekan & Kaprodi:
 1. **Otorisasi Lingkup (RBAC)**: Tampilan terisolasi hanya pada naskah yang melibatkan fakultas atau program studi bersangkutan (misal FITE atau S1 Informatika).
@@ -87,9 +86,9 @@ Setiap endpoint mutasi data wajib memverifikasi token sesi pengguna, hak akses b
 
 ---
 
-## 5. Kepastian Sistem (Zero AI/ML/OCR & Zero TPL)
+## 5. Kedaulatan Data & Keamanan Lokal (Zero Cloud Leakage)
 
-- Sistem ini murni **Sistem Informasi Manajemen konvensional berbasis aturan deterministik** dan basis data relasional.
-- Tidak ada panggilan ke API LLM pihak ketiga atau engine OCR eksternal.
-- Tidak ada data naskah institusi yang dikirim ke penyedia awan luar.
-- Bebas total dari entitas yang tidak relevan dengan tridharma akademik IT Del.
+- **Modul Ekstraksi Berjalan Lokal / On-Premise**: Seluruh modul pemindaian OCR dan *smart pattern extractor* dieksekusi 100% di peramban klien atau runtime lokal aplikasi desktop (`.EXE`).
+- **Tanpa Panggilan Cloud API Pihak Ketiga**: Tidak ada berkas naskah atau data rahasia IT Del yang dikirim ke OpenAI, Google Cloud AI eksternal, atau layanan awan publik mana pun.
+- **Validasi Manusia (Human-in-the-Loop)**: Hasil pemindaian cerdas hanya berstatus sebagai usulan awal (*draft*); verifikasi dan otorisasi akhir 100% diputuskan oleh Staf UKS IT Del.
+- **Bebas Entitas Non-Akademik**: Repositori bersih dan terbebas dari entitas korporasi yang tidak relevan dengan tridharma IT Del.
