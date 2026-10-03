@@ -21,7 +21,7 @@ class DocumentType(str, Enum):
     FINAL_REPORT = "FINAL_REPORT"
 
 class DocumentStatus(str, Enum):
-    AI_EXTRACTED = "AI_EXTRACTED"
+    DRAFT = "DRAFT"
     NEEDS_REVIEW = "NEEDS_REVIEW"
     VALIDATED = "VALIDATED"
     REJECTED = "REJECTED"
@@ -116,8 +116,6 @@ class DocumentBase(BaseModel):
     it_del_signatory_name: Optional[str] = Field(default=None, max_length=150)
     budget: Optional[float] = Field(default=0.0, ge=0.0, description="Alokasi anggaran naskah (Rp)")
     status: DocumentStatus = Field(default=DocumentStatus.NEEDS_REVIEW)
-    ai_confidence_score: Optional[float] = Field(default=0.90, ge=0.0, le=1.0)
-    extractions: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
     @field_validator("document_number", "title", "scope", "partner_signatory_name", "it_del_signatory_name")
     @classmethod

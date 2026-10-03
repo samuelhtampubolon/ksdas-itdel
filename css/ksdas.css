@@ -1,0 +1,54 @@
+:root {
+  --bg: #f3f0e8;
+  --surface: #fffdf8;
+  --ink: #1c2430;
+  --muted: #5c6874;
+  --line: #e0d8cc;
+  --navy: #16324f;
+  --fg: #f6f3ec;
+  font-family: "Segoe UI", "Source Sans 3", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, select, input, textarea { font: inherit; }
+button { cursor: pointer; }
+.shell { display: grid; grid-template-columns: 15rem 1fr; min-height: 100vh; }
+aside { background: var(--navy); color: var(--fg); padding: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.mark { font-family: Georgia, serif; font-size: 1.5rem; margin: 0; }
+.sub, .foot, .muted { color: var(--muted); font-size: 0.9rem; }
+aside .sub, aside .foot { color: #d5dde6; }
+aside button { background: transparent; color: var(--fg); border: 0; text-align: left; border-radius: 8px; padding: 0.7rem 0.8rem; }
+aside button.on, aside button:hover { background: #1e4468; }
+.foot { margin-top: auto; }
+header, main { padding: 1rem 1.25rem; }
+header select, .row input, .row select, .form input, .form select, textarea { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0.65rem 0.75rem; }
+h1 { font-family: Georgia, serif; font-weight: 600; margin: 0 0 0.4rem; }
+h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 1rem 0; }
+.stats div, section, .note { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 0.9rem 1rem; }
+.stats strong { display: block; font-family: Georgia, serif; font-size: 1.8rem; }
+.row, .form { display: grid; gap: 0.6rem; margin: 0.8rem 0; }
+.row { grid-template-columns: 1.4fr repeat(2, 0.8fr) auto auto auto; align-items: center; }
+.form { grid-template-columns: 1fr 1fr; }
+.form label, header label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+button, .link { border-radius: 8px; }
+main > button, .row button, .drop, #template, #read, #commit, #csv2, #reset, #blank, form button {
+  background: var(--navy); color: var(--fg); border: 0; padding: 0.7rem 0.9rem; width: fit-content;
+}
+.row button, #clear { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid var(--line); font-size: 0.92rem; vertical-align: top; }
+th { cursor: pointer; }
+.link { background: none; color: var(--navy); border: 0; padding: 0; font-weight: 700; }
+.note { margin: 0.8rem 0; }
+textarea { min-height: 8rem; }
+.tablewrap { overflow-x: auto; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: 0.25rem 0; }
+@media (max-width: 800px) {
+  .shell { grid-template-columns: 1fr; }
+  aside { position: static; }
+  .stats, .row, .form { grid-template-columns: 1fr; }
+}
