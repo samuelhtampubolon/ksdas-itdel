@@ -125,28 +125,29 @@ namespace KsdasItDelDesktop
         {
             try
             {
+                StringBuilder sb = new StringBuilder();
                 using (ZipArchive archive = ZipFile.OpenRead(filePath))
                 {
-                    ZipArchiveEntry entry = archive.GetEntry("word/document.xml");
-                    if (entry != null)
+                    foreach (ZipArchiveEntry entry in archive.Entries)
                     {
-                        using (Stream s = entry.Open())
-                        using (StreamReader reader = new StreamReader(s, Encoding.UTF8))
+                        if (Regex.IsMatch(entry.FullName, @"^word/(?:header\d*|document|footer\d*)\.xml$", RegexOptions.IgnoreCase))
                         {
-                            string xml = reader.ReadToEnd();
-                            MatchCollection mc = Regex.Matches(xml, @"<w:t(?:\s+[^>]*)?>([\s\S]*?)</w:t>");
-                            if (mc.Count > 0)
+                            using (Stream s = entry.Open())
+                            using (StreamReader reader = new StreamReader(s, Encoding.UTF8))
                             {
-                                StringBuilder sb = new StringBuilder();
+                                string xml = reader.ReadToEnd();
+                                string formatted = xml.Replace("</w:p>", "\n");
+                                MatchCollection mc = Regex.Matches(formatted, @"<w:t(?:\s+[^>]*)?>([\s\S]*?)</w:t>");
                                 foreach (Match m in mc)
                                 {
-                                    sb.Append(m.Groups[1].Value).Append(" ");
+                                    sb.Append(m.Groups[1].Value);
                                 }
-                                return sb.ToString();
+                                sb.AppendLine();
                             }
                         }
                     }
                 }
+                if (sb.Length > 20) return sb.ToString();
             }
             catch {}
             return Path.GetFileNameWithoutExtension(filePath);
@@ -227,7 +228,7 @@ namespace KsdasItDelDesktop
                 unit = "UKS",
                 triDharma = "Pendidikan",
                 pic = "Staf Unit Kerja Sama",
-                status = "DRAFT"
+                status = "AKTIF"
             };
 
             // 1. Jenis Naskah
