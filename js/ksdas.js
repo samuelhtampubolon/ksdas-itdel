@@ -12,66 +12,178 @@
     tri: "",
     attention: false
   };
+  var LEADERSHIP_DIRECTORY = {
+    yayasan: {
+      pembina: "Jenderal TNI (Purn.) Luhut Binsar Pandjaitan, M.P.A.",
+      pengurus: "Intan Simanjuntak"
+    },
+    rektorat: {
+      rektor: {
+        name: "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
+        title: "Rektor Institut Teknologi Del",
+        period: "2025–2029"
+      },
+      wr1: {
+        name: "Good Fried Panggabean, S.T., M.T., Ph.D.",
+        title: "Wakil Rektor I Bidang Akademik dan Kemahasiswaan"
+      },
+      wr2: {
+        name: "Rosni Lumbantoruan, Ph.D.",
+        title: "Wakil Rektor II Bidang Perencanaan, Keuangan, dan Sumber Daya"
+      },
+      wr3: {
+        name: "Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.",
+        title: "Wakil Rektor III Bidang Kemitraan, Inovasi, dan Kewirausahaan"
+      }
+    },
+    lembaga: {
+      spm: {
+        name: "Satuan Penjaminan Mutu (SPM)",
+        detail: "Penanggung Jawab SPMI & AMI Siklus PPEPP Sesuai Regulasi Kemdiktisaintek"
+      },
+      lppm: {
+        name: "Lembaga Penelitian dan Pengabdian kepada Masyarakat (LPPM)",
+        detail: "Pusat Kolaborasi Penelitian dan Pengabdian Berbasis Kemitraan Strategis"
+      },
+      uks: {
+        name: "Bagian Kerja Sama dan Kemitraan (UKS)",
+        detail: "Unit Pelaksana Administrasi Naskah, Monitoring MoU/PKS/IA, dan Pelaporan LaporKerma"
+      }
+    },
+    fakultas: [
+      { id: "FITE", name: "Fakultas Informatika dan Teknik Elektro", dekan: "Indra Hartarto Tambunan, Ph.D." },
+      { id: "FTI", name: "Fakultas Teknologi Industri", dekan: "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si." },
+      { id: "FB", name: "Fakultas Bioteknologi", dekan: "Dr. Merry Meryam Martgrita, S.Si., M.Si." },
+      { id: "FV", name: "Fakultas Vokasi", dekan: "Riyanthi Angrainy Sianturi, S.Sos., M.Ds." }
+    ]
+  };
+
   var FACULTIES = [
-    { id: "FITE", name: "Fakultas Informatika dan Teknik Elektro" },
-    { id: "FTI", name: "Fakultas Teknologi Industri" },
-    { id: "FB", name: "Fakultas Bioteknologi" }
+    { id: "FITE", name: "Fakultas Informatika dan Teknik Elektro", dekan: "Indra Hartarto Tambunan, Ph.D." },
+    { id: "FTI", name: "Fakultas Teknologi Industri", dekan: "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si." },
+    { id: "FB", name: "Fakultas Bioteknologi", dekan: "Dr. Merry Meryam Martgrita, S.Si., M.Si." },
+    { id: "FV", name: "Fakultas Vokasi", dekan: "Riyanthi Angrainy Sianturi, S.Sos., M.Ds." }
   ];
+
   var PROGRAMS = [
     { id: "IF", facultyId: "FITE", name: "S1 Informatika" },
     { id: "SI", facultyId: "FITE", name: "S1 Sistem Informasi" },
+    { id: "TE", facultyId: "FITE", name: "S1 Teknik Elektro" },
     { id: "MR", facultyId: "FTI", name: "S1 Manajemen Rekayasa" },
-    { id: "BP", facultyId: "FB", name: "S1 Teknik Bioproses" }
+    { id: "TM", facultyId: "FTI", name: "S1 Teknik Metalurgi" },
+    { id: "BP", facultyId: "FB", name: "S1 Teknik Bioproses" },
+    { id: "TRPL", facultyId: "FV", name: "D4 Teknologi Rekayasa Perangkat Lunak" },
+    { id: "D3TI", facultyId: "FV", name: "D3 Teknologi Informasi" },
+    { id: "D3TK", facultyId: "FV", name: "D3 Teknologi Komputer" }
   ];
+
   var UNITS = [
-    { id: "UKS", name: "Unit Kerja Sama" },
-    { id: "LPPM", name: "Lembaga Penelitian dan Pengabdian" },
-    { id: "PRODI", name: "Program Studi" }
+    { id: "UKS", name: "Bagian Kerja Sama dan Kemitraan (UKS)" },
+    { id: "LPPM", name: "Lembaga Penelitian dan Pengabdian kepada Masyarakat (LPPM)" },
+    { id: "SPM", name: "Satuan Penjaminan Mutu (SPM / SPMI Kemdiktisaintek)" },
+    { id: "WR3", name: "Wakil Rektor III (Kemitraan, Inovasi, & Kewirausahaan)" },
+    { id: "PRODI", name: "Program Studi" },
+    { id: "FAKULTAS", name: "Fakultas" }
   ];
+
   var ROLES = [
     {
       id: "STAFF",
-      name: "Staf Unit Kerja Sama",
-      detail: "Mencatat, mengimpor, dan melengkapi data",
+      name: "Staf Unit Kerja Sama & Kemitraan (UKS)",
+      detail: "Mencatat naskah, memproses OCR/ekstraksi, mengarsipkan dosir, dan sinkronisasi basis data",
       canWrite: true,
       canImport: true
     },
     {
-      id: "WR3",
-      name: "Wakil Rektor 3",
-      detail: "Memantau masa berlaku, tindak lanjut, dan rekap",
+      id: "REKTOR",
+      name: "Rektor IT Del (Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.)",
+      detail: "Pemegang kebijakan tertinggi, penandatangan MoU institusi, dan pemantau capaian strategis",
       canWrite: true,
       canImport: false
     },
     {
+      id: "WR3",
+      name: "Wakil Rektor III (Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.)",
+      detail: "Koordinator Utama Kemitraan, Kerja Sama, Inovasi, Kewirausahaan, dan Capaian IKU 6",
+      canWrite: true,
+      canImport: true
+    },
+    {
+      id: "SPM",
+      name: "Satuan Penjaminan Mutu (Auditor Mutu Internal / SPMI Kemdiktisaintek)",
+      detail: "Melakukan audit mutu kerja sama, pemantauan siklus PPEPP, evaluasi gap MoU-PKS-IA, dan akreditasi",
+      canWrite: false,
+      canImport: false
+    },
+    {
       id: "DEKAN_FITE",
-      name: "Dekan FITE",
-      detail: "Melihat, menyaring, dan mengunduh data fakultas",
+      name: "Dekan FITE (Indra Hartarto Tambunan, Ph.D.)",
+      detail: "Melihat, menyaring, dan mengevaluasi data kerja sama Fakultas Informatika dan Teknik Elektro",
       facultyId: "FITE",
       canWrite: false,
       canImport: false
     },
     {
+      id: "DEKAN_FTI",
+      name: "Dekan FTI (Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.)",
+      detail: "Melihat, menyaring, dan mengevaluasi data kerja sama Fakultas Teknologi Industri",
+      facultyId: "FTI",
+      canWrite: false,
+      canImport: false
+    },
+    {
       id: "DEKAN_FB",
-      name: "Dekan Fakultas Bioteknologi",
-      detail: "Melihat data fakultas sendiri",
+      name: "Dekan FB (Dr. Merry Meryam Martgrita, S.Si., M.Si.)",
+      detail: "Melihat, menyaring, dan mengevaluasi data kerja sama Fakultas Bioteknologi",
       facultyId: "FB",
+      canWrite: false,
+      canImport: false
+    },
+    {
+      id: "DEKAN_FV",
+      name: "Dekan Fakultas Vokasi (Riyanthi Angrainy Sianturi, S.Sos., M.Ds.)",
+      detail: "Melihat, menyaring, dan mengevaluasi data kerja sama Fakultas Vokasi (D3 TI, D3 TK, D4 TRPL)",
+      facultyId: "FV",
       canWrite: false,
       canImport: false
     },
     {
       id: "KAPRODI_IF",
       name: "Kaprodi S1 Informatika",
-      detail: "Melihat data program studi sendiri",
+      detail: "Melihat dan mengusulkan tindak lanjut kerja sama S1 Informatika (IKU 6 & MBKM)",
       programId: "IF",
+      canWrite: false,
+      canImport: false
+    },
+    {
+      id: "KAPRODI_SI",
+      name: "Kaprodi S1 Sistem Informasi",
+      detail: "Melihat dan mengusulkan tindak lanjut kerja sama S1 Sistem Informasi (IKU 6 & MBKM)",
+      programId: "SI",
+      canWrite: false,
+      canImport: false
+    },
+    {
+      id: "KAPRODI_MR",
+      name: "Kaprodi S1 Manajemen Rekayasa",
+      detail: "Melihat dan mengusulkan tindak lanjut kerja sama S1 Manajemen Rekayasa (IKU 6 & Magang Industri)",
+      programId: "MR",
       canWrite: false,
       canImport: false
     },
     {
       id: "KAPRODI_BP",
       name: "Kaprodi S1 Teknik Bioproses",
-      detail: "Melihat data program studi sendiri",
+      detail: "Melihat dan mengusulkan tindak lanjut kerja sama S1 Teknik Bioproses (IKU 6 & Riset Industri)",
       programId: "BP",
+      canWrite: false,
+      canImport: false
+    },
+    {
+      id: "KAPRODI_TRPL",
+      name: "Kaprodi D4 Teknologi Rekayasa Perangkat Lunak",
+      detail: "Melihat dan mengusulkan kerja sama vokasi industri D4 TRPL",
+      programId: "TRPL",
       canWrite: false,
       canImport: false
     }
@@ -361,7 +473,8 @@
     for (const f of FACULTIES) {
       if (n2 === norm(f.id) || n2 === norm(f.name) || n2.includes(norm(f.name))) return f.id;
     }
-    if (n2 === "fite" || n2.includes("teknik elektro") || n2.includes("informatika") && n2.includes("fakultas")) return "FITE";
+    if (n2 === "fv" || n2.includes("vokasi")) return "FV";
+    if (n2 === "fite" || n2.includes("teknik elektro") || (n2.includes("informatika") && n2.includes("fakultas"))) return "FITE";
     if (n2 === "fti" || n2.includes("teknologi industri")) return "FTI";
     if (n2 === "fb" || n2.includes("bioteknologi")) return "FB";
     return "";
@@ -372,10 +485,15 @@
     for (const p2 of PROGRAMS) {
       if (n2 === norm(p2.id) || n2 === norm(p2.name) || n2.includes(norm(p2.name))) return p2.id;
     }
-    if (n2.includes("sistem informasi")) return "SI";
-    if (n2.includes("informatika")) return "IF";
-    if (n2.includes("manajemen rekayasa")) return "MR";
-    if (n2.includes("bioproses")) return "BP";
+    if (n2.includes("rekayasa perangkat lunak") || n2.includes("trpl")) return "TRPL";
+    if (n2.includes("d3 teknologi informasi") || n2.includes("d3 ti") || n2.includes("ti d3")) return "D3TI";
+    if (n2.includes("d3 teknologi komputer") || n2.includes("d3 tk") || n2.includes("tk d3")) return "D3TK";
+    if (n2.includes("sistem informasi") || n2.includes(" si ") || n2 === "si") return "SI";
+    if (n2.includes("teknik elektro") || n2.includes(" elektro ")) return "TE";
+    if (n2.includes("informatika") || n2.includes(" if ") || n2 === "if") return "IF";
+    if (n2.includes("teknik metalurgi") || n2.includes("metalurgi")) return "TM";
+    if (n2.includes("manajemen rekayasa") || n2.includes(" mr ") || n2 === "mr") return "MR";
+    if (n2.includes("bioproses") || n2.includes(" bp ") || n2 === "bp") return "BP";
     return "";
   }
   function matchUnit(value) {
@@ -384,9 +502,12 @@
     for (const u of UNITS) {
       if (n2 === norm(u.id) || n2.includes(norm(u.name))) return u.id;
     }
-    if (n2.includes("kerja sama") || n2.includes("kerjasama")) return "UKS";
-    if (n2.includes("lppm") || n2.includes("penelitian")) return "LPPM";
+    if (n2.includes("kerja sama") || n2.includes("kerjasama") || n2.includes("kemitraan") || n2.includes("uks")) return "UKS";
+    if (n2.includes("lppm") || n2.includes("penelitian") || n2.includes("pengabdian")) return "LPPM";
+    if (n2.includes("spm") || n2.includes("penjaminan mutu") || n2.includes("ami") || n2.includes("spmi")) return "SPM";
+    if (n2.includes("wr3") || n2.includes("wakil rektor 3") || n2.includes("wakil rektor iii")) return "WR3";
     if (n2.includes("prodi") || n2.includes("program studi")) return "PRODI";
+    if (n2.includes("fakultas")) return "FAKULTAS";
     return "";
   }
   function hintsFromFilename(fileName, partners) {
@@ -841,6 +962,206 @@ ${example.map(csvCell).join(",")}
     </table>
     </body></html>`;
   }
+  function amiReportToWord(role, docs, partners) {
+    const gaps = followUpGaps(docs);
+    const activeDocs = docs.filter((d) => displayStatus(d) === "AKTIF");
+    const expiredDocs = docs.filter((d) => displayStatus(d) === "BERAKHIR");
+    const warningDocs = docs.filter((d) => displayStatus(d) === "AKAN_BERAKHIR");
+    const passiveMous = docs.filter((d) => d.documentType === "MOU_LOI" && displayStatus(d) === "AKTIF" && !state.documents.some((c) => c.parentId === d.id));
+    const pksNoIa = docs.filter((d) => d.documentType === "PKS_MOA" && displayStatus(d) === "AKTIF" && !state.documents.some((c) => c.parentId === d.id));
+
+    return `\uFEFF<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="utf-8">
+    <title>Lembar Hasil Audit Mutu Internal (LH-AMI) Kerja Sama IT Del</title>
+    <style>
+      body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.35; margin: 1.2in 1in; }
+      .kop { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 16px; }
+      .kop h3 { margin: 0; font-size: 12pt; font-weight: bold; }
+      .kop h2 { margin: 2px 0; font-size: 15pt; font-weight: bold; }
+      .kop p { margin: 2px 0; font-size: 9pt; font-family: Arial, sans-serif; }
+      .doc-title { text-align: center; font-size: 13pt; font-weight: bold; margin-bottom: 2px; text-transform: uppercase; }
+      .doc-sub { text-align: center; font-size: 10pt; font-style: italic; margin-bottom: 16px; }
+      h3 { font-size: 11.5pt; font-weight: bold; margin-top: 16px; margin-bottom: 5px; }
+      table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+      th { background-color: #eef2f7; border: 1px solid #333; padding: 5px 6px; font-size: 9.5pt; text-align: left; }
+      td { border: 1px solid #333; padding: 5px 6px; font-size: 9.5pt; }
+      .box { border: 1px solid #555; background: #fafafa; padding: 8px 12px; margin: 10px 0; }
+      .sign-table { width: 100%; border: none; margin-top: 35px; }
+      .sign-table td { border: none; padding: 4px; text-align: center; vertical-align: top; }
+      .badge-kts { color: #b71c1c; font-weight: bold; }
+      .badge-ob { color: #e65100; font-weight: bold; }
+      .badge-ok { color: #1b5e20; font-weight: bold; }
+    </style></head><body>
+    <div class="kop">
+      <h3>YAYASAN DEL</h3>
+      <h2>INSTITUT TEKNOLOGI DEL</h2>
+      <p><b>SATUAN PENJAMINAN MUTU (SPM) & BIRO KERJA SAMA</b><br>
+      Jl. Sisingamangaraja, Sitoluama, Laguboti, Kabupaten Toba, Sumatera Utara 22381<br>
+      Telepon: +62 632 331234 | Surel: spm@del.ac.id | Laman: www.del.ac.id</p>
+    </div>
+    <div class="doc-title">LEMBAR HASIL AUDIT MUTU INTERNAL (LH-AMI) BIDANG KERJA SAMA</div>
+    <div class="doc-sub">Siklus SPMI Kemdiktisaintek (Permendikbudristek No. 53/2023) & Pemenuhan IKU 6 | Tahun Audit: ${new Date().getFullYear()}</div>
+
+    <table style="margin-bottom:12px;">
+      <tr><td style="width:25%; font-weight:bold;">Unit Teraudit (Auditee)</td><td style="width:75%;">Bagian Kerja Sama dan Kemitraan (UKS) & Fakultas (FITE, FTI, FB, FV)</td></tr>
+      <tr><td style="font-weight:bold;">Standar Penjaminan Mutu</td><td style="width:75%;">Standar Nasional Pendidikan Tinggi (SN Dikti) & Siklus PPEPP Kerja Sama Kemdiktisaintek</td></tr>
+      <tr><td style="font-weight:bold;">Tanggal Pelaksanaan Audit</td><td>${todayISO()}</td></tr>
+      <tr><td style="font-weight:bold;">Auditor Penjaminan Mutu</td><td>Tim Auditor Internal Satuan Penjaminan Mutu (SPM) IT Del</td></tr>
+    </table>
+
+    <h3>I. RESUM KEPATUHAN & STATISTIK MUTU NASKAH</h3>
+    <table>
+      <thead><tr><th>Indikator Evaluasi SPMI Kerja Sama</th><th>Jumlah</th><th>Persentase</th><th>Status Kepatuhan</th></tr></thead>
+      <tbody>
+        <tr><td>Total Dosir Naskah Teraudit</td><td>${docs.length}</td><td>100%</td><td>Terdaftar di Sistem KSDAS</td></tr>
+        <tr><td>Naskah Berstatus Aktif & Berjalan</td><td>${activeDocs.length}</td><td>${docs.length ? Math.round(activeDocs.length / docs.length * 100) : 0}%</td><td class="badge-ok">Sesuai Standar Mutu</td></tr>
+        <tr><td>MoU Pasif / "Tidur" (>180 Hari Tanpa PKS)</td><td>${passiveMous.length}</td><td>${docs.length ? Math.round(passiveMous.length / docs.length * 100) : 0}%</td><td class="badge-kts">Temuan KTS Minor (Segera Dibuatkan PKS)</td></tr>
+        <tr><td>PKS Berjalan Belum Memiliki IA / Kegiatan</td><td>${pksNoIa.length}</td><td>${docs.length ? Math.round(pksNoIa.length / docs.length * 100) : 0}%</td><td class="badge-ob">Temuan Observasi (Perlu Rincian Implementasi)</td></tr>
+        <tr><td>Naskah Kedaluwarsa (Lewat Masa Berlaku)</td><td>${expiredDocs.length}</td><td>${docs.length ? Math.round(expiredDocs.length / docs.length * 100) : 0}%</td><td class="badge-kts">Temuan KTS Minor/Mayor (Adendum/Perpanjangan)</td></tr>
+        <tr><td>Naskah Menjelang Berakhir (&le; 180 Hari)</td><td>${warningDocs.length}</td><td>${docs.length ? Math.round(warningDocs.length / docs.length * 100) : 0}%</td><td class="badge-ob">Peringatan Dini (Kirim Surat Evaluasi Mitra)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>II. CAPAIAN INDIKATOR KINERJA UTAMA (IKU 6) PER FAKULTAS & PRODI</h3>
+    <table>
+      <thead><tr><th>Fakultas / Program Studi</th><th>Dekan / Penanggung Jawab</th><th>Total Naskah</th><th>Naskah Industri / Mitra Bereputasi</th><th>Capaian IKU 6</th></tr></thead>
+      <tbody>
+        ${FACULTIES.map((f) => {
+          const fDocs = docs.filter((d) => d.facultyId === f.id);
+          const fProdis = PROGRAMS.filter((p) => p.facultyId === f.id);
+          const fMitraRep = fDocs.filter((d) => {
+            const p = state.partners.find((x) => x.id === d.partnerId);
+            return p && (p.type === "SWASTA" || p.type === "BUMN" || p.type === "PERGURUAN_TINGGI");
+          }).length;
+          return `<tr>
+            <td><b>${f.id}</b> - ${esc(f.name)}</td>
+            <td>${esc(f.dekan || "-")}</td>
+            <td>${fDocs.length}</td>
+            <td>${fMitraRep}</td>
+            <td>${fDocs.length > 0 ? "Memenuhi Target IKU 6" : "Perlu Peningkatan Kemitraan"}</td>
+          </tr>` + fProdis.map((pr) => {
+            const prDocs = docs.filter((d) => d.programId === pr.id);
+            return `<tr style="font-size:9pt; background:#fafafa;">
+              <td style="padding-left:18px;">&bull; ${esc(pr.name)} (${pr.id})</td>
+              <td>Kaprodi ${pr.id}</td>
+              <td>${prDocs.length}</td>
+              <td>${prDocs.filter((d) => displayStatus(d) === "AKTIF").length} Aktif</td>
+              <td>${prDocs.length >= 1 ? "✓ Terdata" : "Belum Ada Naskah"}</td>
+            </tr>`;
+          }).join("");
+        }).join("")}
+      </tbody>
+    </table>
+
+    <h3>III. TEMUAN AUDIT & DAFTAR KESENJANGAN RELASI (RELATIONAL GAPS)</h3>
+    ${gaps.length ? `
+    <div class="box">
+      <b>Rincian Kesenjangan Dokumen (Temuan AMI):</b>
+      <ul>
+        ${gaps.map((g) => `<li><b>[${esc(g.kind)}]</b> ${esc(g.message)} (ID: ${esc(g.documentId)})</li>`).join("")}
+      </ul>
+    </div>` : `<p class="badge-ok">✓ Tidak ditemukan kesenjangan relasi. Tata kelola dosir naskah berjalan tertib.</p>`}
+
+    <h3>IV. RENCANA TINDAK LANJUT (RTL) AUDIT MUTU INTERNAL</h3>
+    <ol>
+      <li><b>Penanganan MoU Pasif:</b> Menginstruksikan UKS dan Dekan Fakultas terkait (FITE, FTI, FB, FV) untuk menghubungi mitra dalam waktu 14 hari kerja guna menyusun draft PKS turunan.</li>
+      <li><b>Pelaporan LaporKerma Kemdiktisaintek:</b> Memastikan seluruh naskah yang berstatus aktif dan memiliki IA telah disinkronkan ke platform LaporKerma Kemdiktisaintek sebelum batas akhir pelaporan semesteran.</li>
+      <li><b>Pembaruan Dosir Kedaluwarsa:</b> Naskah yang telah berakhir masa berlakunya wajib diputuskan: apakah dilakukan perpanjangan (MoU/PKS Baru / Adendum) atau dipindahkan secara resmi ke arsip non-aktif.</li>
+      <li><b>Penguatan IKU 6:</b> Mendorong Program Studi vokasi (TRPL, D3TI, D3TK) dan teknik untuk memperluas kemitraan kurikulum industri terapan dan program magang bersertifikat.</li>
+    </ol>
+
+    <table class="sign-table">
+      <tr>
+        <td style="width:33%;">
+          Auditee,<br>
+          Kepala Bagian Kerja Sama (UKS)<br><br><br><br>
+          <b><u>Staf Unit Kerja Sama IT Del</u></b><br>
+          NIP. IT Del UKS
+        </td>
+        <td style="width:34%;">
+          Ketua Tim Auditor,<br>
+          Satuan Penjaminan Mutu (SPM)<br><br><br><br>
+          <b><u>Auditor SPM IT Del</u></b><br>
+          Siklus PPEPP Kemdiktisaintek
+        </td>
+        <td style="width:33%;">
+          Mengetahui & Menyetujui,<br>
+          Wakil Rektor III (Kemitraan & Inovasi)<br><br><br><br>
+          <b><u>${esc(LEADERSHIP_DIRECTORY.rektorat.wr3.name)}</u></b><br>
+          Institut Teknologi Del
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" style="text-align:center; padding-top:25px;">
+          Mengesahkan,<br>
+          Rektor Institut Teknologi Del<br><br><br><br>
+          <b><u>${esc(LEADERSHIP_DIRECTORY.rektorat.rektor.name)}</u></b><br>
+          Periode ${esc(LEADERSHIP_DIRECTORY.rektorat.rektor.period)}
+        </td>
+      </tr>
+    </table>
+    </body></html>`;
+  }
+
+  function amiToCsv(docs, partners) {
+    const header = [
+      "Nomor Dokumen",
+      "Judul Naskah",
+      "Jenis",
+      "Mitra Kerja Sama",
+      "Fakultas",
+      "Program Studi",
+      "Masa Berlaku",
+      "Status Operasional",
+      "Status Kepatuhan AMI",
+      "Klasifikasi Temuan",
+      "Rekomendasi SPMI Kemdiktisaintek"
+    ];
+    const lines = [header.join(",")];
+    for (const d of docs) {
+      const p = partnerName(partners, d.partnerId);
+      const st = displayStatus(d);
+      const hasChild = state.documents.some((c) => c.parentId === d.id);
+      let amiStatus = "Sesuai";
+      let temuan = "Tidak Ada Temuan";
+      let rekomendasi = "Pertahankan pelaksanaan tridharma";
+
+      if (st === "BERAKHIR") {
+        amiStatus = "Tidak Patuh";
+        temuan = "KTS Minor / Mayor (Kedaluwarsa)";
+        rekomendasi = "Perpanjang atau pindahkan ke arsip";
+      } else if (st === "AKAN_BERAKHIR") {
+        amiStatus = "Perhatian";
+        temuan = "Observasi (Menjelang Berakhir)";
+        rekomendasi = "Kirim surat permohonan perpanjangan";
+      } else if (d.documentType === "MOU_LOI" && !hasChild) {
+        amiStatus = "Perhatian";
+        temuan = "KTS Minor (MoU Pasif / Belum Ada PKS)";
+        rekomendasi = "Dorong prodi menyusun PKS turunan";
+      } else if (d.documentType === "PKS_MOA" && !hasChild) {
+        amiStatus = "Perhatian";
+        temuan = "Observasi (PKS Belum Ada IA/Kegiatan)";
+        rekomendasi = "Terbitkan Implementation Arrangement (IA)";
+      }
+
+      const row = [
+        d.documentNumber,
+        d.title,
+        typeLabel(d.documentType),
+        p,
+        facultyName(d.facultyId),
+        programName(d.programId),
+        `${d.startDate || "-"} s.d. ${d.endDate || "-"}`,
+        st,
+        amiStatus,
+        temuan,
+        rekomendasi
+      ].map((val) => `"${String(val || "").replace(/"/g, '""')}"`);
+      lines.push(row.join(","));
+    }
+    return lines.join("\r\n");
+  }
+
   var INVALID_PERSON_TOKENS = new Set([
     "pt", "cv", "yayasan", "universitas", "institut", "kementerian", "dinas",
     "pemerintah", "badan", "bank", "direktorat", "tim", "panitia", "divisi", "biro",
@@ -1210,35 +1531,38 @@ ${example.map(csvCell).join(",")}
       }
     }
 
-    // 5. Pejabat Penandatangan IT Del
+    // 5. Pejabat Penandatangan IT Del (Terkini 2025–2026/2029)
     if (/Arnaldo\s+Marulitua\s+Sinaga|Arnaldo\s+Sinaga/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del");
+      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del (Rektor)");
       setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del");
-    } else if (/Johannes\s+(?:Harungguan\s+)?Sianipar/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Johannes Harungguan Sianipar, S.T., M.T.", "Penandatangan IT Del");
+    } else if (/Good\s+Fried\s+Panggabean|Good\s+Fried/i.test(text)) {
+      setPatch("itdelSignatory", "Good Fried Panggabean, S.T., M.T., Ph.D.", "Penandatangan IT Del (WR 1)");
+      setPatch("itdelSignatoryTitle", "Wakil Rektor I Bidang Akademik dan Kemahasiswaan IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Rosni\s+Lumbantoruan/i.test(text)) {
+      setPatch("itdelSignatory", "Rosni Lumbantoruan, Ph.D.", "Penandatangan IT Del (WR 2)");
+      setPatch("itdelSignatoryTitle", "Wakil Rektor II Bidang Perencanaan, Keuangan, dan Sumber Daya IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Ellyas\s+(?:Alga\s+)?Nainggolan/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.", "Penandatangan IT Del (WR 3 Kemitraan)");
+      setPatch("itdelSignatoryTitle", "Wakil Rektor III Bidang Kemitraan, Inovasi, dan Kewirausahaan IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Indra\s+Hartarto\s+Tambunan|Indra\s+Tambunan/i.test(text)) {
+      setPatch("itdelSignatory", "Indra Hartarto Tambunan, Ph.D.", "Penandatangan IT Del (Dekan FITE)");
       setPatch("itdelSignatoryTitle", "Dekan Fakultas Informatika dan Teknik Elektro IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Rizal\s+Sinaga/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Rizal Sinaga, S.T., M.T.", "Penandatangan IT Del");
+    } else if (/Fitriani\s+Tupa\s+Ronauli\s+Silalahi|Fitriani\s+(?:Tupa\s+)?Silalahi/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.", "Penandatangan IT Del (Dekan FTI)");
       setPatch("itdelSignatoryTitle", "Dekan Fakultas Teknologi Industri IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Merry\s+(?:M\.\s+)?Sibarani/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Merry M. Sibarani, S.Si., M.Si.", "Penandatangan IT Del");
+    } else if (/Merry\s+(?:Meryam\s+)?Martgrita/i.test(text)) {
+      setPatch("itdelSignatory", "Dr. Merry Meryam Martgrita, S.Si., M.Si.", "Penandatangan IT Del (Dekan FB)");
       setPatch("itdelSignatoryTitle", "Dekan Fakultas Bioteknologi IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Fitriani\s+Saragih/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Fitriani Saragih, S.T., M.T.", "Penandatangan IT Del");
-      setPatch("itdelSignatoryTitle", "Ketua LPPM IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Humasak\s+(?:Tommy\s+)?Simanjuntak/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Humasak Tommy Argo Simanjuntak, S.T., M.ISD.", "Penandatangan IT Del");
-      setPatch("itdelSignatoryTitle", "Wakil Rektor 1 IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Sendy\s+(?:Krisna\s+)?Pangeran/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Sendy Krisna Pangeran, S.T., M.T.", "Penandatangan IT Del");
-      setPatch("itdelSignatoryTitle", "Wakil Rektor 3 IT Del", "Jabatan Penandatangan IT Del");
+    } else if (/Riyanthi\s+(?:Angrainy\s+)?Sianturi/i.test(text)) {
+      setPatch("itdelSignatory", "Riyanthi Angrainy Sianturi, S.Sos., M.Ds.", "Penandatangan IT Del (Dekan FV)");
+      setPatch("itdelSignatoryTitle", "Dekan Fakultas Vokasi IT Del", "Jabatan Penandatangan IT Del");
     } else {
       setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del (Default Rektor)", "Baku");
       setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del", "Baku");
     }
 
     // 6. Pejabat Penandatangan Mitra
-    const itDelPersons = /Arnaldo|Johannes\s+(?:Harungguan\s+)?Sianipar|Rizal\s+Sinaga|Merry\s+(?:M\.\s+)?Sibarani|Fitriani\s+Saragih|Humasak|Sendy/i;
+    const itDelPersons = /Arnaldo|Sinaga|Good\s*Fried|Panggabean|Rosni|Lumbantoruan|Ellyas|Nainggolan|Indra\s*Hartarto|Tambunan|Fitriani\s*(?:Tupa|Silalahi)|Merry\s*(?:Meryam|Martgrita)|Riyanthi|Sianturi/i;
     const signatoryPats = [
       /(?:Prof\.|Dr\.|Ir\.|Drs\.|Dra\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:,\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D|B\.Eng|M\.Eng|Sc|Si|Kom|T|E|M|H|Pd)\b[A-Za-z\.,\s]*)?)/g,
       /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}),\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D\.|B\.Eng\.|M\.Eng\.|S\.Kom\.|M\.Kom\.|S\.T\.|M\.T\.|S\.Si\.|M\.Si\.|S\.E\.|M\.M\.|S\.H\.|M\.H\.)/g,
@@ -1265,23 +1589,38 @@ ${example.map(csvCell).join(",")}
     ];
     for (const reg of titlePats) {
       const m = text.match(reg);
-      if (m && !/Rektor\s+Institut\s+Teknologi\s+Del|Dekan\s+Fakultas\s+(?:Informatika|Teknologi Industri|Bioteknologi)\s+IT\s+Del/i.test(m[0])) {
+      if (m && !/Rektor\s+Institut\s+Teknologi\s+Del|Dekan\s+Fakultas\s+(?:Informatika|Teknologi Industri|Bioteknologi|Vokasi)\s+IT\s+Del/i.test(m[0])) {
         setPatch("partnerSignatoryTitle", cleanString(m[0]), "Jabatan Penandatangan Mitra");
         break;
       }
     }
 
-    // 7. Kategori Fakultas & Program Studi
-    if (/fakultas informatika|teknik elektro|\bfite\b|sistem informasi|rekayasa perangkat lunak|software|komputer|cyber|data|ai\b/i.test(lowerText)) {
+    // 7. Kategori Fakultas & Program Studi (4 Fakultas & 9 Program Studi IT Del)
+    if (/fakultas vokasi|\bfv\b|rekayasa perangkat lunak|\btrpl\b|d3 teknologi informasi|d3 ti|d3 teknologi komputer|d3 tk|vokasi|terapan/i.test(lowerText)) {
+      setPatch("facultyId", "FV", "Fakultas Terkait (FV - Fakultas Vokasi)");
+      if (/rekayasa perangkat lunak|\btrpl\b/i.test(lowerText)) {
+        setPatch("programId", "TRPL", "Program Studi (D4 Teknologi Rekayasa Perangkat Lunak)");
+      } else if (/teknologi komputer|d3 tk|jaringan komputer|hardware|embedded/i.test(lowerText)) {
+        setPatch("programId", "D3TK", "Program Studi (D3 Teknologi Komputer)");
+      } else {
+        setPatch("programId", "D3TI", "Program Studi (D3 Teknologi Informasi)");
+      }
+    } else if (/fakultas informatika|teknik elektro|\bfite\b|sistem informasi|software|komputer|cyber|data|ai\b/i.test(lowerText)) {
       setPatch("facultyId", "FITE", "Fakultas Terkait (FITE)");
-      if (/sistem informasi|erp|bisnis digital|crm|analisis bisnis|tata kelola/i.test(lowerText)) {
+      if (/teknik elektro|arus kuat|arus lemah|tenaga listrik|telekomunikasi|elektronika/i.test(lowerText)) {
+        setPatch("programId", "TE", "Program Studi (S1 Teknik Elektro)");
+      } else if (/sistem informasi|erp|bisnis digital|crm|analisis bisnis|tata kelola/i.test(lowerText)) {
         setPatch("programId", "SI", "Program Studi (S1 Sistem Informasi)");
       } else {
         setPatch("programId", "IF", "Program Studi (S1 Informatika)");
       }
-    } else if (/teknologi industri|\bfti\b|manajemen rekayasa|rantai pasok|manufaktur|logistik|pabrik|optimasi/i.test(lowerText)) {
+    } else if (/teknologi industri|\bfti\b|manajemen rekayasa|teknik metalurgi|metalurgi|rantai pasok|manufaktur|logistik|pabrik|optimasi|material/i.test(lowerText)) {
       setPatch("facultyId", "FTI", "Fakultas Terkait (FTI)");
-      setPatch("programId", "MR", "Program Studi (S1 Manajemen Rekayasa)");
+      if (/metalurgi|material|smelter|ekstraksi logam|korosi/i.test(lowerText)) {
+        setPatch("programId", "TM", "Program Studi (S1 Teknik Metalurgi)");
+      } else {
+        setPatch("programId", "MR", "Program Studi (S1 Manajemen Rekayasa)");
+      }
     } else if (/bioteknologi|\bfb\b|bioproses|mikrobiologi|lingkungan|fermentasi|hayati|pangan/i.test(lowerText)) {
       setPatch("facultyId", "FB", "Fakultas Terkait (FB)");
       setPatch("programId", "BP", "Program Studi (S1 Teknik Bioproses)");
@@ -1913,6 +2252,8 @@ ${example.map(csvCell).join(",")}
       ...role.canImport ? [["impor", "Impor tabel"]] : [],
       ["relasi", "Relasi"],
       ["analisis", "Analisis"],
+      ["spmi", "SPMI & AMI"],
+      ["struktur", "Struktur & Pejabat"],
       ["panduan", "Panduan"]
     ];
     root.innerHTML = `
@@ -1954,6 +2295,8 @@ ${example.map(csvCell).join(",")}
     if (state.view === "impor") return importView();
     if (state.view === "relasi") return relationView(visible);
     if (state.view === "analisis") return analysisView(role);
+    if (state.view === "spmi") return spmiView(role, visible);
+    if (state.view === "struktur") return structureView();
     if (state.view === "panduan") return guideView();
     const gaps = followUpGaps(state.documents).filter((gap) => visible.some((doc) => doc.id === gap.documentId));
     const attention = visible.filter((doc) => ["AKAN_BERAKHIR", "BERAKHIR"].includes(displayStatus(doc)) || missingFields(doc).length);
@@ -2293,6 +2636,360 @@ ${example.map(csvCell).join(",")}
     <section><h2>Server kampus</h2><p>Nama host, basis data, penyimpanan berkas, dan SSO diputuskan SDI/TSI/DukTek. Prototipe ini tidak mengarang nilai itu. Jangan unggah naskah rahasia ke demo publik.</p></section>
     <button id="reset" type="button">Kembalikan data contoh</button>`;
   }
+
+  function spmiView(role, visible) {
+    const docs = visible;
+    const activeDocs = docs.filter((d) => displayStatus(d) === "AKTIF");
+    const expiredDocs = docs.filter((d) => displayStatus(d) === "BERAKHIR");
+    const warningDocs = docs.filter((d) => displayStatus(d) === "AKAN_BERAKHIR");
+    const passiveMous = docs.filter((d) => d.documentType === "MOU_LOI" && displayStatus(d) === "AKTIF" && !state.documents.some((c) => c.parentId === d.id));
+    const pksNoIa = docs.filter((d) => d.documentType === "PKS_MOA" && displayStatus(d) === "AKTIF" && !state.documents.some((c) => c.parentId === d.id));
+
+    return `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+      <div>
+        <h1 style="margin:0;">SPMI & Audit Mutu Internal (AMI) Kerja Sama</h1>
+        <p class="muted" style="margin:0.25rem 0 0;">Standar Penjaminan Mutu Kemdiktisaintek (Permendikbudristek No. 53/2023), Siklus PPEPP, dan Capaian IKU 6.</p>
+      </div>
+      <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+        <button id="btn-export-ami-doc" type="button" class="btn-primary" style="font-size:0.85rem; padding:0.4rem 0.8rem;">📄 Unduh Lembar Hasil Audit (.doc)</button>
+        <button id="btn-export-ami-csv" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.8rem;">📊 Unduh Matriks SPMI (.csv)</button>
+      </div>
+    </div>
+
+    <!-- Banner PPEPP Kemdiktisaintek -->
+    <div style="background: linear-gradient(135deg, #0d233a 0%, #1a3a5f 100%); color:#fff; border-radius:8px; padding:1.1rem 1.3rem; margin-bottom:1.2rem; box-shadow:0 3px 10px rgba(0,0,0,0.12);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+        <span style="font-size:0.82rem; letter-spacing:0.5px; text-transform:uppercase; background:rgba(255,255,255,0.15); padding:0.25rem 0.6rem; border-radius:12px; font-weight:600;">
+          Kerangka Regulasi Kemdiktisaintek &bull; Permendikbudristek No. 53 Tahun 2023
+        </span>
+        <span style="font-size:0.85rem; color:#90caf9;">Status Siklus: <b>Aktif & Terkendali (Audit Internal Terjadwal)</b></span>
+      </div>
+      <h3 style="margin:0 0 0.4rem; font-size:1.15rem; color:#fff;">Siklus PPEPP Penjaminan Mutu Kerja Sama & Kemitraan IT Del</h3>
+      <p style="margin:0; font-size:0.88rem; line-height:1.5; color:#e0e0e0;">
+        Penjaminan mutu kerja sama di IT Del beroperasi melalui siklus PPEPP terpadu: Penetapan standar mutu dokumen & kriteria mitra, Pelaksanaan naskah tridharma (MoU &rarr; PKS &rarr; IA), Evaluasi berkala melalui Audit Mutu Internal (AMI) untuk mengeliminasi "MoU tidur", Pengendalian melalui Rencana Tindak Lanjut (RTL), dan Peningkatan capaian Indikator Kinerja Utama (IKU 6).
+      </p>
+      
+      <!-- 5 Langkah Siklus PPEPP -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.65rem; margin-top:1rem;">
+        <div style="background:rgba(255,255,255,0.1); border-radius:6px; padding:0.65rem 0.8rem; border-left:3px solid #64b5f6;">
+          <b style="color:#bbdefb; font-size:0.82rem;">1. PENETAPAN (P)</b>
+          <p style="margin:0.25rem 0 0; font-size:0.78rem; color:#f5f5f5;">Standar pemilihan mitra bereputasi, format baku dosir naskah, dan pakta integritas tridharma.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:6px; padding:0.65rem 0.8rem; border-left:3px solid #81c784;">
+          <b style="color:#c8e6c9; font-size:0.82rem;">2. PELAKSANAAN (P)</b>
+          <p style="margin:0.25rem 0 0; font-size:0.78rem; color:#f5f5f5;">Penerbitan PKS maksimal 6 bulan setelah MoU, realisasi IA di prodi (MBKM, magang, riset).</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:6px; padding:0.65rem 0.8rem; border-left:3px solid #ffb74d;">
+          <b style="color:#ffe0b2; font-size:0.82rem;">3. EVALUASI (E / AMI)</b>
+          <p style="margin:0.25rem 0 0; font-size:0.78rem; color:#f5f5f5;">Audit kepatuhan naskah, identifikasi kesenjangan hierarki, deteksi naskah kedaluwarsa.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:6px; padding:0.65rem 0.8rem; border-left:3px solid #e57373;">
+          <b style="color:#ffcdd2; font-size:0.82rem;">4. PENGENDALIAN (P / RTL)</b>
+          <p style="margin:0.25rem 0 0; font-size:0.78rem; color:#f5f5f5;">Penerbitan Rencana Tindak Lanjut (RTL), adendum perpanjangan, atau penghentian naskah pasif.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:6px; padding:0.65rem 0.8rem; border-left:3px solid #ba68c8;">
+          <b style="color:#e1bee7; font-size:0.82rem;">5. PENINGKATAN (P)</b>
+          <p style="margin:0.25rem 0 0; font-size:0.78rem; color:#f5f5f5;">Peningkatan kualitas mitra ke skala dunia/industri top, hilirisasi paten, pelaporan LaporKerma.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kartu Statistik Indikator Mutu -->
+    <div class="stats" style="margin-bottom:1.2rem;">
+      <div><span>Total Naskah Teraudit</span><strong>${docs.length}</strong></div>
+      <div><span>Naskah Aktif & Patuh</span><strong style="color:#107c41;">${activeDocs.length}</strong></div>
+      <div><span>MoU Pasif / "Tidur"</span><strong style="color:#d9534f;">${passiveMous.length}</strong></div>
+      <div><span>PKS Belum Ada IA</span><strong style="color:#f0ad4e;">${pksNoIa.length}</strong></div>
+    </div>
+
+    <!-- Capaian IKU 6 Kemdiktisaintek Per Fakultas & Prodi -->
+    <section style="margin-bottom:1.2rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+        <h2 style="margin:0; font-size:1.05rem;">🎯 Capaian IKU 6 Kemdiktisaintek (Kemitraan Program Studi)</h2>
+        <span style="font-size:0.8rem; background:#e8f4fd; color:#0d47a1; padding:0.2rem 0.55rem; border-radius:10px; font-weight:600;">
+          Target: Seluruh 9 Prodi Memiliki Kemitraan Aktif dengan Mitra Bereputasi
+        </span>
+      </div>
+      <p class="muted" style="font-size:0.85rem; margin:0 0 0.6rem;">
+        Indikator Kinerja Utama 6 mewajibkan program studi memiliki kemitraan dengan mitra kelas dunia (perusahaan multinasional, BUMN, perguruan tinggi top, atau instansi pemerintah) yang menghasilkan kurikulum bersama, magang bersertifikat, atau riset kolaboratif.
+      </p>
+      
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fakultas / Program Studi</th>
+              <th>Pimpinan Penanggung Jawab</th>
+              <th style="text-align:center;">Total Naskah</th>
+              <th style="text-align:center;">Naskah Aktif</th>
+              <th style="text-align:center;">Mitra Industri / BUMN</th>
+              <th>Status Evaluasi IKU 6</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${FACULTIES.map((f) => {
+              const fDocs = docs.filter((d) => d.facultyId === f.id);
+              const fActive = fDocs.filter((d) => displayStatus(d) === "AKTIF").length;
+              const fMitraInd = fDocs.filter((d) => {
+                const p = state.partners.find((x) => x.id === d.partnerId);
+                return p && (p.type === "SWASTA" || p.type === "BUMN");
+              }).length;
+              const fProdis = PROGRAMS.filter((p) => p.facultyId === f.id);
+              return `
+              <tr style="background:#f4f7fb; font-weight:600;">
+                <td><b>${f.id}</b> — ${esc(f.name)}</td>
+                <td>${esc(f.dekan || "Dekan")}</td>
+                <td style="text-align:center;">${fDocs.length}</td>
+                <td style="text-align:center; color:#107c41;">${fActive}</td>
+                <td style="text-align:center;">${fMitraInd}</td>
+                <td><span class="badge-status status-aktif" style="font-size:0.75rem;">${fDocs.length > 0 ? "✓ Terpenuhi" : "Perlu Percepatan"}</span></td>
+              </tr>
+              ` + fProdis.map((pr) => {
+                const prDocs = docs.filter((d) => d.programId === pr.id);
+                const prActive = prDocs.filter((d) => displayStatus(d) === "AKTIF").length;
+                const prMitraInd = prDocs.filter((d) => {
+                  const p = state.partners.find((x) => x.id === d.partnerId);
+                  return p && (p.type === "SWASTA" || p.type === "BUMN");
+                }).length;
+                return `
+                <tr style="font-size:0.85rem;">
+                  <td style="padding-left:1.5rem;">&bull; <b>${esc(pr.name)}</b> (${pr.id})</td>
+                  <td class="muted">Kaprodi ${pr.id}</td>
+                  <td style="text-align:center;">${prDocs.length}</td>
+                  <td style="text-align:center;">${prActive}</td>
+                  <td style="text-align:center;">${prMitraInd}</td>
+                  <td>${prDocs.length >= 1 ? `<span style="color:#107c41; font-weight:600;">✓ Kemitraan Aktif (${prActive})</span>` : `<span style="color:#d9534f; font-weight:600;">⚠️ Belum Ada Naskah</span>`}</td>
+                </tr>`;
+              }).join("");
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Matriks Temuan Audit Mutu Internal (AMI) -->
+    <section>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+        <h2 style="margin:0; font-size:1.05rem;">📋 Matriks Temuan Audit & Rencana Tindak Lanjut (RTL)</h2>
+        <span class="muted" style="font-size:0.82rem;">Klasifikasi Temuan: KTS Mayor, KTS Minor, Observasi (OB), dan Sesuai</span>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No. Dokumen</th>
+              <th>Judul Naskah & Mitra</th>
+              <th>Jenis</th>
+              <th>Masa Berlaku</th>
+              <th>Klasifikasi Temuan AMI</th>
+              <th>Rekomendasi Tindak Lanjut SPMI</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${docs.map((d) => {
+              const st = displayStatus(d);
+              const p = partnerName(state.partners, d.partnerId);
+              const hasChild = state.documents.some((c) => c.parentId === d.id);
+              let badgeColor = "#107c41";
+              let badgeLabel = "Sesuai Standar";
+              let rec = "Pertahankan dan lanjutkan implementasi Tri Dharma perguruan tinggi.";
+
+              if (st === "BERAKHIR") {
+                badgeColor = "#d9534f";
+                badgeLabel = "KTS Minor: Kedaluwarsa";
+                rec = "Lakukan evaluasi manfaat kerja sama. Jika masih strategis, ajukan perpanjangan/adendum. Jika selesai, arsipkan secara resmi.";
+              } else if (st === "AKAN_BERAKHIR") {
+                badgeColor = "#f0ad4e";
+                badgeLabel = "Observasi: Segera Berakhir";
+                rec = "Kirim surat permohonan perpanjangan kepada mitra kerja sama dalam kurun waktu 30 hari.";
+              } else if (d.documentType === "MOU_LOI" && !hasChild) {
+                badgeColor = "#d9534f";
+                badgeLabel = "KTS Minor: MoU Pasif / Tidur";
+                rec = "MoU belum memiliki turunan PKS. Dekan dan Kaprodi wajib menginisiasi draf PKS teknis bersama mitra.";
+              } else if (d.documentType === "PKS_MOA" && !hasChild) {
+                badgeColor = "#f0ad4e";
+                badgeLabel = "Observasi: PKS Belum Ada IA";
+                rec = "Terbitkan Implementation Arrangement (IA) atau surat tugas pelaksanaan kegiatan mahasiswa/dosen.";
+              }
+
+              return `
+              <tr>
+                <td style="font-weight:600; font-size:0.85rem;">${esc(d.documentNumber)}</td>
+                <td>
+                  <div style="font-weight:600;">${esc(d.title)}</div>
+                  <div class="muted" style="font-size:0.8rem;">Mitra: ${esc(p)} | Fakultas: ${esc(facultyName(d.facultyId))}</div>
+                </td>
+                <td><span class="tag">${esc(typeLabel(d.documentType))}</span></td>
+                <td style="font-size:0.82rem;">${esc(d.startDate || "-")} s.d. ${esc(d.endDate || "-")}</td>
+                <td>
+                  <span style="display:inline-block; font-size:0.75rem; font-weight:700; color:#fff; background:${badgeColor}; padding:0.2rem 0.5rem; border-radius:4px;">
+                    ${badgeLabel}
+                  </span>
+                </td>
+                <td style="font-size:0.83rem;">${rec}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+  }
+
+  function structureView() {
+    const dir = LEADERSHIP_DIRECTORY;
+    return `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+      <div>
+        <h1 style="margin:0;">Struktur Organisasi & Pejabat Pimpinan IT Del</h1>
+        <p class="muted" style="margin:0.25rem 0 0;">Daftar Lengkap Nama Pejabat Pimpinan Terkini (2025–2026), 4 Fakultas, 9 Program Studi, dan Tata Kelola Biro Kerja Sama.</p>
+      </div>
+      <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+        <a href="#spmi" class="btn-primary" style="font-size:0.85rem; padding:0.4rem 0.8rem; text-decoration:none;">⚖️ Dasbor SPMI & AMI Kemdiktisaintek</a>
+      </div>
+    </div>
+
+    <!-- Bagan Yayasan Del & Rektorat -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+      <!-- Kartu Yayasan Del -->
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.05); border-top:4px solid #1a3a5f;">
+        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:#0d233a;">Badan Penyelenggara</span>
+        <h3 style="margin:0.2rem 0 0.6rem; color:#0d233a; font-size:1.1rem;">Yayasan Del</h3>
+        <p style="margin:0 0 0.35rem; font-size:0.88rem;"><b>Pembina:</b> ${esc(dir.yayasan.pembina)}</p>
+        <p style="margin:0; font-size:0.88rem;"><b>Pengurus:</b> ${esc(dir.yayasan.pengurus)}</p>
+        <div style="margin-top:0.75rem; padding-top:0.6rem; border-top:1px dashed #e2e8f0; font-size:0.8rem; color:#64748b;">
+          Memberikan arahan strategis pengembangan institusi, kemitraan strategis nasional/internasional, dan fasilitas kampus.
+        </div>
+      </div>
+
+      <!-- Kartu Rektor IT Del -->
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1.1rem; box-shadow:0 1px 4px rgba(0,0,0,0.05); border-top:4px solid #107c41;">
+        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:#107c41;">Pimpinan Tertinggi IT Del</span>
+        <h3 style="margin:0.2rem 0 0.4rem; color:#0f5132; font-size:1.1rem;">${esc(dir.rektorat.rektor.name)}</h3>
+        <p style="margin:0 0 0.2rem; font-size:0.88rem; font-weight:600;">${esc(dir.rektorat.rektor.title)}</p>
+        <p style="margin:0; font-size:0.82rem; color:#64748b;">Periode Jabatan: <b>${esc(dir.rektorat.rektor.period)}</b></p>
+        <div style="margin-top:0.75rem; padding-top:0.6rem; border-top:1px dashed #e2e8f0; font-size:0.8rem; color:#64748b;">
+          Penanggung jawab umum institusi dan penandatangan utama Nota Kesepahaman (MoU / LOI) antar perguruan tinggi, industri, dan kementerian.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tiga Wakil Rektor IT Del -->
+    <h2 style="font-size:1.05rem; margin:1rem 0 0.6rem; color:#0d233a;">🏛️ Jajaran Wakil Rektor Institut Teknologi Del (2025–2026)</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04); border-left:4px solid #0284c7;">
+        <b style="color:#0369a1; font-size:0.82rem;">WAKIL REKTOR I (AKADEMIK & KEMAHASISWAAN)</b>
+        <h4 style="margin:0.25rem 0 0.35rem; font-size:1rem; color:#0f172a;">${esc(dir.rektorat.wr1.name)}</h4>
+        <p style="margin:0; font-size:0.82rem; color:#475569;">
+          Mengkoordinasikan implementasi kurikulum kerja sama, program Merdeka Belajar Kampus Merdeka (MBKM), magang bersertifikat, dan pertukaran mahasiswa.
+        </p>
+      </div>
+
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04); border-left:4px solid #059669;">
+        <b style="color:#047857; font-size:0.82rem;">WAKIL REKTOR II (KEUANGAN & SUMBER DAYA)</b>
+        <h4 style="margin:0.25rem 0 0.35rem; font-size:1rem; color:#0f172a;">${esc(dir.rektorat.wr2.name)}</h4>
+        <p style="margin:0; font-size:0.82rem; color:#475569;">
+          Mengelola tata kelola anggaran naskah kerja sama, sarana dan prasarana laboratorium bersama mitra industri, serta sumber daya manusia pendukung.
+        </p>
+      </div>
+
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04); border-left:4px solid #d97706; background:#fffcf5;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <b style="color:#b45309; font-size:0.82rem;">WAKIL REKTOR III (KEMITRAAN & INOVASI)</b>
+          <span style="font-size:0.7rem; background:#fef3c7; color:#92400e; padding:0.15rem 0.45rem; border-radius:6px; font-weight:700;">Penanggung Jawab Kemitraan</span>
+        </div>
+        <h4 style="margin:0.25rem 0 0.35rem; font-size:1rem; color:#0f172a;">${esc(dir.rektorat.wr3.name)}</h4>
+        <p style="margin:0; font-size:0.82rem; color:#475569;">
+          <b>Pimpinan Pembina Biro Kerja Sama:</b> Membawahi Bagian Kerja Sama dan Kemitraan (UKS), memimpin negosiasi kemitraan strategis, hilirisasi inovasi, kewirausahaan, serta bertanggung jawab terhadap ketercapaian <b>IKU 6 Kemdiktisaintek</b>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Satuan & Lembaga Penunjang -->
+    <h2 style="font-size:1.05rem; margin:1rem 0 0.6rem; color:#0d233a;">⚖️ Unit Penjaminan Mutu & Pelaksana Kemitraan</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <h4 style="margin:0 0 0.25rem; font-size:0.95rem; color:#0d233a;">Satuan Penjaminan Mutu (SPM)</h4>
+        <p class="muted" style="margin:0 0 0.4rem; font-size:0.82rem;">Penyelenggara SPMI & Auditor Mutu Internal (AMI)</p>
+        <p style="margin:0; font-size:0.82rem; color:#334155;">
+          Menjalankan audit berkala terhadap seluruh naskah kemitraan, memantau siklus PPEPP, mendeteksi kesenjangan relasi (MoU tanpa PKS), dan memastikan pemenuhan standar SN Dikti / Kemdiktisaintek.
+        </p>
+      </div>
+
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <h4 style="margin:0 0 0.25rem; font-size:0.95rem; color:#0d233a;">Bagian Kerja Sama dan Kemitraan (UKS)</h4>
+        <p class="muted" style="margin:0 0 0.4rem; font-size:0.82rem;">Unit Pelaksana Operasional Naskah</p>
+        <p style="margin:0; font-size:0.82rem; color:#334155;">
+          Mengelola arsip dosir fisik dan digital, memproses ekstraksi OCR naskah, memonitor masa berlaku, dan melakukan sinkronisasi data ke sistem LaporKerma Kemdiktisaintek.
+        </p>
+      </div>
+
+      <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <h4 style="margin:0 0 0.25rem; font-size:0.95rem; color:#0d233a;">Lembaga Penelitian & Pengabdian (LPPM)</h4>
+        <p class="muted" style="margin:0 0 0.4rem; font-size:0.82rem;">Pusat Riset Bersama & PKM Kemitraan</p>
+        <p style="margin:0; font-size:0.82rem; color:#334155;">
+          Mengkoordinasikan kerja sama penelitian bersama (joint research), publikasi bersama, pengabdian masyarakat di Kawasan Danau Toba, dan hilirisasi paten ke industri mitra.
+        </p>
+      </div>
+    </div>
+
+    <!-- 4 Fakultas & 9 Program Studi IT Del -->
+    <h2 style="font-size:1.05rem; margin:1rem 0 0.6rem; color:#0d233a;">🎓 4 Fakultas & 9 Program Studi Institut Teknologi Del</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:1.2rem;">
+      ${FACULTIES.map((f) => {
+        const prodis = PROGRAMS.filter((p) => p.facultyId === f.id);
+        return `
+        <div style="background:#fff; border:1px solid #d2d6dc; border-radius:8px; padding:1rem; box-shadow:0 1px 3px rgba(0,0,0,0.04); border-top:3px solid #1e3a8a;">
+          <span style="font-size:0.75rem; font-weight:700; color:#1e3a8a;">FAKULTAS</span>
+          <h4 style="margin:0.2rem 0 0.3rem; font-size:0.95rem; color:#0f172a;">${esc(f.name)} (${f.id})</h4>
+          <p style="margin:0 0 0.5rem; font-size:0.85rem; color:#334155;"><b>Dekan:</b> ${esc(f.dekan || "-")}</p>
+          <div style="font-size:0.8rem; font-weight:600; color:#475569; margin-bottom:0.3rem;">Program Studi:</div>
+          <ul style="margin:0; padding-left:1.2rem; font-size:0.82rem; color:#334155;">
+            ${prodis.map((pr) => `<li><b>${esc(pr.name)}</b> (${pr.id})</li>`).join("")}
+          </ul>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <!-- Delegasi Penandatanganan & Rantai Komando -->
+    <section style="margin-bottom:1rem;">
+      <h2 style="font-size:1.05rem; margin:0 0 0.6rem; color:#0d233a;">✒️ Wewenang Penandatanganan Naskah Kerja Sama (Rantai Komando)</h2>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tingkat Naskah</th>
+              <th>Pihak Penandatangan IT Del</th>
+              <th>Tupoksi & Lingkup Wewenang</th>
+              <th>Pihak Penandatangan Mitra</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>MoU / LOI (Nota Kesepahaman)</b></td>
+              <td><b>Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.</b> (Rektor) / WR III atas mandat</td>
+              <td>Kesepakatan payung tingkat institusi yang mencakup komitmen tridharma perguruan tinggi.</td>
+              <td>Rektor / Direktur Utama / Kepala Daerah / Pimpinan Tertinggi Mitra</td>
+            </tr>
+            <tr>
+              <td><b>PKS / MoA (Perjanjian Kerja Sama)</b></td>
+              <td><b>Dekan Fakultas (FITE, FTI, FB, FV)</b> / WR III / Ketua LPPM</td>
+              <td>Perjanjian operasional teknis yang mencakup hak, kewajiban, anggaran, dan klausul implementasi.</td>
+              <td>Dekan Mitra / Direktur Divisi / Kepala Dinas / Kepala Cabang Mitra</td>
+            </tr>
+            <tr>
+              <td><b>IA (Implementation Arrangement)</b></td>
+              <td><b>Ketua Program Studi (Kaprodi)</b> / Kepala Laboratorium / Dosen PIC</td>
+              <td>Rincian pelaksanaan teknis per semester: jumlah mahasiswa magang, jadwal riset, materi workshop.</td>
+              <td>Manajer Teknis / Supervisor / Koordinator Program Mitra</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>`;
+  }
+
   function wire(role) {
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.onclick = () => {
@@ -2311,6 +3008,8 @@ ${example.map(csvCell).join(",")}
       if (h === "repository" || h === "naskah") targetView = "naskah";
       else if (h === "entri" || h === "pencatatan") targetView = "entri";
       else if (h === "analisis") targetView = "analisis";
+      else if (h === "spmi" || h === "ami") targetView = "spmi";
+      else if (h === "struktur" || h === "pejabat") targetView = "struktur";
       else if (h === "impor" || h === "migrasi") targetView = "impor";
       else if (h === "relasi") targetView = "relasi";
       else if (h === "panduan") targetView = "panduan";
@@ -2469,6 +3168,16 @@ ${example.map(csvCell).join(",")}
       state.isAnalysingSelected = false;
       state.view = "analisis";
       render();
+    });
+    const btnAmiDoc = document.getElementById("btn-export-ami-doc");
+    if (btnAmiDoc) btnAmiDoc.addEventListener("click", () => {
+      const docs = scopeDocuments(state.documents, role);
+      downloadText("laporan-hasil-audit-ami-itdel.doc", amiReportToWord(role, docs, state.partners), "application/msword");
+    });
+    const btnAmiCsv = document.getElementById("btn-export-ami-csv");
+    if (btnAmiCsv) btnAmiCsv.addEventListener("click", () => {
+      const docs = scopeDocuments(state.documents, role);
+      downloadText("matriks-kepatuhan-spmi-itdel.csv", amiToCsv(docs, state.partners), "text/csv");
     });
     function syncFormDom(patch, currentDoc) {
       setTimeout(() => {

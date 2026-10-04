@@ -1,0 +1,85 @@
+[
+  {
+    "kategori": "YAYASAN",
+    "jabatan": "Pembina Yayasan Del",
+    "nama": "Jenderal TNI (Purn.) Luhut Binsar Pandjaitan, M.P.A.",
+    "lingkup": "Pengarah Strategis Institut Teknologi Del"
+  },
+  {
+    "kategori": "YAYASAN",
+    "jabatan": "Pengurus Yayasan Del",
+    "nama": "Intan Simanjuntak",
+    "lingkup": "Pengawas Tata Kelola Yayasan"
+  },
+  {
+    "kategori": "REKTORAT",
+    "jabatan": "Rektor Institut Teknologi Del",
+    "nama": "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
+    "periode": "2025–2029",
+    "lingkup": "Pimpinan Tertinggi & Penandatangan MoU Institusi"
+  },
+  {
+    "kategori": "REKTORAT",
+    "jabatan": "Wakil Rektor I (Akademik & Kemahasiswaan)",
+    "nama": "Good Fried Panggabean, S.T., M.T., Ph.D.",
+    "lingkup": "Bidang Akademik, Kurikulum Kerja Sama, MBKM"
+  },
+  {
+    "kategori": "REKTORAT",
+    "jabatan": "Wakil Rektor II (Perencanaan, Keuangan, & Sumber Daya)",
+    "nama": "Rosni Lumbantoruan, Ph.D.",
+    "lingkup": "Anggaran Kemitraan, Fasilitas & Sarpras"
+  },
+  {
+    "kategori": "REKTORAT",
+    "jabatan": "Wakil Rektor III (Kemitraan, Inovasi, & Kewirausahaan)",
+    "nama": "Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.",
+    "lingkup": "Koordinator Utama Kemitraan, UKS, Inkubasi, & IKU 6"
+  },
+  {
+    "kategori": "PENJAMINAN_MUTU",
+    "jabatan": "Ketua Satuan Penjaminan Mutu (SPM)",
+    "nama": "Satuan Penjaminan Mutu IT Del",
+    "lingkup": "Penyelenggara SPMI & Auditor Mutu Internal (AMI) Siklus PPEPP"
+  },
+  {
+    "kategori": "PELAKSANA_KERJASAMA",
+    "jabatan": "Kepala Bagian Kerja Sama dan Kemitraan (UKS)",
+    "nama": "Unit Kerja Sama IT Del",
+    "lingkup": "Administrasi Dosir, Ekstraksi Dokumen, LaporKerma Kemdiktisaintek"
+  },
+  {
+    "kategori": "LEMBAGA_PENELITIAN",
+    "jabatan": "Ketua Lembaga Penelitian dan Pengabdian kepada Masyarakat (LPPM)",
+    "nama": "LPPM IT Del",
+    "lingkup": "Riset Kolaboratif & Pengabdian Masyarakat Bersama Mitra"
+  },
+  {
+    "kategori": "FAKULTAS",
+    "jabatan": "Dekan Fakultas Informatika dan Teknik Elektro (FITE)",
+    "nama": "Indra Hartarto Tambunan, Ph.D.",
+    "fakultasId": "FITE",
+    "programStudi": ["S1 Informatika", "S1 Sistem Informasi", "S1 Teknik Elektro"]
+  },
+  {
+    "kategori": "FAKULTAS",
+    "jabatan": "Dekan Fakultas Teknologi Industri (FTI)",
+    "nama": "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.",
+    "fakultasId": "FTI",
+    "programStudi": ["S1 Manajemen Rekayasa", "S1 Teknik Metalurgi"]
+  },
+  {
+    "kategori": "FAKULTAS",
+    "jabatan": "Dekan Fakultas Bioteknologi (FB)",
+    "nama": "Dr. Merry Meryam Martgrita, S.Si., M.Si.",
+    "fakultasId": "FB",
+    "programStudi": ["S1 Teknik Bioproses"]
+  },
+  {
+    "kategori": "FAKULTAS",
+    "jabatan": "Dekan Fakultas Vokasi (FV)",
+    "nama": "Riyanthi Angrainy Sianturi, S.Sos., M.Ds.",
+    "fakultasId": "FV",
+    "programStudi": ["D4 Teknologi Rekayasa Perangkat Lunak", "D3 Teknologi Informasi", "D3 Teknologi Komputer"]
+  }
+]

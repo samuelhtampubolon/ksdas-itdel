@@ -334,33 +334,59 @@ namespace KsdasItDelDesktop
                 doc.partnerName = "Mitra Kerja Sama IT Del";
             }
 
-            // 5. Pejabat IT Del
+            // 5. Pejabat IT Del (Terkini 2025–2026/2029)
             if (Regex.IsMatch(text, @"(Arnaldo\s+Marulitua\s+Sinaga|Arnaldo\s+Sinaga)", RegexOptions.IgnoreCase))
             {
                 doc.itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.";
                 doc.itdelSignatoryTitle = "Rektor Institut Teknologi Del";
                 result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Rektor)");
             }
-            else if (Regex.IsMatch(text, @"(Johannes\s+(?:Harungguan\s+)?Sianipar)", RegexOptions.IgnoreCase))
+            else if (Regex.IsMatch(text, @"(Good\s+Fried\s+Panggabean|Good\s+Fried)", RegexOptions.IgnoreCase))
             {
-                doc.itdelSignatory = "Dr. Johannes Harungguan Sianipar, S.T., M.T.";
+                doc.itdelSignatory = "Good Fried Panggabean, S.T., M.T., Ph.D.";
+                doc.itdelSignatoryTitle = "Wakil Rektor I IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (WR 1)");
+            }
+            else if (Regex.IsMatch(text, @"(Rosni\s+Lumbantoruan)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Rosni Lumbantoruan, Ph.D.";
+                doc.itdelSignatoryTitle = "Wakil Rektor II IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (WR 2)");
+            }
+            else if (Regex.IsMatch(text, @"(Ellyas\s+(?:Alga\s+)?Nainggolan)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.";
+                doc.itdelSignatoryTitle = "Wakil Rektor III IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (WR 3 Kemitraan)");
+            }
+            else if (Regex.IsMatch(text, @"(Indra\s+Hartarto\s+Tambunan|Indra\s+Tambunan)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Indra Hartarto Tambunan, Ph.D.";
                 doc.itdelSignatoryTitle = "Dekan FITE IT Del";
                 result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FITE)");
             }
-            else if (Regex.IsMatch(text, @"(Rizal\s+Sinaga)", RegexOptions.IgnoreCase))
+            else if (Regex.IsMatch(text, @"(Fitriani\s+Tupa\s+Ronauli\s+Silalahi|Fitriani\s+(?:Tupa\s+)?Silalahi)", RegexOptions.IgnoreCase))
             {
-                doc.itdelSignatory = "Dr. Rizal Sinaga, S.T., M.T.";
+                doc.itdelSignatory = "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.";
                 doc.itdelSignatoryTitle = "Dekan FTI IT Del";
                 result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FTI)");
             }
-            else if (Regex.IsMatch(text, @"(Merry\s+(?:M\.\s+)?Sibarani)", RegexOptions.IgnoreCase))
+            else if (Regex.IsMatch(text, @"(Merry\s+(?:Meryam\s+)?Martgrita)", RegexOptions.IgnoreCase))
             {
-                doc.itdelSignatory = "Dr. Merry M. Sibarani, S.Si., M.Si.";
+                doc.itdelSignatory = "Dr. Merry Meryam Martgrita, S.Si., M.Si.";
                 doc.itdelSignatoryTitle = "Dekan FB IT Del";
                 result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FB)");
             }
+            else if (Regex.IsMatch(text, @"(Riyanthi\s+(?:Angrainy\s+)?Sianturi)", RegexOptions.IgnoreCase))
+            {
+                doc.itdelSignatory = "Riyanthi Angrainy Sianturi, S.Sos., M.Ds.";
+                doc.itdelSignatoryTitle = "Dekan FV IT Del";
+                result.Findings.Add("✓ Penandatangan IT Del: " + doc.itdelSignatory + " (Dekan FV)");
+            }
             else
             {
+                doc.itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.";
+                doc.itdelSignatoryTitle = "Rektor Institut Teknologi Del";
                 result.Findings.Add("✓ Penandatangan IT Del (Baku): " + doc.itdelSignatory + " (Rektor)");
             }
 
@@ -376,7 +402,7 @@ namespace KsdasItDelDesktop
                 foreach (Match m in mc)
                 {
                     string cand = m.Value.Trim();
-                    if (!Regex.IsMatch(cand, @"(Arnaldo|Johannes|Rizal|Merry|Fitriani)", RegexOptions.IgnoreCase) && IsPersonName(cand))
+                    if (!Regex.IsMatch(cand, @"(Arnaldo|Sinaga|Good\s*Fried|Panggabean|Rosni|Lumbantoruan|Ellyas|Nainggolan|Indra|Tambunan|Fitriani|Silalahi|Merry|Martgrita|Riyanthi|Sianturi)", RegexOptions.IgnoreCase) && IsPersonName(cand))
                     {
                         doc.partnerSignatory = cand;
                         result.Findings.Add("✓ Penandatangan Mitra (Orang): " + doc.partnerSignatory);
@@ -393,28 +419,46 @@ namespace KsdasItDelDesktop
                 result.Findings.Add("✓ Jabatan Mitra: " + doc.partnerSignatoryTitle);
             }
 
-            // 7. Fakultas & Prodi
+            // 7. Fakultas & Prodi (4 Fakultas & 9 Program Studi IT Del)
             string lower = text.ToLower();
-            int scoreFITE = 0, scoreFTI = 0, scoreFB = 0;
-            string[] fiteWords = new string[] { "informatika", "software", "pemrograman", "komputer", "sistem informasi", "erp", "cyber", "jaringan", "teknik elektro" };
-            string[] ftiWords = new string[] { "manajemen rekayasa", "industri", "rantai pasok", "supply chain", "manufaktur", "logistik", "pabrik" };
-            string[] fbWords = new string[] { "bioproses", "bioteknologi", "flora", "fauna", "mikrobiologi", "limbah", "danau toba", "pangan" };
+            int scoreFV = 0, scoreFITE = 0, scoreFTI = 0, scoreFB = 0;
+            string[] fvWords = new string[] { "vokasi", "rekayasa perangkat lunak", "trpl", "d3 teknologi informasi", "d3 ti", "d3 teknologi komputer", "d3 tk", "terapan" };
+            string[] fiteWords = new string[] { "informatika", "software", "pemrograman", "komputer", "sistem informasi", "erp", "cyber", "jaringan", "teknik elektro", "arus kuat", "arus lemah" };
+            string[] ftiWords = new string[] { "manajemen rekayasa", "industri", "teknik metalurgi", "metalurgi", "rantai pasok", "supply chain", "manufaktur", "logistik", "pabrik", "material" };
+            string[] fbWords = new string[] { "bioproses", "bioteknologi", "flora", "fauna", "mikrobiologi", "limbah", "danau toba", "pangan", "hayati" };
 
+            foreach (string w in fvWords) if (lower.Contains(w)) scoreFV++;
             foreach (string w in fiteWords) if (lower.Contains(w)) scoreFITE++;
             foreach (string w in ftiWords) if (lower.Contains(w)) scoreFTI++;
             foreach (string w in fbWords) if (lower.Contains(w)) scoreFB++;
 
-            if (scoreFITE >= scoreFTI && scoreFITE >= scoreFB && scoreFITE > 0)
+            if (scoreFV > scoreFITE && scoreFV >= scoreFTI && scoreFV >= scoreFB)
+            {
+                doc.faculty = "FV";
+                if (lower.Contains("trpl") || lower.Contains("rekayasa perangkat lunak"))
+                    doc.program = "D4 Teknologi Rekayasa Perangkat Lunak";
+                else if (lower.Contains("d3 tk") || lower.Contains("teknologi komputer"))
+                    doc.program = "D3 Teknologi Komputer";
+                else
+                    doc.program = "D3 Teknologi Informasi";
+                result.Findings.Add(string.Format("✓ Fakultas & Prodi: FV ({0})", doc.program));
+            }
+            else if (scoreFITE >= scoreFTI && scoreFITE >= scoreFB && scoreFITE > 0)
             {
                 doc.faculty = "FITE";
-                doc.program = lower.Contains("sistem informasi") || lower.Contains("erp") ? "S1 Sistem Informasi" : "S1 Informatika";
+                if (lower.Contains("teknik elektro") || lower.Contains("elektro"))
+                    doc.program = "S1 Teknik Elektro";
+                else if (lower.Contains("sistem informasi") || lower.Contains("erp"))
+                    doc.program = "S1 Sistem Informasi";
+                else
+                    doc.program = "S1 Informatika";
                 result.Findings.Add(string.Format("✓ Fakultas & Prodi: FITE ({0})", doc.program));
             }
             else if (scoreFTI > scoreFITE && scoreFTI >= scoreFB)
             {
                 doc.faculty = "FTI";
-                doc.program = "S1 Manajemen Rekayasa";
-                result.Findings.Add("✓ Fakultas & Prodi: FTI (S1 Manajemen Rekayasa)");
+                doc.program = lower.Contains("metalurgi") ? "S1 Teknik Metalurgi" : "S1 Manajemen Rekayasa";
+                result.Findings.Add(string.Format("✓ Fakultas & Prodi: FTI ({0})", doc.program));
             }
             else if (scoreFB > scoreFITE && scoreFB > scoreFTI)
             {
@@ -804,8 +848,13 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
                     string fakJson = @"[
   { ""facultyId"": ""FITE"", ""facultyName"": ""Fakultas Informatika dan Teknik Elektro"", ""programId"": ""IF"", ""programName"": ""S1 Informatika"" },
   { ""facultyId"": ""FITE"", ""facultyName"": ""Fakultas Informatika dan Teknik Elektro"", ""programId"": ""SI"", ""programName"": ""S1 Sistem Informasi"" },
+  { ""facultyId"": ""FITE"", ""facultyName"": ""Fakultas Informatika dan Teknik Elektro"", ""programId"": ""TE"", ""programName"": ""S1 Teknik Elektro"" },
   { ""facultyId"": ""FTI"", ""facultyName"": ""Fakultas Teknologi Industri"", ""programId"": ""MR"", ""programName"": ""S1 Manajemen Rekayasa"" },
-  { ""facultyId"": ""FB"", ""facultyName"": ""Fakultas Bioteknologi"", ""programId"": ""BP"", ""programName"": ""S1 Teknik Bioproses"" }
+  { ""facultyId"": ""FTI"", ""facultyName"": ""Fakultas Teknologi Industri"", ""programId"": ""TM"", ""programName"": ""S1 Teknik Metalurgi"" },
+  { ""facultyId"": ""FB"", ""facultyName"": ""Fakultas Bioteknologi"", ""programId"": ""BP"", ""programName"": ""S1 Teknik Bioproses"" },
+  { ""facultyId"": ""FV"", ""facultyName"": ""Fakultas Vokasi"", ""programId"": ""TRPL"", ""programName"": ""D4 Teknologi Rekayasa Perangkat Lunak"" },
+  { ""facultyId"": ""FV"", ""facultyName"": ""Fakultas Vokasi"", ""programId"": ""D3TI"", ""programName"": ""D3 Teknologi Informasi"" },
+  { ""facultyId"": ""FV"", ""facultyName"": ""Fakultas Vokasi"", ""programId"": ""D3TK"", ""programName"": ""D3 Teknologi Komputer"" }
 ]";
                     File.WriteAllText(_fakultasProdiPath, fakJson, Encoding.UTF8);
                 }
@@ -1072,9 +1121,9 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
             sb.AppendLine("     File: tables/mitra_institusi.json");
             sb.AppendLine("     Mitra: Pemkab Toba, USU, SMKN 1 Laguboti, Dispar Sumut, Huawei, Bank Mandiri");
             sb.AppendLine();
-            sb.AppendLine("  3. ksdas_fakultas_prodi (4 program studi resmi)");
+            sb.AppendLine("  3. ksdas_fakultas_prodi (4 fakultas & 9 program studi resmi IT Del)");
             sb.AppendLine("     File: tables/fakultas_prodi.json");
-            sb.AppendLine("     Fakultas: FITE (IF, SI), FTI (MR), FB (BP)");
+            sb.AppendLine("     Fakultas: FITE (IF, SI, TE), FTI (MR, TM), FB (BP), FV (TRPL, D3TI, D3TK)");
             sb.AppendLine();
             sb.AppendLine("  4. ksdas_audit_log (Buku Log Mutasi Sistem)");
             sb.AppendLine("     File: tables/audit_trail_log.json");
@@ -1647,8 +1696,8 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
                     triDharma = "Penelitian",
                     activityName = "Riset bersama contoh",
                     pic = "Staf Unit Kerja Sama",
-                    itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-                    itdelSignatoryTitle = "Rektor Institut Teknologi Del",
+                    itdelSignatory = "Indra Hartarto Tambunan, Ph.D.",
+                    itdelSignatoryTitle = "Dekan Fakultas Informatika dan Teknik Elektro IT Del",
                     partnerSignatory = "Dekan Fasilkom-TI USU",
                     partnerSignatoryTitle = "Dekan",
                     location = "Medan",
@@ -1659,22 +1708,22 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
                     id = "DOC-08",
                     documentType = "MoU / LOI",
                     documentNumber = "MOU-CONTOH-2025-009",
-                    title = "Contoh — nota kesepahaman dengan SMK Laguboti",
+                    title = "Contoh — nota kesepahaman vokasi industri dengan SMK Laguboti",
                     partnerName = "SMK Negeri 1 Laguboti",
                     partnerType = "Sekolah",
                     signedDate = "2025-06-01",
                     startDate = "2025-06-01",
                     endDate = "2028-05-31",
                     status = "AKTIF",
-                    scope = "Pengenalan pemrograman",
-                    faculty = "FITE",
-                    program = "S1 Informatika",
+                    scope = "Pengenalan pemrograman & kurikulum vokasi industri",
+                    faculty = "FV",
+                    program = "D4 Teknologi Rekayasa Perangkat Lunak",
                     unit = "Unit Kerja Sama",
                     triDharma = "Pendidikan",
-                    activityName = "Workshop siswa",
+                    activityName = "Workshop & Prakerin siswa vokasi",
                     pic = "Staf Unit Kerja Sama",
-                    itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-                    itdelSignatoryTitle = "Rektor Institut Teknologi Del",
+                    itdelSignatory = "Riyanthi Angrainy Sianturi, S.Sos., M.Ds.",
+                    itdelSignatoryTitle = "Dekan Fakultas Vokasi IT Del",
                     partnerSignatory = "Kepala Sekolah SMK N 1 Laguboti",
                     partnerSignatoryTitle = "Kepala Sekolah",
                     location = "Laguboti"
@@ -1723,8 +1772,8 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
                     triDharma = "Pengabdian",
                     activityName = "Pendataan flora contoh",
                     pic = "Staf Unit Kerja Sama",
-                    itdelSignatory = "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-                    itdelSignatoryTitle = "Rektor Institut Teknologi Del",
+                    itdelSignatory = "Dr. Merry Meryam Martgrita, S.Si., M.Si.",
+                    itdelSignatoryTitle = "Dekan Fakultas Bioteknologi IT Del",
                     partnerSignatory = "",
                     partnerSignatoryTitle = "",
                     location = "Danau Toba",
@@ -1782,7 +1831,7 @@ CREATE TABLE IF NOT EXISTS ksdas_audit_log (
             _cbStatus.SelectedItem = doc.status ?? "DRAFT";
 
             _cbFaculty = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
-            _cbFaculty.Items.AddRange(new object[] { "FITE", "FTI", "FB" });
+            _cbFaculty.Items.AddRange(new object[] { "FITE", "FTI", "FB", "FV" });
             _cbFaculty.SelectedItem = doc.faculty ?? "FITE";
 
             _txtScope = new TextBox { Text = doc.scope ?? "", Dock = DockStyle.Fill };

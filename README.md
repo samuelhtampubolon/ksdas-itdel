@@ -101,6 +101,58 @@ Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sh
   - **Word (`.doc`)**: Dosir resmi ber-Kop Surat Institut Teknologi Del dan tanda tangan Rektor.
 - **Generate Analisis Kemitraan**: Menghasilkan analisis statistik sebaran status, jenis naskah, kesenjangan tindak lanjut, dan rekomendasi pimpinan, serta opsi unduh laporan ke Word (`.doc`).
 
+### 3. Dari Satuan Penjaminan Mutu (SPM / SPMI Kemdiktisaintek):
+- **Dasbor Siklus PPEPP**: Pemantauan tahapan Penetapan, Pelaksanaan, Evaluasi (AMI), Pengendalian (RTL), dan Peningkatan mutu kerja sama.
+- **Audit Mutu Internal (AMI)**: Pendeteksian otomatis kesenjangan relasi naskah (MoU "tidur" / pasif > 180 hari tanpa PKS, PKS tanpa IA/kegiatan, dan naskah kedaluwarsa).
+- **Evaluasi Ketercapaian IKU 6 Kemdiktisaintek**: Matriks kemitraan program studi dengan industri/mitra kelas dunia per 4 fakultas dan 9 program studi.
+- **Ekspor Lembar Hasil Audit Mutu Internal (LH-AMI)**: Menghasilkan berkas Word resmi ber-Kop Surat Satuan Penjaminan Mutu & Rektorat IT Del dengan rekomendasi tindak lanjut.
+
+---
+
+## 🏛️ Struktur Organisasi & Pejabat Pimpinan IT Del (2025–2026/2029)
+
+KSDAS diselaraskan 100% dengan tata pamong dan pejabat definitif terbaru Institut Teknologi Del:
+
+- **Yayasan Del**:
+  - **Pembina**: Jenderal TNI (Purn.) Luhut Binsar Pandjaitan, M.P.A.
+  - **Pengurus**: Intan Simanjuntak
+- **Rektorat IT Del**:
+  - **Rektor**: Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech. *(Periode 2025–2029)*
+  - **Wakil Rektor I (Akademik & Kemahasiswaan)**: Good Fried Panggabean, S.T., M.T., Ph.D.
+  - **Wakil Rektor II (Perencanaan, Keuangan, & Sumber Daya)**: Rosni Lumbantoruan, Ph.D.
+  - **Wakil Rektor III (Kemitraan, Inovasi, & Kewirausahaan)**: Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D. *(Pimpinan Pembina Biro Kerja Sama & Capaian IKU 6)*
+- **Lembaga & Satuan**:
+  - **Satuan Penjaminan Mutu (SPM)**: Penyelenggara SPMI & Auditor Mutu Internal Siklus PPEPP Kemdiktisaintek
+  - **Bagian Kerja Sama dan Kemitraan (UKS)**: Unit Pelaksana Pengarsipan Dosir, Ekstraksi Naskah, & LaporKerma
+  - **Lembaga Penelitian dan Pengabdian kepada Masyarakat (LPPM)**: Riset Bersama & Hilirisasi PKM Industri
+- **4 Fakultas & 9 Program Studi**:
+  1. **Fakultas Informatika dan Teknik Elektro (FITE)** — Dekan: Indra Hartarto Tambunan, Ph.D.
+     - S1 Informatika (IF)
+     - S1 Sistem Informasi (SI)
+     - S1 Teknik Elektro (TE)
+  2. **Fakultas Teknologi Industri (FTI)** — Dekan: Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.
+     - S1 Manajemen Rekayasa (MR)
+     - S1 Teknik Metalurgi (TM)
+  3. **Fakultas Bioteknologi (FB)** — Dekan: Dr. Merry Meryam Martgrita, S.Si., M.Si.
+     - S1 Teknik Bioproses (BP)
+  4. **Fakultas Vokasi (FV)** — Dekan: Riyanthi Angrainy Sianturi, S.Sos., M.Ds.
+     - D4 Teknologi Rekayasa Perangkat Lunak (TRPL)
+     - D3 Teknologi Informasi (D3TI)
+     - D3 Teknologi Komputer (D3TK)
+
+---
+
+## ⚖️ Landasan Regulasi Kemdiktisaintek (SPMI & AMI)
+
+1. **Permendikbudristek No. 53 Tahun 2023** tentang Penjaminan Mutu Pendidikan Tinggi (Standar Nasional Pendidikan Tinggi / SN Dikti).
+2. **Siklus PPEPP SPMI**:
+   - **Penetapan**: Standar pemilihan mitra bereputasi, format baku dosir, pedoman MoU/PKS/IA.
+   - **Pelaksanaan**: Realisasi turunan PKS maksimal 180 hari dari MoU, pelaksanaan kegiatan tridharma.
+   - **Evaluasi**: Audit Mutu Internal (AMI) berkala terhadap rantai relasi naskah dan masa berlaku.
+   - **Pengendalian**: Penerbitan Rencana Tindak Lanjut (RTL) atas temuan KTS Minor/Mayor.
+   - **Peningkatan**: Peningkatan kualitas mitra ke skala dunia/industri terkemuka dan sinkronisasi LaporKerma.
+3. **Indikator Kinerja Utama (IKU 6 Kemdiktisaintek)**: Kemitraan Program Studi dengan Mitra Kelas Dunia, Industri Terkemuka, BUMN, atau Lembaga Riset Bereputasi.
+
 ---
 
 ## Kompilasi Ulang Aplikasi Desktop

@@ -1,6 +1,6 @@
 {
   "database_name": "ksdas_itdel_local",
-  "version": "1.2.0-LOKAL",
+  "version": "2.0.0-LOKAL-KEMDIKTISAINTEK",
   "architecture": "Relational Local Structured System",
   "tables": [
     {
@@ -11,12 +11,22 @@
     {
       "name": "ksdas_mitra",
       "file": "tables/mitra_institusi.json",
-      "description": "Direktori master mitra industri, universitas, dan pemerintah"
+      "description": "Direktori master mitra industri, universitas, BUMN, dan pemerintah"
     },
     {
       "name": "ksdas_fakultas_prodi",
       "file": "tables/fakultas_prodi.json",
-      "description": "Taksonomi fakultas (FITE, FTI, FB) dan program studi"
+      "description": "Taksonomi 4 fakultas (FITE, FTI, FB, FV) dan 9 program studi IT Del"
+    },
+    {
+      "name": "ksdas_pejabat_pimpinan",
+      "file": "tables/pejabat_pimpinan.json",
+      "description": "Direktori pejabat pimpinan terkini Rektorat, 4 Dekan, SPM, LPPM, dan UKS IT Del"
+    },
+    {
+      "name": "ksdas_spmi_standar",
+      "file": "tables/spmi_ami_standar.json",
+      "description": "Standar penjaminan mutu SPMI siklus PPEPP dan capaian IKU 6 Kemdiktisaintek"
     },
     {
       "name": "ksdas_audit_log",
