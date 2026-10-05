@@ -342,7 +342,7 @@ Seluruh parameter teknis berikut sengaja ditandai **TBD (To Be Determined)** aga
 | **OD-06** | **Reverse Proxy & WAF** | A. Nginx Open Source + ModSecurity OWASP Core Rule Set<br>B. Cloudflare Enterprise / Reverse Proxy Hardware Kampus<br>C. Traefik / Caddy Reverse Proxy | **TBD** | Ditentukan oleh tim jaringan DukTek untuk manajemen sertifikat SSL otomatis. |
 | **OD-07** | **Platform Monitoring & SIEM** | A. Prometheus + Grafana + Loki (Self-Hosted)<br>B. ELK Stack (Elasticsearch, Logstash, Kibana)<br>C. Syslog Server Eksisting IT Del | **TBD** | Terintegrasi dengan pusat komando operasi jaringan kampus. |
 | **OD-08** | **Mekanisme Cadangan Offsite** | A. Sinkronisasi berkala ke NAS terisolasi di Kampus 2 / Gedung Terpisah<br>B. Cloud Glacier / Cold Archive Terenkripsi<br>C. Offline Tape / Hard Disk Mirroring Berkala | **TBD** | Menjamin kepatuhan RPO 24 jam dan mitigasi bencana fisik. |
-| **OD-09** | **Konvensi Nama Domain (DNS)** | A. `ksdas.del.ac.id`<br>B. `kerjasama.del.ac.id`<br>C. `mitra.del.ac.id` | **TBD** | Didaftarkan oleh administrator DNS institusi IT Del. |
+| **OD-09** | **Konvensi Nama Domain (DNS)** | Nama domain ditentukan SDI (TBD) | **TBD** | Didaftarkan oleh administrator DNS institusi IT Del. |
 | **OD-10** | **Masa Retensi Data Audit Log** | A. 3 Tahun<br>B. 5 Tahun (Sesuai Siklus Akreditasi BAN-PT)<br>C. Permanen (Selamanya) | **TBD** | Disesuaikan dengan pedoman kearsipan digital dan sistem mutu SPM IT Del. |
 | **OD-11** | **Isolasi Lingkungan Parser** | A. gVisor Container Runtime<br>B. Docker Container dengan flag `--network none`<br>C. VM Khusus Terisolasi (*MicroVM Firecracker*) | **TBD** | Mencegah potensi celah *container breakout* pada saat parsing berkas asing. |
 | **OD-12** | **Alokasi Sumber Daya Server** | A. Bare-metal server tersendiri (16 Cores, 32GB RAM)<br>B. Virtual Machine Proxmox / VMware kampus (4-8 vCPU, 16GB RAM) | **TBD** | Disesuaikan dengan kuota virtualisasi pada data center kampus Del. |
@@ -353,7 +353,7 @@ Seluruh parameter teknis berikut sengaja ditandai **TBD (To Be Determined)** aga
 
 Sistem KSDAS IT Del telah memenuhi standar kesiapan arsitektur (*Architecture Readiness*) dan prinsip keamanan data perguruan tinggi:
 1. **Valid:** Model ancaman memetakan seluruh 22 risiko keamanan utama secara terstruktur dengan kontrol mitigasi yang konkret.
-2. **Reliable:** Arsitektur memisahkan batasan kepercayaan dan menjamin pemulihan bencana dengan strategi cadangan 3-2-1 dan RPO/RTO terukur.
+2. **Reliable:** Arsitektur memisahkan batasan kepercayaan dan dirancang untuk mendukung pemulihan bencana dengan strategi cadangan 3-2-1 dan RPO/RTO terukur.
 3. **Dependable:** Memegang teguh prinsip *Zero Trust*, pertahanan berlapis (*Defense-in-Depth*), audit log mutlak, serta prinsip *Human-in-the-Loop* yang menempatkan manusia sebagai penentu keputusan validitas naskah kerja sama.
 
 ---

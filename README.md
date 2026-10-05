@@ -1,9 +1,6 @@
 # KSDAS IT Del — Sistem Informasi Kerja Sama
 
-[![Release](https://img.shields.io/github/v/release/samuelhtampubolon/ksdas-itdel?color=blue&label=Rilis%20Resmi)](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest)
-[![Download EXE](https://img.shields.io/badge/Download-KSDAS__ITDel.exe-success?style=for-the-badge&logo=windows)](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest/download/KSDAS_ITDel.exe)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Live Web Demo](https://img.shields.io/badge/Web%20Portal-Live%20Demo-informational?logo=github)](https://samuelhtampubolon.github.io/ksdas-itdel/)
+**Tautan resmi:** [Rilis](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest) &middot; [Demo web](https://samuelhtampubolon.github.io/ksdas-itdel/) &middot; Lisensi: [MIT](LICENSE)
 
 Sistem Informasi Manajemen Kerja Sama untuk Unit Kerja Sama (UKS) Institut Teknologi Del, Laguboti, Sumatera Utara.
 

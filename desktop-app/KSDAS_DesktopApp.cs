@@ -747,6 +747,9 @@ namespace KsdasDesktop
                 res.Headers["Referrer-Policy"] = "no-referrer";
                 res.Headers["Content-Security-Policy"] = Csp;
                 res.Headers["Cache-Control"] = "no-store";
+                res.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+                res.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
+                res.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
 
                 // Pertahanan DNS rebinding: Host harus loopback pada port ini.
                 string host = req.Headers["Host"] ?? "";
@@ -777,6 +780,15 @@ namespace KsdasDesktop
             }
         }
 
+        /// Perbandingan token waktu-konstan (anti timing attack).
+        bool TokenOk(string given)
+        {
+            if (given == null || given.Length != token.Length) return false;
+            int diff = 0;
+            for (int i = 0; i < token.Length; i++) diff |= given[i] ^ token[i];
+            return diff == 0;
+        }
+
         static string JsonErr(string m) { return "{\"error\":" + LocalDatabase.NewSerializer().Serialize(m) + "}"; }
 
         void SafeSend(HttpListenerResponse res, int code, string mime, string body)
@@ -790,12 +802,12 @@ namespace KsdasDesktop
             // Ping publik hanya menyatakan identitas aplikasi (untuk deteksi satu instans).
             if (path == "/api/ping" && method == "GET")
             {
-                bool authed = req.Headers["X-KSDAS-Token"] == token;
+                bool authed = TokenOk(req.Headers["X-KSDAS-Token"]);
                 string extra = authed ? ",\"dbDir\":" + LocalDatabase.NewSerializer().Serialize(db.Root) + ",\"port\":" + port : "";
                 Send(res, 200, "application/json; charset=utf-8", "{\"app\":\"KSDAS\",\"version\":\"" + Program.Version + "\",\"mode\":\"local-server\"" + extra + "}");
                 return;
             }
-            if (req.Headers["X-KSDAS-Token"] != token) throw new ApiError(401, "Token sesi tidak valid. Muat ulang halaman dari aplikasi KSDAS.");
+            if (!TokenOk(req.Headers["X-KSDAS-Token"])) throw new ApiError(401, "Token sesi tidak valid. Muat ulang halaman dari aplikasi KSDAS.");
             string origin = req.Headers["Origin"];
             if (!string.IsNullOrEmpty(origin) && origin != "http://127.0.0.1:" + port && origin != "http://localhost:" + port) throw new ApiError(403, "Origin tidak diizinkan.");
 
