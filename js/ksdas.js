@@ -1568,6 +1568,7 @@ ${example.map(csvCell).join(",")}
           view: initView !== "beranda" ? initView : (saved.view || "beranda"),
           documents: saved.documents?.length ? saved.documents : seedDocuments(),
           partners: saved.partners?.length ? saved.partners : seedPartners(),
+          memory: normalizeMemory(saved.memory),
           filters: { ...EMPTY_FILTERS },
           sortKey: "endDate",
           sortDir: "asc",
@@ -1585,6 +1586,7 @@ ${example.map(csvCell).join(",")}
       view: initView,
       documents: seedDocuments(),
       partners: seedPartners(),
+      memory: normalizeMemory(null),
       filters: { ...EMPTY_FILTERS },
       sortKey: "endDate",
       sortDir: "asc",
@@ -1605,6 +1607,7 @@ ${example.map(csvCell).join(",")}
     return {
       partners: state.partners,
       docs: state.documents,
+      memory: state.memory,
       leaders: [L.rektorat.rektor, L.rektorat.wr1, L.rektorat.wr2, L.rektorat.wr3, ...L.fakultas.map((f) => ({ name: f.dekan, title: "Dekan " + f.name }))]
     };
   }
@@ -1626,6 +1629,30 @@ ${example.map(csvCell).join(",")}
     }
     const res = await ocrWorker.recognize(src);
     return { text: res.data.text || "", confidence: res.data.confidence };
+  }
+  function normalizeMemory(m) {
+    const mem = m && typeof m === "object" ? m : {};
+    return { partnerAliases: mem.partnerAliases && typeof mem.partnerAliases === "object" ? mem.partnerAliases : {}, fieldStats: mem.fieldStats && typeof mem.fieldStats === "object" ? mem.fieldStats : {} };
+  }
+  /** Belajar dari validasi staf: statistik koreksi per field dan alias nama mitra. Hanya disimpan lokal. */
+  function learnFromValidation(current, next) {
+    const exf = current.extraction && current.extraction.fields;
+    if (!exf || (current.extraction.learned)) return;
+    const mem = state.memory;
+    for (const [k, f] of Object.entries(exf)) {
+      if (k === "notes") continue;
+      const after = k === "triDharma" ? (next.triDharma || []).join("; ") : String(next[k] ?? "");
+      const st = mem.fieldStats[k] || (mem.fieldStats[k] = { n: 0, corrected: 0 });
+      st.n += 1;
+      if (String(f.value) !== after) st.corrected += 1;
+    }
+    const pf = exf.partnerId;
+    if (pf && pf.raw && next.partnerId && next.partnerId !== pf.value) {
+      const key = norm(KSDASExtract.smartCase(pf.raw));
+      if (key) mem.partnerAliases[key] = next.partnerId;
+      state.partners = state.partners.map((pt) => pt.id === next.partnerId ? { ...pt, aliases: [...new Set([...(pt.aliases || []), KSDASExtract.smartCase(pf.raw)])] } : pt);
+    }
+    next.extraction = { ...next.extraction, learned: true };
   }
   function normalizeDoc(d) {
     const doc = { ...blankNaskah(), ...d };
@@ -1672,6 +1699,9 @@ ${example.map(csvCell).join(",")}
       <div class="card"><h2>Berkas lampiran</h2>
         <p><b>${st.fileCount ?? (srv ? srv.fileCount : 0)}</b> berkas</p>
         <p class="small">Total: <b>${esc(fmtBytes(st.fileBytes ?? (srv ? srv.fileBytes : 0)))}</b></p></div>
+      <div class="card"><h2>Memori ekstraksi</h2>
+        <p><b>${Object.keys(state.memory.partnerAliases).length}</b> alias mitra, <b>${Object.keys(state.memory.fieldStats).length}</b> statistik field</p>
+        <p class="small">Dipelajari dari validasi staf. Disimpan lokal, tidak dikirim ke luar. ${canAct ? '<button type="button" id="st-mem-reset" class="link">Hapus memori</button>' : ""}</p></div>
       <div class="card"><h2>Audit dan cadangan</h2>
         <p><b>${st.auditCount ?? (srv ? srv.auditCount : 0)}</b> catatan audit</p>
         <p class="small"><b>${st.backupCount ?? (srv ? srv.backupCount : 0)}</b> cadangan</p></div>
@@ -1754,7 +1784,7 @@ ${example.map(csvCell).join(",")}
   seedAudit();
   function save() {
     state.documents = state.documents.filter((d) => !isEmptyDraft(d) || d.id === state.editingId);
-    const snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: new Date().toISOString() };
+    const snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory, savedAt: new Date().toISOString() };
     try {
       localStorage.setItem(KEY, JSON.stringify(snap));
     } catch (e) {
@@ -1956,18 +1986,30 @@ ${example.map(csvCell).join(",")}
     return f || null;
   }
   /** Tanda keyakinan + sumber di bawah input. Bila staf mengubah nilai, ditandai "dikoreksi". */
+  function altLabel(key, a) {
+    if (key === "partnerId") return a.display || a.value;
+    if (key === "programId") return programName(a.value);
+    if (key === "facultyId") return facultyName(a.value);
+    return a.display || a.value;
+  }
+  function altChips(doc, key, list, heading) {
+    if (!list || !list.length) return "";
+    return `<div class="alts"><span class="small">${heading}</span> ${list.map((a) => `<button type="button" class="chip" data-alt-key="${esc(key)}" data-alt-val="${esc(String(a.value))}" title="${esc((a.why || "") + (a.page ? " \u00B7 hlm. " + a.page : "") + (a.source ? " \u00B7 " + a.source : ""))}">${esc(altLabel(key, a))}</button>`).join(" ")}</div>`;
+  }
+  /** Tanda keyakinan + sumber di bawah input. Bila staf mengubah nilai, ditandai "dikoreksi". */
   function fieldNote(doc, key) {
     const f = extractedField(doc, key);
-    if (!f) return "";
+    const sug = doc.extraction && doc.extraction.suggestions ? doc.extraction.suggestions[key] : null;
+    if (!f) return sug && !doc[key] ? altChips(doc, key, sug, "Saran (belum pasti):") : "";
     const cur = key === "triDharma" ? (Array.isArray(doc.triDharma) ? doc.triDharma.join("; ") : String(doc.triDharma || "")) : String(doc[key] ?? "");
     const edited = String(f.value) !== cur;
     const where = f.sheet ? `sheet ${esc(f.sheet)}` : (f.page ? `hlm. ${f.page}` : "");
-    return `<span class="fnote ${edited ? "fn-edit" : "fn-" + f.level}">${edited ? "✎ Dikoreksi staf" : LEVEL_TEXT[f.level] || ""}</span>
+    return `<span class="fnote ${edited ? "fn-edit" : "fn-" + f.level}">${edited ? "\u270E Dikoreksi staf" : LEVEL_TEXT[f.level] || ""}</span>
       <details class="fsrc"><summary>Sumber${where ? " (" + where + ")" : ""}</summary>
         <div>Metode: ${esc(f.method || "")}</div>
         <div>Kutipan: <q>${esc(f.source || "")}</q></div>
         ${f.note ? `<div>Catatan: ${esc(f.note)}</div>` : ""}
-      </details>`;
+      </details>${f.level !== "TINGGI" || edited ? altChips(doc, key, f.alts, "Pilihan lain:") : ""}`;
   }
   function field(label, control, doc, key) {
     const f = doc && key ? extractedField(doc, key) : null;
@@ -2044,6 +2086,8 @@ ${example.map(csvCell).join(",")}
     <section class="batchsum" aria-live="polite">
       <h2>Ringkasan kelompok terakhir</h2>
       <p><b>${state.lastBatch.ok}</b> berkas diproses, <b>${state.lastBatch.rows}</b> baris tabel dibaca, <b>${state.lastBatch.skipped.length}</b> dilewati.</p>
+      ${state.lastBatch.byType && Object.keys(state.lastBatch.byType).length ? `<p>Komposisi: ${Object.entries(state.lastBatch.byType).map(([t, n]) => `${n} ${esc(t)}`).join(", ")}.</p>` : ""}
+      ${state.lastBatch.unlinked && state.lastBatch.unlinked.length ? `<p class="manual"><b>Belum punya induk:</b> ${state.lastBatch.unlinked.map(esc).join("; ")}. Unggah dokumen induknya atau tautkan manual.</p>` : ""}
       ${state.lastBatch.skipped.length ? `<ul>${state.lastBatch.skipped.map((s) => `<li>${esc(s.name)}: ${esc(s.reason)}</li>`).join("")}</ul>` : ""}
     </section>` : ""}
 
@@ -2077,9 +2121,11 @@ ${example.map(csvCell).join(",")}
       ${doc.fileName ? `<p class="muted">Berkas sumber: <b>${esc(doc.fileName)}</b> (${esc(fmtBytes(doc.fileSize))})${doc.fileHash ? ` &middot; SHA-256 <code title="${esc(doc.fileHash)}">${esc(doc.fileHash.slice(0, 12))}…</code>` : ""}
         ${doc.fileRef ? ` &middot; <button type="button" class="link" id="btn-dl-original">Unduh berkas asli</button>` : ""}</p>` : ""}
       ${ex && ex.flags && ex.flags.length ? `<div class="flags" role="note"><b>Perlu perhatian:</b><ul>${ex.flags.map((f) => `<li>${esc(f.message)}</li>`).join("")}</ul></div>` : ""}
+      ${ex && ex.summary ? `<div class="summarybox"><b>Ringkasan otomatis:</b> ${esc(ex.summary)}</div>` : ""}
+      ${ex && ex.nextActions && ex.nextActions.length ? `<details class="actions" open><summary><b>Langkah berikutnya untuk staf (${ex.nextActions.length})</b></summary><ol>${ex.nextActions.map((a) => `<li class="act-${esc(a.kind)}">${esc(a.text)}</li>`).join("")}</ol></details>` : ""}
       ${ex ? `<p class="muted small">Diekstraksi ${esc(ex.at ? ex.at.slice(0, 16).replace("T", " ") : "")} &middot; ${Object.keys(ex.fields || {}).length} field terisi otomatis &middot; ${missingFields(doc).length} field wajib masih kosong.</p>` : ""}
       ${missingFields(doc).length ? `<p class="manual" role="note"><b>Perlu diisi manual:</b> ${esc(missingFields(doc).join(", "))}.</p>` : `<p class="manual ok" role="note">Seluruh field wajib sudah terisi. Periksa kesesuaiannya dengan berkas asli sebelum validasi.</p>`}
-      ${parentSug ? `<p class="note">Saran induk: ${parentSug.id ? `<b>${esc(parentSug.number)}</b>` : `nomor <b>${esc(parentSug.number)}</b> (belum ada di basis data)`}. ${esc(parentSug.reason)} ${parentSug.id && doc.parentId !== parentSug.id && writable ? `<button type="button" id="use-parent-ex" class="btn-subtle">Tautkan</button>` : ""}${parentSug.id && doc.parentId === parentSug.id ? " <b>Sudah ditautkan.</b>" : ""}</p>` : ""}
+      ${ex && ex.parentCandidates && ex.parentCandidates.length ? `<div class="note"><b>Kandidat induk (${esc(typeLabel(PARENT_OF[doc.documentType] || ""))}):</b><ul>${ex.parentCandidates.map((c) => `<li><b>${esc(c.number || c.id)}</b> (skor ${c.score}, ${esc(c.level === "TINGGI" ? "pasti" : c.level === "SEDANG" ? "kuat" : "lemah")}): ${esc(c.reason)} ${doc.parentId === c.id ? "<b>Sudah ditautkan.</b>" : writable ? `<button type="button" class="btn-subtle" data-link-parent="${esc(c.id)}">Tautkan</button>` : ""}</li>`).join("")}</ul></div>` : parentSug ? `<p class="note">Rujukan induk: nomor <b>${esc(parentSug.number)}</b>${parentSug.id ? "" : " (belum ada di basis data)"}. ${esc(parentSug.reason)}</p>` : ""}
       <form id="form" class="form" novalidate>
         <fieldset ${dis} class="fs">
         <legend class="sr">Data naskah</legend>
@@ -2816,6 +2862,10 @@ ${example.map(csvCell).join(",")}
         created.push(doc);
         batch.ok += 1;
       }
+      const TL = { MOU_LOI: "MoU/LOI", PKS_MOA: "PKS/MoA", IA: "IA", PROPOSAL: "Proposal", LAPORAN: "Laporan" };
+      batch.byType = {};
+      created.forEach((d) => { const t = TL[d.documentType] || "Belum dikenali"; batch.byType[t] = (batch.byType[t] || 0) + 1; });
+      batch.unlinked = created.filter((d) => PARENT_OF[d.documentType] && !d.parentId).map((d) => `${d.documentNumber || d.fileName} (${TL[d.documentType]})`);
       state.ocrProgress = null;
       state.busy = false;
       state.lastBatch = batch;
@@ -2844,21 +2894,24 @@ ${example.map(csvCell).join(",")}
       doc.fileHash = hash || "";
       doc.status = "DRAFT";
       doc.validation = { state: "NEEDS_REVIEW", by: "", at: "" };
-      const parent = resolveParent(doc, result);
-      if (parent) {
-        doc.extraction = { parent };
-        if (parent.id && parent.level === "TINGGI") { doc.parentId = parent.id; parent.linked = true; }
-      }
+      const cands = KSDASExtract.rankParents(doc, state.documents, result.refs || []);
+      const parent = resolveParent(doc, result, cands);
+      if (parent && parent.id && parent.level === "TINGGI") { doc.parentId = parent.id; parent.linked = true; }
       doc.extraction = {
-        ...(doc.extraction || {}),
         at: new Date().toISOString(),
-        fields: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, { value: f.value, level: f.level, page: f.page, sheet: f.sheet, source: f.source, method: f.method, note: f.note }])),
+        fields: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, { value: f.value, level: f.level, page: f.page, sheet: f.sheet, source: f.source, method: f.method, note: f.note, raw: f.raw, alts: f.alts }])),
+        suggestions: result.suggestions || {},
+        summary: result.summary || "",
+        nextActions: result.nextActions || [],
         flags: [...result.flags, ...(result.warnings || []).map((m) => ({ code: "reader_warning", message: m }))],
         parent: parent || null,
+        parentCandidates: cands,
         overall: result.overall
       };
-      if (duplicateNumber(state.documents, doc.documentNumber)) {
-        doc.extraction.flags.push({ code: "duplicate_document", message: `Nomor ${doc.documentNumber} sudah dipakai naskah lain. Periksa apakah ini duplikat.` });
+      if (doc.parentId) {
+        const par = state.documents.find((d) => d.id === doc.parentId);
+        if (par && par.partnerId && doc.partnerId && par.partnerId !== doc.partnerId) doc.extraction.flags.push({ code: "parent_partner_mismatch", message: `Mitra pada dokumen ini berbeda dari mitra induk (${par.documentNumber}). Periksa.` });
+        if (par && par.endDate && doc.startDate && doc.startDate > par.endDate) doc.extraction.flags.push({ code: "parent_expired", message: `Dokumen dimulai setelah induk (${par.documentNumber}) berakhir pada ${par.endDate}.` });
       }
       if (file) {
         try {
@@ -2873,15 +2926,14 @@ ${example.map(csvCell).join(",")}
       return doc;
     }
 
-    function resolveParent(doc, result) {
+    function resolveParent(doc, result, cands) {
       const sug = result.parentSuggestion;
       if (sug && sug.id) return { ...sug };
       if (sug && sug.number) {
         const hit = state.documents.find((d) => norm(d.documentNumber) === norm(sug.number));
         if (hit) return { id: hit.id, number: hit.documentNumber, level: "TINGGI", reason: `Dokumen merujuk nomor ${sug.number}.`, page: sug.page, source: sug.source };
       }
-      const guess = suggestParent(doc, state.documents);
-      if (guess) return { id: guess.id, number: guess.number, level: "SEDANG", reason: guess.reason };
+      if (cands && cands.length) return { id: cands[0].id, number: cands[0].number, level: cands[0].level, reason: cands[0].reason };
       return sug || null;
     }
 
@@ -2987,6 +3039,28 @@ ${example.map(csvCell).join(",")}
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       KSDASStore.audit("DOWNLOAD", cur.id, cur.fileName, role.name);
     };
+    document.querySelectorAll("[data-alt-key]").forEach((b) => {
+      b.onclick = () => {
+        const f = document.getElementById("form");
+        const el = f && f.elements[b.dataset.altKey];
+        if (!el) return;
+        el.value = b.dataset.altVal;
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        el.focus();
+        b.classList.add("chosen");
+        b.textContent = "\u2714 " + b.textContent.replace(/^\u2714 /, "");
+      };
+    });
+    document.querySelectorAll("[data-link-parent]").forEach((b) => {
+      b.onclick = () => {
+        const cur = state.documents.find((d) => d.id === state.editingId);
+        if (!cur) return;
+        cur.parentId = b.dataset.linkParent;
+        KSDASStore.audit("LINK", cur.id, `Tautkan ke ${cur.parentId}`, role.name);
+        save();
+        render();
+      };
+    });
     const useParentEx = document.getElementById("use-parent-ex");
     if (useParentEx) useParentEx.onclick = () => {
       const cur = state.documents.find((d) => d.id === state.editingId);
@@ -3046,6 +3120,7 @@ ${example.map(csvCell).join(",")}
         next.validation = { state: changedExtracted || vstate === "CORRECTED" ? "CORRECTED" : "VALIDATED", by: role.name, at: now };
         if (next.status === "DRAFT" || next.status === "ARSIP") next.status = "AKTIF";
         state.partners = state.partners.map((pt) => pt.id === next.partnerId && pt.draft ? { ...pt, draft: false } : pt);
+        learnFromValidation(current, next);
       } else {
         if (next.status === "AKTIF" && vstate === "NEEDS_REVIEW") return fail("Naskah hasil ekstraksi harus divalidasi lebih dulu. Gunakan tombol Validasi dan aktifkan.");
         if (next.status === "AKTIF" && missingFields(next).length) return fail(`Belum bisa ditandai aktif. Masih kosong: ${missingFields(next).join(", ")}.`);
@@ -3185,6 +3260,13 @@ ${example.map(csvCell).join(",")}
           } catch (e) { await done("Pemulihan gagal: " + e.message); }
         };
       });
+      if ($("st-mem-reset")) $("st-mem-reset").onclick = async () => {
+        if (!confirm("Hapus memori ekstraksi (alias mitra dan statistik koreksi)? Naskah tidak terpengaruh.")) return;
+        state.memory = normalizeMemory(null);
+        KSDASStore.audit("MEMORY_RESET", "memori", "Memori ekstraksi dihapus", role.name);
+        save();
+        await done("Memori ekstraksi dihapus.");
+      };
       if ($("st-clear-all")) $("st-clear-all").onclick = async () => {
         if (!role.canWrite) return;
         if (!confirm("Hapus SEMUA naskah dan mitra dari penyimpanan ini (termasuk data contoh)? Cadangan dibuat lebih dulu dan dapat dipulihkan.")) return;
@@ -3200,7 +3282,7 @@ ${example.map(csvCell).join(",")}
         } catch (e) { await done("Gagal mengosongkan data: " + e.message); }
       };
       if ($("st-export")) $("st-export").onclick = async () => {
-        const payload = { schema: "ksdas-export/1", exportedAt: new Date().toISOString(), documents: state.documents, partners: state.partners };
+        const payload = { schema: "ksdas-export/1", exportedAt: new Date().toISOString(), documents: state.documents, partners: state.partners, memory: state.memory };
         payload.checksum = await snapshotHash(payload.documents, payload.partners);
         downloadText(`ksdas-ekspor-${todayISO()}.json`, JSON.stringify(payload, null, 2), "application/json");
         KSDASStore.audit("EXPORT", "json", `${state.documents.length} naskah`, role.name);
@@ -3221,6 +3303,7 @@ ${example.map(csvCell).join(",")}
           await KSDASStore.backup(state);
           state.documents = data.documents.map(normalizeDoc);
           state.partners = data.partners;
+          if (data.memory) state.memory = normalizeMemory(data.memory);
           KSDASStore.audit("IMPORT", f.name, `${data.documents.length} naskah`, role.name);
           save();
           await done(`Impor selesai: ${data.documents.length} naskah.`);
@@ -3249,7 +3332,8 @@ ${example.map(csvCell).join(",")}
         state.documents = saved.documents.map(normalizeDoc);
         state.partners = saved.partners && saved.partners.length ? saved.partners : state.partners;
         if (saved.roleId) state.roleId = saved.roleId;
-        try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: saved.savedAt })); } catch { }
+        if (saved.memory) state.memory = normalizeMemory(saved.memory);
+        try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory, savedAt: saved.savedAt })); } catch { }
       } else {
         await KSDASStore.saveState(state, true);
       }
