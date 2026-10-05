@@ -1,0 +1,27 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Uji ekstraksi
+        run: node --test tests/extract.test.js
+  build-exe:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pasang Mono
+        run: sudo apt-get update && sudo apt-get install -y mono-mcs libmono-system-windows-forms4.0-cil libmono-system-web-extensions4.0-cil libmono-system-data4.0-cil libmono-system-io-compression-filesystem4.0-cil libmono-system-io-compression4.0-cil
+      - name: Bangun EXE
+        run: ./build_exe.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KSDAS_ITDel.exe
+          path: KSDAS_ITDel.exe

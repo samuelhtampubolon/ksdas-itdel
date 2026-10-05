@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KSDAS IT Del — Sistem Informasi Kerja Sama</title>
+  <title>KSDAS IT Del - Sistem Informasi Kerja Sama</title>
   <meta name="description" content="Sistem Informasi Kerja Sama Institut Teknologi Del. Pencatatan naskah, modul OCR dan ekstraksi cerdas, saringan dan analisis Dekan/Kaprodi, serta migrasi data.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="ksdas-token" content="{{KSDAS_TOKEN}}">
   <link rel="stylesheet" href="css/ksdas.css">
   <!-- Pustaka Offline Mandiri (Zero Network Dependency - 100% Berjalan Lokal) -->
   <script src="js/jszip.min.js"></script>
@@ -13,6 +16,8 @@
 </head>
 <body>
   <div id="app"></div>
+  <script src="js/extract.js"></script>
+  <script src="js/storage.js"></script>
   <script src="js/ksdas.js"></script>
 </body>
 </html>

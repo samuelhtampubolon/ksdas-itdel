@@ -53,3 +53,7 @@ Desktop.ini
 *.temp
 /scratch/
 /tmp/
+
+# Basis data lokal dibuat otomatis oleh KSDAS_ITDel.exe (dapat berisi data pribadi)
+ksdas_local_database/
+web.zip

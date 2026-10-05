@@ -7,7 +7,11 @@
 
 Sistem Informasi Manajemen Kerja Sama untuk Unit Kerja Sama (UKS) Institut Teknologi Del, Laguboti, Sumatera Utara.
 
-Aplikasi ini menggabungkan **Sistem Informasi Manajemen berbasis data relasional yang kokoh** dengan modul **Ekstraksi Cerdas & OCR Lokal Portabel**. Sistem ini mampu membaca isi naskah dokumen (Word DOCX, DOC, PDF, pindaian gambar/scan, maupun ringkasan teks) untuk mengenali secara presisi nomor naskah, nama penandatangan (membedakan orang asli dan instansi), judul kerja sama, kategori fakultas/prodi, klasifikasi Tri Dharma, masa berlaku, dan nilai anggaran. Hasil deteksi langsung mengisi kolom formulir di layar sebagai usulan awal (*draft suggestions*), di mana **Staf Unit Kerja Sama memiliki kendali penuh untuk memverifikasi, melengkapi detail, dan mengesahkan data sebelum disimpan ke basis data**.
+Staf mengunggah dokumen (PDF, DOCX, Excel/CSV, atau scan). KSDAS membaca isinya dan **mengisi kolom formulir otomatis sebagai usulan** lengkap dengan tingkat keyakinan, halaman, dan kutipan sumber. Nilai yang tidak tertulis di dokumen dibiarkan kosong (tidak ditebak) dan ditandai "perlu diisi manual". Staf memeriksa, melengkapi, lalu memvalidasi sebelum menjadi data resmi. Semua proses berjalan lokal, tanpa layanan AI eksternal.
+
+- Cara kerja ekstraksi dan batasnya: [docs/EKSTRAKSI_DOKUMEN.md](docs/EKSTRAKSI_DOKUMEN.md)
+- Demonstrasi penyimpanan, storage, dan memori: [docs/PENYIMPANAN_DAN_SIMULASI.md](docs/PENYIMPANAN_DAN_SIMULASI.md)
+- Langkah manual pemilik repositori: [docs/LANGKAH_MANUAL_PEMILIK.md](docs/LANGKAH_MANUAL_PEMILIK.md)
 
 ---
 
@@ -24,30 +28,19 @@ Aplikasi desktop Windows Forms ini portabel dan standalone (dapat langsung dijal
 
 ---
 
-## 🗄️ Sistem Basis Data Terstruktur & Terintegrasi Lokal
+## 🗄️ Penyimpanan Lokal oleh KSDAS_ITDel.exe
 
-Saat **`KSDAS_ITDel.exe`** dijalankan atau di-install melalui **`setup_ksdas_local.bat`**, sistem secara otomatis dan instan membangun arsitektur basis data relasional terstruktur di direktori lokal komputer Anda:
+Saat dijalankan, EXE langsung membangun folder `ksdas_local_database/` di samping EXE dan menjalankan server lokal yang hanya mendengarkan `127.0.0.1`:
 
 ```text
 ksdas_local_database/
-├── tables/
-│   ├── naskah_kerjasama.json      <- Data relasional dosir naskah (MoU, PKS, IA)
-│   ├── mitra_institusi.json       <- Direktori master mitra kampus & industri
-│   ├── fakultas_prodi.json        <- Taksonomi fakultas (FITE, FTI, FB) & program studi
-│   ├── audit_trail_log.json       <- Buku log transaksi mutasi sistem (immutable)
-│   └── database_manifest.json     <- Manifest integritas & status relasional
-├── schema/
-│   ├── ksdas_relational_schema.sql <- Skema DDL resmi PostgreSQL 14+ / SQLite 3
-│   └── data_dictionary.json        <- Kamus data relasional terstandar
-├── dosir_lampiran/                 <- Folder repositori naskah PDF/Word/Scan
-└── backups/                        <- Cadangan snapshot berkala basis data
+├── tables/            naskah_kerjasama.json, mitra_institusi.json, lampiran_berkas.json, audit_trail_log.jsonl, database_manifest.json
+├── schema/            ksdas_relational_schema.sql (PostgreSQL), data_dictionary.json
+├── dosir_lampiran/    berkas asli yang diunggah (nama dibuat server)
+└── backups/           cadangan bertanda waktu + manifest SHA-256
 ```
 
-### Keunggulan Basis Data Lokal KSDAS:
-1. **Otomatis Tanpa Konfigurasi Rumit**: Tidak membutuhkan instalasi server SQL pihak ketiga; langsung siap pakai saat pertama kali dijalankan.
-2. **Skema Standar RDBMS SQL**: Berkas DDL `schema/ksdas_relational_schema.sql` telah disiapkan dan kompatibel 100% untuk migrasi langsung ke PostgreSQL produksi TSI/SDI IT Del.
-3. **Audit Trail Mutlak**: Setiap kali naskah ditambah, diubah, atau dihapus, log transaksi dicatat secara permanen di `tables/audit_trail_log.json`.
-4. **Pencadangan Instan (Snapshot Backup)**: Tombol *"🔄 Cadangkan Basis Data"* di bilah alat aplikasi desktop membuat cadangan terstempel waktu (*timestamped snapshot*) ke dalam folder `backups/`.
+Versi GitHub Pages memakai IndexedDB di peramban dengan antarmuka yang sama. Menu **Penyimpanan & Memori** pada keduanya menampilkan pemakaian ruang, memori, simulasi tulis/baca, cadangan, dan uji pemulihan.
 
 ---
 
@@ -65,7 +58,7 @@ ksdas_local_database/
 ## Mengapa KSDAS Server Lokal Menggantikan Google Drive, OneDrive, dan Notion?
 
 Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sheets, Microsoft OneDrive, dan Notion. Kondisi tersebut tidak ideal karena:
-1. **Kedaulatan & Kerahasiaan Dokumen**: Naskah kerja sama memuat hak kekayaan intelektual, klausul non-disclosure (NDA), dan rincian anggaran. Server lokal intranet kampus IT Del menjamin data tersimpan aman di dalam perimeter kampus tanpa risiko kebocoran data (*zero data leakage*).
+1. **Kedaulatan & Kerahasiaan Dokumen**: Naskah kerja sama memuat hak kekayaan intelektual, klausul non-disclosure (NDA), dan rincian anggaran. Server lokal intranet kampus IT Del menjaga data tetap berada di dalam perimeter kampus (kontrol keamanan lengkap ditentukan SDI/TSI/DukTek).
 2. **Ketiadaan Rantai Relasi di Cloud Publik**: Google Drive/Notion hanya menyimpan file tanpa memvalidasi apakah MoU sudah memiliki PKS turunan atau apakah PKS sudah memiliki naskah pelaksanaan (IA).
 3. **Pembatasan Wewenang**: Di KSDAS, Dekan dan Kaprodi secara otomatis terisolasi hanya dapat melihat dan mengunduh data fakultas/prodi yang dipimpinnya.
 4. **Pemberitahuan Otomatis Masa Berlaku**: KSDAS menghitung sisa hari berlaku dan menandai naskah yang akan berakhir (≤ 180 hari) maupun yang telah kedaluwarsa.
@@ -75,7 +68,7 @@ Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sh
 ## Alur Operasional Utama
 
 ### 1. Dari Perspektif Staf Unit Kerja Sama:
-- **Unggah Berkas Naskah**: Staf mengunggah dokumen fisik pindaian (Scan/Gambar), berkas Word (`.docx`, `.doc`), PDF, atau teks ringkasan &rarr; tersimpan di basis data sebagai lampiran.
+- **Unggah Berkas Naskah**: PDF, Word, Excel/CSV, atau scan gambar &rarr; berkas asli tersimpan sebagai lampiran (IndexedDB di web, folder `dosir_lampiran` di EXE).
 - **Ekstraksi Cerdas & OCR Otomatis**: Sistem secara otomatis membaca naskah dan menjalankan *entity extractor* untuk mendeteksi:
   - Nomor naskah (MoU/PKS/IA),
   - Judul kerja sama (klausul 'TENTANG'),
@@ -85,9 +78,9 @@ Saat ini dokumen kerja sama IT Del tersimpan tersebar di Google Drive, Google Sh
   - Klasifikasi Tri Dharma Perguruan Tinggi (Pendidikan, Penelitian, Pengabdian),
   - Masa berlaku (tanggal mulai, berakhir, durasi tahun),
   - Nilai anggaran & lokasi kegiatan.
-- **Pengisian Formulir Seketika**: Kolom formulir di layar langsung terisi seketika dengan tanda visual hijau `[Terdeteksi Cerdas]`.
-- **Validasi Manual Staf**: Staf meninjau, menyempurnakan, dan melengkapi data yang belum terisi secara manual agar data 100% valid dan terverifikasi sebelum disimpan ke basis data.
-- **Pintasan Otomatisasi Staf**: Tombol sampel instan (MoU Pemkab Toba dan PKS Industri) tersedia untuk pengujian cepat 1-klik.
+- **Pengisian Formulir Otomatis (usulan)**: Kolom formulir terisi dengan penanda keyakinan (Tinggi, Sedang, Rendah), halaman, dan kutipan sumber. Field yang tidak ditemukan dibiarkan kosong.
+- **Validasi Staf**: Staf melengkapi yang kosong, memeriksa yang berkeyakinan sedang/rendah, lalu menekan Validasi. Status: Perlu ditinjau, Tervalidasi, Tervalidasi (dikoreksi), Ditolak.
+- **Unggah Banyak Berkas**: Sampai 100 berkas sekaligus, diurutkan menurut hirarki MoU, PKS, IA, Proposal, Laporan, relasi induk otomatis dari rujukan nomor.
 - **Migrasi Data Massal**: Fitur impor tabel untuk memindahkan data dari Google Sheets, OneDrive Excel, atau Notion secara deterministik.
 
 ### 2. Dari Perspektif Dekan dan Kaprodi:
