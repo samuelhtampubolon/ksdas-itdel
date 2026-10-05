@@ -97,7 +97,7 @@
 
     /** Simpan state (di-debounce). Mengembalikan promise yang selesai setelah tertulis. */
     saveState: function (state, immediate) {
-      pendingState = { roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: new Date().toISOString() };
+      pendingState = { roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory || {}, savedAt: new Date().toISOString() };
       if (saveTimer) clearTimeout(saveTimer);
       var run = function () {
         var snap = pendingState; pendingState = null; saveTimer = null;
@@ -160,7 +160,7 @@
       if (mode === "local-server") return api("POST", "api/backup", {});
       if (!db) return Promise.reject(new Error("IndexedDB tidak tersedia."));
       var name = "backup_" + new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
-      var snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: new Date().toISOString() };
+      var snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory || {}, savedAt: new Date().toISOString() };
       var json = JSON.stringify(snap);
       return sha256(new TextEncoder().encode(json)).then(function (hash) {
         var t = db.transaction("backups", "readwrite");

@@ -507,6 +507,135 @@
     return out.length ? out : null;
   }
 
+  /* ============================================================ kecerdasan lanjutan */
+  function lev(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    var prev = [], cur = [], i, j;
+    for (j = 0; j <= b.length; j++) prev[j] = j;
+    for (i = 1; i <= a.length; i++) {
+      cur[0] = i;
+      for (j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1));
+      var t = prev; prev = cur; cur = t;
+    }
+    return prev[b.length];
+  }
+  function strSim(a, b) { var m = Math.max(a.length, b.length); return m ? 1 - lev(a, b) / m : 1; }
+  var ABBR = {
+    pemkab: "pemerintah kabupaten", pemko: "pemerintah kota", pemkot: "pemerintah kota", pemprov: "pemerintah provinsi",
+    univ: "universitas", poltek: "politeknik", inst: "institut", dinkes: "dinas kesehatan", disdik: "dinas pendidikan",
+    kemenag: "kementerian agama", smkn: "smk negeri", sman: "sma negeri", smpn: "smp negeri", kab: "kabupaten", prov: "provinsi"
+  };
+  /** Kunci nama mitra: singkatan diperluas, bentuk badan hukum dibuang. */
+  function pkey(name) {
+    return norm(name).split(" ").map(function (w) { return ABBR[w] || w; }).join(" ")
+      .replace(/\b(pt|cv|ud|tbk|persero|perum|yayasan)\b/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function partnerSim(a, b) {
+    var ka = pkey(a), kb = pkey(b);
+    if (!ka || !kb) return 0;
+    if (ka === kb) return 1;
+    return Math.max(jaccard(ka, kb), strSim(ka, kb));
+  }
+
+  /** Perbaikan galat OCR yang umum pada angka, tanggal, dan nama bulan. Hanya untuk halaman hasil OCR. */
+  var MONTH_NAMES = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+  function repairOcrLine(t) {
+    var out = t;
+    out = out.replace(/\b[lI1]TDe[lI1]\b/g, "ITDel").replace(/\bN[0O]m[0o]r\b/g, "Nomor");
+    out = out.replace(/[0-9A-Za-z\/.\-|]{4,}/g, function (tok) {
+      return tok.split("/").map(function (seg) {
+        if (!/^[0-9OoIl|SB.\-]+$/.test(seg) || (seg.match(/\d/g) || []).length < 2) return seg;
+        return seg.replace(/(?<=[\d.\-])[Oo](?=[\d.\-]|$)|^[Oo](?=\d)/g, "0").replace(/(?<=[\d.\-])[Il|](?=[\d.\-]|$)|^[Il|](?=\d)/g, "1").replace(/(?<=\d)S(?=\d)/g, "5").replace(/(?<=\d)B(?=\d)/g, "8");
+      }).join("/");
+    });
+    var digitFix = function (x) { return x.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1"); };
+    out = out.replace(/\b([0-9OoIl]{1,2})\s+([A-Za-z]{4,9})\s+([0-9OoIl]{4})\b/g, function (m, d, w, y) {
+      var lw = w.toLowerCase(), month = null;
+      if (MONTH_NAMES.indexOf(lw) >= 0) month = w;
+      else for (var i = 0; i < MONTH_NAMES.length && !month; i++) if (lw[0] === MONTH_NAMES[i][0] && lev(lw, MONTH_NAMES[i]) <= 1) month = MONTH_NAMES[i].charAt(0).toUpperCase() + MONTH_NAMES[i].slice(1);
+      return month ? digitFix(d) + " " + month + " " + digitFix(y) : m;
+    });
+    return out;
+  }
+
+  /** Profil kata kunci topik per program studi, hanya untuk SARAN (tidak mengisi otomatis). */
+  var TOPICS = {
+    TRPL: ["rekayasa perangkat lunak", "aplikasi", "pemrograman", "software", "pengembangan sistem", "web", "mobile", "devops"],
+    IF: ["informatika", "kecerdasan buatan", "machine learning", "data science", "algoritma", "keamanan siber", "komputasi"],
+    SI: ["sistem informasi", "erp", "basis data", "bisnis digital", "tata kelola", "analisis bisnis", "enterprise"],
+    TE: ["elektro", "elektronika", "listrik", "iot", "embedded", "telekomunikasi", "sensor", "energi"],
+    D3TK: ["jaringan komputer", "perangkat keras", "hardware", "infrastruktur jaringan"],
+    D3TI: ["teknologi informasi", "administrasi sistem", "help desk"],
+    MR: ["manajemen rekayasa", "rantai pasok", "logistik", "manufaktur", "industri", "optimasi", "produksi"],
+    TM: ["metalurgi", "logam", "material", "smelter", "pengecoran", "korosi"],
+    BP: ["bioproses", "bioteknologi", "fermentasi", "pangan", "mikroba", "enzim", "hayati"]
+  };
+  function topicSuggest(text) {
+    var t = " " + norm(text) + " ", out = [];
+    Object.keys(TOPICS).forEach(function (id) {
+      var hits = TOPICS[id].filter(function (kw) { return t.indexOf(" " + kw + " ") >= 0; });
+      if (hits.length) out.push({ id: id, score: hits.reduce(function (a, kw) { return a + (kw.indexOf(" ") > 0 ? 2 : 1); }, 0), hits: hits });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out;
+  }
+
+  var TYPE_NAME = { MOU_LOI: "MoU/LOI", PKS_MOA: "PKS/MoA", IA: "IA", PROPOSAL: "Proposal", LAPORAN: "Laporan" };
+  var PARENT_TYPE = { PKS_MOA: "MOU_LOI", IA: "PKS_MOA", PROPOSAL: "IA", LAPORAN: "PROPOSAL" };
+  function tokenSet(s) { return norm(s).split(" ").filter(function (w) { return w.length > 3; }); }
+
+  /** Peringkat kandidat induk berdasarkan rujukan nomor, mitra, kemiripan judul, dan rentang tanggal. */
+  function rankParents(doc, docs, refs) {
+    var want = PARENT_TYPE[doc.documentType];
+    if (!want) return [];
+    var res = [];
+    docs.forEach(function (c) {
+      if (c.id === doc.id || c.documentType !== want) return;
+      var score = 0, why = [];
+      if (refs && refs.some(function (r) { return norm(r) === norm(c.documentNumber); })) { score += 1; why.push("dokumen merujuk nomor " + c.documentNumber); }
+      if (doc.partnerId && c.partnerId === doc.partnerId) { score += 0.4; why.push("mitra sama"); }
+      var a = tokenSet(doc.title || ""), b = tokenSet(c.title || "");
+      if (a.length && b.length) {
+        var inter = a.filter(function (w) { return b.indexOf(w) >= 0; }).length, jac = inter / (a.length + b.length - inter);
+        if (jac >= 0.2) { score += Math.min(0.3, jac * 0.5); why.push("judul mirip (" + Math.round(jac * 100) + "%)"); }
+      }
+      if (doc.startDate && c.startDate && c.endDate && doc.startDate >= c.startDate && doc.startDate <= c.endDate) { score += 0.2; why.push("dalam masa berlaku induk"); }
+      else if (doc.startDate && c.endDate && doc.startDate > c.endDate) { score -= 0.3; why.push("induk sudah berakhir saat dokumen ini dimulai"); }
+      if (doc.facultyId && c.facultyId === doc.facultyId) { score += 0.1; why.push("fakultas sama"); }
+      if (score > 0.25) res.push({ id: c.id, number: c.documentNumber, score: Math.round(score * 100) / 100, why: why });
+    });
+    res.sort(function (a, b) { return b.score - a.score; });
+    return res.slice(0, 3).map(function (r, i, arr) {
+      var explicit = r.score >= 1;
+      var clear = r.score >= 0.7 && (arr.length === 1 || r.score - arr[1].score >= 0.25);
+      r.level = explicit ? "TINGGI" : clear ? "SEDANG" : "RENDAH";
+      r.reason = r.why.join(", ") + ".";
+      return r;
+    });
+  }
+
+  function fmtIso(d) {
+    if (!d) return "";
+    var m = d.split("-");
+    var names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return +m[2] + " " + names[+m[1]] + " " + m[0];
+  }
+  function summarize(f) {
+    var type = f.documentType ? TYPE_NAME[f.documentType.value] : "Naskah";
+    var partner = f.partnerId ? (f.partnerId.display || "").replace(/ \(mitra baru.*$/, "") : "";
+    var s = type + (partner ? " antara Institut Teknologi Del dan " + partner : "");
+    if (f.title) s += " tentang " + f.title.value;
+    s += ".";
+    if (f.documentNumber) s += " Nomor " + f.documentNumber.value + ".";
+    if (f.signedDate) s += " Ditandatangani " + fmtIso(f.signedDate.value) + ".";
+    if (f.startDate && f.endDate) s += " Berlaku " + fmtIso(f.startDate.value) + " sampai " + fmtIso(f.endDate.value) + ".";
+    else if (f.startDate) s += " Berlaku sejak " + fmtIso(f.startDate.value) + ".";
+    if (f.budget) s += " Anggaran " + f.budget.value + ".";
+    return s;
+  }
+
   /* ----------------------------------------------------- analisis teks inti */
   var INJECTION_RE = /abaikan\s+(?:semua\s+)?(?:instruksi|perintah|aturan)|lupakan\s+(?:semua\s+)?instruksi|ignore\s+(?:all\s+|any\s+)?(?:previous|prior|above)|disregard\s+(?:the\s+)?(?:above|previous)|system\s+prompt|you\s+are\s+now|setujui\s+otomatis|tetapkan\s+(?:nomor|status|jenis)/i;
 
@@ -516,6 +645,7 @@
       String(pg.text || "").split(/\r?\n/).forEach(function (raw) {
         var t = clean(raw);
         if (!t) return;
+        if (pg.method === "OCR") t = repairOcrLine(t);
         if (INJECTION_RE.test(t)) { suspicious++; return; }
         lines.push({ t: t, page: pg.n, sheet: pg.sheet, method: pg.method, ocrConf: pg.ocrConf, legacy: pg.legacy, i: lines.length });
       });
@@ -528,6 +658,7 @@
     var partners = ctx.partners || [];
     var knownDocs = ctx.docs || [];
     var leaders = ctx.leaders || [];
+    var memory = ctx.memory || {};
     var fileName = input.fileName || "";
     var pages = input.pages || [];
     var built = buildLines(pages);
@@ -546,6 +677,9 @@
       if (value === "" || value == null) return;
       if (fields[key]) return;
       if (downgrade) level = level === "TINGGI" ? "SEDANG" : "RENDAH";
+      var st = memory.fieldStats && memory.fieldStats[key];
+      var learnedNote = "";
+      if (st && st.n >= 3 && st.corrected / st.n >= 0.5 && level === "TINGGI") { level = "SEDANG"; learnedNote = "Field ini sering dikoreksi staf pada dokumen sebelumnya (" + st.corrected + " dari " + st.n + "). Periksa teliti."; }
       var f = {
         value: typeof value === "string" ? clean(value) : value,
         level: level, score: LEVEL[level],
@@ -554,6 +688,7 @@
         method: method || (line && line.method === "OCR" ? "OCR+ATURAN" : "ATURAN_TEKS")
       };
       if (extra) for (var k in extra) f[k] = extra[k];
+      if (learnedNote) f.note = (f.note ? f.note + " " : "") + learnedNote;
       fields[key] = f;
     }
     function lineText(from, to) { return lines.slice(from, to).map(function (l) { return l.t; }).join("\n"); }
@@ -839,19 +974,27 @@
     }
     partnerNameRaw = clean(partnerNameRaw).replace(/^(?:dan|dengan)\s+/i, "").replace(/[,;:]+$/, "").replace(/(?<!\bTbk|\bPT|\bCV|\bUD|\bNo)\.$/, "");
     var partnerDraft = null, partnerMatch = null;
+    var partnerAlts = [];
     function resolvePartner(rawName, line, level, method, addrCtx) {
       if (fields.partnerId) return;
       var display = smartCase(rawName);
-      var key = norm(display), core = legalCore(display);
-      var found = null, foundLevel = null;
-      partners.forEach(function (p) {
-        if (found && foundLevel === "TINGGI") return;
-        if (norm(p.name) === key || (p.shortName && norm(p.shortName) === key)) { found = p; foundLevel = "TINGGI"; }
-        else if (core.length >= 4 && (legalCore(p.name) === core)) { found = p; foundLevel = "TINGGI"; }
-        else if (!found && jaccard(legalCore(p.name), core) >= 0.75) { found = p; foundLevel = "SEDANG"; }
+      var found = null, foundLevel = null, how = null;
+      var aliasId = memory.partnerAliases && memory.partnerAliases[norm(display)];
+      var byAlias = aliasId ? partners.filter(function (p) { return p.id === aliasId; })[0] : null;
+      if (byAlias) { found = byAlias; foundLevel = "TINGGI"; how = "ALIAS_DIPELAJARI"; }
+      var scored = partners.map(function (p) {
+        var names = [p.name, p.shortName].concat(p.aliases || []).filter(Boolean);
+        return { p: p, s: Math.max.apply(null, names.map(function (n) { return partnerSim(display, n); })) };
+      }).sort(function (a, b) { return b.s - a.s; });
+      if (!found && scored.length) {
+        if (scored[0].s >= 0.97) { found = scored[0].p; foundLevel = "TINGGI"; how = "KECOCOKAN_NAMA"; }
+        else if (scored[0].s >= 0.82) { found = scored[0].p; foundLevel = "SEDANG"; how = "KEMIRIPAN_NAMA"; }
+      }
+      scored.filter(function (x) { return x.s >= 0.4 && (!found || x.p.id !== found.id); }).slice(0, 3).forEach(function (x) {
+        partnerAlts.push({ value: x.p.id, display: x.p.name, page: line ? line.page : null, source: snippet(rawName, 160), why: "nama mirip (" + Math.round(x.s * 100) + "%)" });
       });
       if (found) {
-        put("partnerId", found.id, foundLevel === "TINGGI" ? level : "SEDANG", line, rawName, method, { display: found.name });
+        put("partnerId", found.id, foundLevel === "TINGGI" ? level : "SEDANG", line, rawName, how === "ALIAS_DIPELAJARI" ? "ALIAS_DIPELAJARI" : method, { display: found.name, raw: rawName, note: how === "ALIAS_DIPELAJARI" ? "Dikenali dari koreksi staf sebelumnya." : (how === "KEMIRIPAN_NAMA" ? "Nama di dokumen berbeda sedikit dari master." : undefined) });
         partnerMatch = found;
         if (foundLevel !== "TINGGI") flags.push({ code: "partner_similar", message: "Nama mitra di dokumen \"" + display + "\" mirip dengan mitra terdaftar \"" + found.name + "\". Pastikan sama." });
         return;
@@ -867,7 +1010,7 @@
         name: display, shortName: display.length > 28 ? display.slice(0, 26) + "\u2026" : display,
         type: guessPartnerType(display), country: country, city: clean(city), province: clean(prov), draft: true
       };
-      put("partnerId", partnerDraft.id, level === "TINGGI" ? "SEDANG" : level, line, rawName, method, { display: display + " (mitra baru, perlu dikonfirmasi)", newPartner: true });
+      put("partnerId", partnerDraft.id, level === "TINGGI" ? "SEDANG" : level, line, rawName, method, { display: display + " (mitra baru, perlu dikonfirmasi)", newPartner: true, raw: rawName });
       flags.push({ code: "new_partner", message: "Mitra \"" + display + "\" belum ada di master. Dibuat sebagai mitra baru berstatus draf. Periksa jenis mitra, negara, dan kota." });
     }
     if (labelled.partnerName) resolvePartner(labelled.partnerName.v, labelled.partnerName.line, "TINGGI", "LABEL", "");
@@ -1129,8 +1272,86 @@
       if (!parentSuggestion) parentSuggestion = { id: "", number: refs[0].value, level: "RENDAH", reason: "Dokumen merujuk nomor " + refs[0].value + " yang belum ada di basis data. Unggah dokumen induknya.", page: refs[0].line.page, source: snippet(refs[0].line.t, 200), unresolved: true };
     }
 
+    /* ===== kecerdasan lanjutan: silang-periksa, alternatif, saran, ringkasan ===== */
+    var suggestions = {};
+    var altStore = {};
+    function addAlt(key, alt) { (altStore[key] = altStore[key] || []).push(alt); }
+    function roleWord(t) { t = t || ""; return /Wakil\s+Rektor/i.test(t) ? "WR" : /Rektor/i.test(t) ? "REKTOR" : /Dekan/i.test(t) ? "DEKAN" : ""; }
+
+    // (a) tahun pada nomor vs tanggal
+    if (fields.documentNumber && (fields.signedDate || fields.startDate)) {
+      var ym = fields.documentNumber.value.match(/(?:^|\/)(20\d{2})(?:$|[\/.\-])/);
+      var rd = (fields.signedDate || fields.startDate).value;
+      if (ym && Math.abs(+ym[1] - +rd.slice(0, 4)) >= 1) flags.push({ code: "year_mismatch", message: "Tahun pada nomor dokumen (" + ym[1] + ") berbeda dari tanggal " + (fields.signedDate ? "tanda tangan" : "mulai") + " (" + rd.slice(0, 4) + "). Periksa keduanya." });
+    }
+    // (b) jabatan penandatangan IT Del vs direktori pimpinan
+    if (fields.itdelSignatory && fields.itdelSignatoryTitle && leaders.length) {
+      var cl = canonicalLeader(fields.itdelSignatory.value);
+      if (cl && roleWord(cl.title) && roleWord(fields.itdelSignatoryTitle.value) && roleWord(cl.title) !== roleWord(fields.itdelSignatoryTitle.value))
+        flags.push({ code: "signatory_title_mismatch", message: "Jabatan \"" + fields.itdelSignatoryTitle.value + "\" tidak sesuai direktori pimpinan untuk " + cl.name + " (" + cl.title + "). Periksa nama atau jabatan." });
+    }
+    // (c) Dekan penandatangan vs fakultas
+    if (fields.itdelSignatoryTitle) {
+      var dm = fields.itdelSignatoryTitle.value.match(/Dekan\s+(Fakultas\s+[A-Za-z ]+?)(?:\s+(?:Institut|IT\s*Del)|$)/i);
+      if (dm) {
+        var dfac = FACULTY_DEFS.filter(function (df) { return new RegExp(df.re, "i").test(dm[1]); })[0];
+        if (dfac && fields.facultyId && fields.facultyId.value !== dfac.id) flags.push({ code: "faculty_signatory_mismatch", message: "Penandatangan adalah " + fields.itdelSignatoryTitle.value + " tetapi fakultas terisi " + fields.facultyId.value + ". Periksa." });
+        if (dfac && !fields.facultyId) addAlt("facultyId", { value: dfac.id, display: dfac.id, page: fields.itdelSignatoryTitle.page, source: fields.itdelSignatoryTitle.source, why: "fakultas dari jabatan penandatangan (Dekan)" });
+      }
+    }
+    // (d) kewajaran masa berlaku
+    if (fields.startDate && fields.endDate && fields.endDate.value >= fields.startDate.value) {
+      var yrs = (Date.parse(fields.endDate.value) - Date.parse(fields.startDate.value)) / 31557600000;
+      if (yrs > 10) flags.push({ code: "long_duration", message: "Masa berlaku " + yrs.toFixed(1) + " tahun, lebih dari 10 tahun. Periksa tanggal." });
+    }
+    if (fields.signedDate && fields.startDate && Date.parse(fields.signedDate.value) - Date.parse(fields.startDate.value) > 30 * 86400000)
+      flags.push({ code: "signed_after_start", message: "Tanggal tanda tangan lebih dari 30 hari setelah tanggal mulai berlaku. Periksa." });
+    // (e) kemungkinan duplikat (nomor sama, atau mitra + jenis + tanggal mulai sama, atau judul sangat mirip)
+    knownDocs.forEach(function (d) {
+      var same = fields.documentNumber && norm(d.documentNumber) === norm(fields.documentNumber.value);
+      var pid = fields.partnerId ? fields.partnerId.value : "";
+      var ctxSame = pid && d.partnerId === pid && fields.documentType && d.documentType === fields.documentType.value && fields.startDate && d.startDate === fields.startDate.value;
+      var titleSame = fields.title && d.title && fields.documentType && d.documentType === fields.documentType.value && strSim(norm(fields.title.value), norm(d.title)) >= 0.85;
+      if (same) flags.push({ code: "duplicate_document", message: "Nomor " + d.documentNumber + " sudah dipakai naskah lain (" + d.id + ")." });
+      else if (ctxSame || titleSame) flags.push({ code: "possible_duplicate", message: "Mirip dengan naskah " + (d.documentNumber || d.id) + " (" + (ctxSame ? "mitra, jenis, dan tanggal mulai sama" : "judul sangat mirip") + "). Periksa apakah duplikat." });
+    });
+
+    // alternatif per field
+    numCands.forEach(function (c) { addAlt("documentNumber", { value: c.value, display: c.value, page: c.line.page, source: snippet(c.line.t, 160), why: "nomor lain pada dokumen" }); });
+    dated.forEach(function (x) {
+      ["signedDate", "startDate", "endDate"].forEach(function (k) { addAlt(k, { value: x.d.iso, display: fmtIso(x.d.iso), page: x.line.page, source: snippet(x.line.t, 160), why: "tanggal lain pada dokumen" }); });
+    });
+    budgets.forEach(function (b) { addAlt("budget", { value: "Rp " + b.digits.replace(/\B(?=(\d{3})+(?!\d))/g, "."), display: "Rp " + b.digits.replace(/\B(?=(\d{3})+(?!\d))/g, "."), page: b.line.page, source: snippet(b.line.t, 160), why: "nominal lain pada dokumen" }); });
+    partnerAlts.forEach(function (a) { addAlt("partnerId", a); });
+    Object.keys(progMentions).forEach(function (id) { addAlt("programId", { value: id, display: id, page: progMentions[id].line.page, source: snippet(progMentions[id].line.t, 160), why: "program studi lain yang disebut" }); });
+    Object.keys(facMentions).forEach(function (id) { addAlt("facultyId", { value: id, display: id, page: facMentions[id].line.page, source: snippet(facMentions[id].line.t, 160), why: "fakultas lain yang disebut" }); });
+    var topics = topicSuggest(lines.map(function (l) { return l.t; }).join("\n"));
+    if (!fields.programId) topics.filter(function (t) { return t.score >= 2; }).slice(0, 2).forEach(function (t) { addAlt("programId", { value: t.id, display: t.id, page: null, source: "Kata kunci: " + t.hits.join(", "), why: "saran topik (skor " + t.score + ")" }); });
+    if (!fields.facultyId && topics.length && topics[0].score >= 2) {
+      var tdef = PROGRAM_DEFS.filter(function (d) { return d.id === topics[0].id; })[0];
+      if (tdef) addAlt("facultyId", { value: tdef.faculty, display: tdef.faculty, page: null, source: "Kata kunci: " + topics[0].hits.join(", "), why: "saran topik" });
+    }
+    Object.keys(altStore).forEach(function (k) {
+      var seen = {}, list = [];
+      altStore[k].forEach(function (a) {
+        if (fields[k] && String(fields[k].value) === String(a.value)) return;
+        if (seen[a.value]) return;
+        seen[a.value] = 1; list.push(a);
+      });
+      list = list.slice(0, 4);
+      if (!list.length) return;
+      if (fields[k]) fields[k].alts = list; else suggestions[k] = list;
+    });
+
+    // peringkat induk
+    var refList = refs.map(function (r) { return r.value; });
+    var parentCandidates = rankParents({
+      documentType: fields.documentType ? fields.documentType.value : "", partnerId: partnerMatch ? partnerMatch.id : "",
+      title: fields.title ? fields.title.value : "", startDate: fields.startDate ? fields.startDate.value : "", facultyId: fields.facultyId ? fields.facultyId.value : ""
+    }, knownDocs, refList);
+
     /* kualitas */
-    var required = ["documentType", "documentNumber", "title", "partnerId", "signedDate", "itdelSignatory", "partnerSignatory"];
+    var required = ["documentType", "documentNumber", "title", "partnerId", "signedDate", "facultyId", "itdelSignatory", "partnerSignatory"];
     if (docType !== "PROPOSAL" && docType !== "LAPORAN") required.push("startDate", "endDate");
     var FIELD_LABEL = {
       documentType: "Jenis naskah", documentNumber: "Nomor dokumen", title: "Judul", partnerId: "Mitra", signedDate: "Tanggal tanda tangan",
@@ -1138,13 +1359,27 @@
       facultyId: "Fakultas", programId: "Program studi", triDharma: "Tri Dharma", scope: "Ruang lingkup", budget: "Anggaran", fundingSource: "Sumber dana",
       location: "Lokasi", activityName: "Nama kegiatan", pic: "PIC", partnerSignatoryTitle: "Jabatan penandatangan mitra", itdelSignatoryTitle: "Jabatan penandatangan IT Del"
     };
-    var optionalAsk = ["facultyId", "programId", "triDharma", "scope"];
+    var optionalAsk = ["programId", "triDharma", "scope"];
     if (docType === "IA" || docType === "PROPOSAL" || docType === "LAPORAN") optionalAsk.push("activityName", "pic", "location", "budget", "fundingSource");
     var missing = required.concat(optionalAsk).filter(function (k) { return !fields[k]; });
     var low = Object.keys(fields).filter(function (k) { return fields[k].level !== "TINGGI"; });
     if (low.length) flags.push({ code: "low_ai_confidence", message: low.length + " field berkeyakinan sedang atau rendah. Periksa terhadap berkas asli: " + low.map(function (k) { return FIELD_LABEL[k] || k; }).join(", ") + "." });
     var scored = Object.keys(fields).map(function (k) { return fields[k].score; });
     var overall = scored.length ? scored.reduce(function (a, b) { return a + b; }, 0) / scored.length : 0;
+
+
+    var summary = summarize(fields);
+    var nextActions = [];
+    missing.forEach(function (k) {
+      if (required.indexOf(k) >= 0) nextActions.push({ kind: "isi", key: k, text: "Isi " + (FIELD_LABEL[k] || k) + (suggestions[k] ? " (ada saran, lihat di bawah kolom)" : "") });
+    });
+    Object.keys(fields).forEach(function (k) {
+      if (fields[k].level !== "TINGGI") nextActions.push({ kind: "periksa", key: k, text: "Periksa " + (FIELD_LABEL[k] || k) + (fields[k].page ? " (hlm. " + fields[k].page + ")" : "") });
+    });
+    if (fields.partnerId && fields.partnerId.newPartner) nextActions.push({ kind: "konfirmasi", key: "partnerId", text: "Konfirmasi mitra baru dan lengkapi jenis, negara, kota" });
+    if (PARENT_TYPE[docType] && !(parentSuggestion && parentSuggestion.id) && !(parentCandidates[0] && parentCandidates[0].level !== "RENDAH"))
+      nextActions.push({ kind: "relasi", key: "parent", text: "Tautkan ke " + TYPE_NAME[PARENT_TYPE[docType]] + " induk atau unggah dokumen induknya" });
+    if (docType === "MOU_LOI" || docType === "PKS_MOA") nextActions.push({ kind: "info", key: "child", text: "Setelah divalidasi, pantau pembuatan " + TYPE_NAME[Object.keys(PARENT_TYPE).filter(function (k) { return PARENT_TYPE[k] === docType; })[0]] + " turunannya" });
 
     var patch = {}, provenance = {}, findings = [];
     Object.keys(fields).forEach(function (k) {
@@ -1156,6 +1391,7 @@
       fields: fields, patch: patch, provenance: provenance, findings: findings, flags: flags,
       missing: missing.map(function (k) { return { key: k, label: FIELD_LABEL[k] || k, required: required.indexOf(k) >= 0 }; }),
       partnerDraft: partnerDraft, partnerMatch: partnerMatch, parentSuggestion: parentSuggestion,
+      summary: summary, nextActions: nextActions, suggestions: suggestions, parentCandidates: parentCandidates, refs: refList,
       overall: overall, pageCount: pages.length, lineCount: lines.length, ocrMean: meanOcr, fieldLabels: FIELD_LABEL
     };
   }
@@ -1174,6 +1410,7 @@
     HEADER_ALIASES: HEADER_ALIASES,
     detectKind: detectKind, readFile: readFile, analyze: analyze, detectRegistry: detectRegistry, analyzeRegistryRow: analyzeRegistryRow,
     parseCsv: parseCsv, findDates: findDates, wordsToInt: wordsToInt, smartCase: smartCase, guessPartnerType: guessPartnerType, norm: norm,
+    rankParents: rankParents, partnerSim: partnerSim, repairOcrLine: repairOcrLine, topicSuggest: topicSuggest, summarize: summarize,
     _readDocx: readDocx, _readXlsx: readXlsx
   };
 });
