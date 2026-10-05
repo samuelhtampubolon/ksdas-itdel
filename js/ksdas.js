@@ -270,37 +270,35 @@
       documentNumber: "",
       title: "",
       partnerId: "",
-      signedDate: todayISO(now),
-      startDate: todayISO(now),
+      signedDate: "",
+      startDate: "",
       endDate: "",
       status: "DRAFT",
       scope: "",
       facultyId: "",
       programId: "",
       unitId: "UKS",
-      triDharma: ["PENDIDIKAN"],
+      triDharma: [],
       activityName: "",
-      pic: "Staf Unit Kerja Sama",
+      pic: "",
       partnerSignatory: "",
       partnerSignatoryTitle: "",
-      itdelSignatory: "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.",
-      itdelSignatoryTitle: "Rektor Institut Teknologi Del",
+      itdelSignatory: "",
+      itdelSignatoryTitle: "",
       parentId: "",
-      location: "Laguboti",
+      location: "",
       budget: "",
       fundingSource: "",
       notes: "",
       fileName: "",
       fileSize: 0,
+      fileRef: "",
+      fileHash: "",
       uploadedAt: stamp,
       updatedAt: stamp,
-      provenance: {
-        itdelSignatory: "SISTEM",
-        itdelSignatoryTitle: "SISTEM",
-        startDate: "SISTEM",
-        location: "SISTEM",
-        unitId: "SISTEM"
-      }
+      validation: { state: "DRAFT", by: "", at: "" },
+      extraction: null,
+      provenance: { unitId: "SISTEM" }
     };
   }
   function partnerName(partners, id) {
@@ -1162,642 +1160,6 @@ ${example.map(csvCell).join(",")}
     return lines.join("\r\n");
   }
 
-  var INVALID_PERSON_TOKENS = new Set([
-    "pt", "cv", "yayasan", "universitas", "institut", "kementerian", "dinas",
-    "pemerintah", "badan", "bank", "direktorat", "tim", "panitia", "divisi", "biro",
-    "bagian", "fakultas", "program", "studi", "pasal", "pihak", "pertama", "kedua",
-    "ketiga", "kesepakatan", "perjanjian", "republik", "indonesia", "kabupaten", "kota",
-    "provinsi", "rektor", "dekan", "direktur", "kepala", "bupati", "gubernur", "camat",
-    "surat", "memorandum", "understanding", "agreement", "arrangement", "nomor",
-    "ruang", "lingkup", "ayat", "bab", "ketentuan", "umum", "penutup", "jangka", "waktu",
-    "tujuan", "kegiatan", "anggaran", "biaya", "tugas", "kewajiban", "hak", "pelaksanaan"
-  ]);
-
-  function isPersonName(name) {
-    if (!name || name.length < 4) return false;
-    if (name === name.toUpperCase() && !/(?:PROF\.|DR\.|IR\.|S\.T\.|M\.T\.)/.test(name)) {
-      return false;
-    }
-    const clean = name.replace(/^(?:selaku|bertindak|pihak|kedua|pertama)\s+/i, "");
-    const words = clean.toLowerCase().split(/[\s,.]+/).filter((w) => w.length > 1);
-    if (words.length < 2) return false;
-    for (const w of words) {
-      if (INVALID_PERSON_TOKENS.has(w)) return false;
-    }
-    return true;
-  }
-
-  function cleanString(str) {
-    return (str || "").replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ").trim();
-  }
-
-  // --- MESIN EKSTRAKSI DOKUMEN & OCR PRESISI TINGGI (NATIVE ZIP + FLATE + OLE + TESSERACT/PDF.JS) ---
-  function extractTextFromDoc(buffer) {
-    try {
-      const bytes = new Uint8Array(buffer);
-      let utf16Str = "";
-      for (let i = 0; i < bytes.length - 1; i += 2) {
-        if (bytes[i+1] === 0 && bytes[i] >= 32 && bytes[i] <= 126) {
-          utf16Str += String.fromCharCode(bytes[i]);
-        } else if (bytes[i+1] === 0 && (bytes[i] === 10 || bytes[i] === 13)) {
-          utf16Str += " ";
-        }
-      }
-      if (utf16Str.length > 50) return utf16Str;
-      let asciiStr = "";
-      for (let i = 0; i < bytes.length; i++) {
-        if (bytes[i] >= 32 && bytes[i] <= 126) asciiStr += String.fromCharCode(bytes[i]);
-        else if (bytes[i] === 10 || bytes[i] === 13) asciiStr += " ";
-      }
-      return asciiStr;
-    } catch (_) { return ""; }
-  }
-
-  async function extractTextFromDocx(buffer) {
-    try {
-      if (typeof window !== "undefined" && window.JSZip) {
-        const zip = await window.JSZip.loadAsync(buffer);
-        const textParts = [];
-
-        // 1. Ambil berkas Header (Kop surat, nomor naskah, unit kerja sama IT Del)
-        const headerFiles = Object.keys(zip.files).filter((f) => /^word\/header\d*\.xml$/i.test(f));
-        for (const hf of headerFiles) {
-          try {
-            const xml = await zip.files[hf].async("text");
-            const clean = xml.replace(/<\/w:p>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'");
-            if (clean.trim()) textParts.push(clean.trim());
-          } catch (_) {}
-        }
-
-        // 2. Ambil dokumen utama (word/document.xml)
-        const docEntry = zip.file("word/document.xml") || zip.file(/word\/document\.xml$/i)[0];
-        if (docEntry) {
-          const xml = await docEntry.async("text");
-          const clean = xml.replace(/<\/w:p>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'");
-          if (clean.trim()) textParts.push(clean.trim());
-        }
-
-        // 3. Ambil berkas Footer
-        const footerFiles = Object.keys(zip.files).filter((f) => /^word\/footer\d*\.xml$/i.test(f));
-        for (const ff of footerFiles) {
-          try {
-            const xml = await zip.files[ff].async("text");
-            const clean = xml.replace(/<\/w:p>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'");
-            if (clean.trim()) textParts.push(clean.trim());
-          } catch (_) {}
-        }
-
-        // 4. Metadata dokumen dari docProps/core.xml
-        const coreEntry = zip.file("docProps/core.xml");
-        if (coreEntry) {
-          try {
-            const xml = await coreEntry.async("text");
-            const titleMatch = xml.match(/<dc:title>([\s\S]*?)<\/dc:title>/i);
-            if (titleMatch && titleMatch[1]) textParts.push("TITLE_META: " + titleMatch[1].trim());
-            const subjMatch = xml.match(/<dc:subject>([\s\S]*?)<\/dc:subject>/i);
-            if (subjMatch && subjMatch[1]) textParts.push("SUBJECT_META: " + subjMatch[1].trim());
-          } catch (_) {}
-        }
-
-        const combined = textParts.join("\n\n").trim();
-        if (combined.length > 15) return combined;
-      }
-    } catch (err) {
-      console.warn("JSZip DOCX extract error:", err);
-    }
-    return extractTextFromDoc(buffer);
-  }
-
-  async function extractTextFromPdf(buffer, onProgress) {
-    if (onProgress) onProgress("Mengekstraksi teks dokumen PDF...", 25);
-    if (typeof window !== "undefined" && window.pdfjsLib) {
-      try {
-        if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-          pdfjsLib.GlobalWorkerOptions.workerSrc = "js/pdf.worker.min.js";
-        }
-        const loadingTask = pdfjsLib.getDocument({ data: buffer });
-        const pdf = await loadingTask.promise;
-        let fullText = "";
-        const maxPages = Math.min(pdf.numPages, 30);
-        for (let i = 1; i <= maxPages; i++) {
-          if (onProgress) onProgress(`Membaca halaman PDF ${i} dari ${maxPages}...`, 25 + Math.round((i / maxPages) * 55));
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-
-          // Rekonstruksi baris naskah berdasarkan koordinat Y
-          let lastY = null;
-          let pageLines = [];
-          let currentLine = "";
-          for (const item of textContent.items) {
-            const y = item.transform ? Math.round(item.transform[5]) : null;
-            if (lastY !== null && y !== null && Math.abs(y - lastY) > 5) {
-              if (currentLine.trim()) pageLines.push(currentLine.trim());
-              currentLine = "";
-            }
-            currentLine += (currentLine ? " " : "") + item.str;
-            lastY = y;
-          }
-          if (currentLine.trim()) pageLines.push(currentLine.trim());
-          fullText += pageLines.join("\n") + "\n\n";
-        }
-        if (fullText.trim().length > 20) {
-          return fullText;
-        }
-      } catch (pdfErr) {
-        console.warn("PDF.js extractor fallback:", pdfErr);
-      }
-    }
-
-    // Native PDF Parser Fallback (Tanpa Worker)
-    try {
-      const bytes = new Uint8Array(buffer);
-      let rawStr = "";
-      const sampleLen = Math.min(bytes.length, 500000);
-      for (let i = 0; i < sampleLen; i++) rawStr += String.fromCharCode(bytes[i]);
-
-      const texts = [];
-      const tjMatches = rawStr.match(/\(([^)]+)\)\s*Tj/g);
-      if (tjMatches) {
-        tjMatches.forEach((m) => {
-          const sub = m.replace(/\)\s*Tj$/, "").replace(/^\(/, "");
-          texts.push(sub);
-        });
-      }
-      const tjArrayMatches = rawStr.match(/\[([^\]]+)\]\s*TJ/g);
-      if (tjArrayMatches) {
-        tjArrayMatches.forEach((m) => {
-          const inner = m.match(/\(([^)]+)\)/g);
-          if (inner) texts.push(inner.map((t) => t.slice(1, -1)).join(""));
-        });
-      }
-
-      if (typeof DecompressionStream !== "undefined") {
-        const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
-        let match;
-        let streamCount = 0;
-        while ((match = streamRegex.exec(rawStr)) !== null && streamCount < 30) {
-          streamCount++;
-          try {
-            const streamIdx = rawStr.indexOf("stream", match.index);
-            let dataStart = streamIdx + 6;
-            if (rawStr[dataStart] === "\r" && rawStr[dataStart + 1] === "\n") dataStart += 2;
-            else if (rawStr[dataStart] === "\n") dataStart += 1;
-
-            const endIdx = rawStr.indexOf("endstream", dataStart);
-            if (endIdx > dataStart) {
-              const streamBytes = bytes.subarray(dataStart, endIdx);
-              if (streamBytes.length > 4 && streamBytes[0] === 0x78) {
-                const ds = new DecompressionStream("deflate");
-                const writer = ds.writable.getWriter();
-                writer.write(streamBytes);
-                writer.close();
-                const response = new Response(ds.readable);
-                const decomp = await response.text();
-                const innerTj = decomp.match(/\(([^)]+)\)\s*Tj/g);
-                if (innerTj) {
-                  innerTj.forEach((t) => texts.push(t.replace(/\)\s*Tj$/, "").replace(/^\(/, "")));
-                }
-              }
-            }
-          } catch (_) {}
-        }
-      }
-      if (texts.length) return texts.join(" ");
-    } catch (err) {
-      console.warn("Native PDF parser error:", err);
-    }
-    return "";
-  }
-
-  async function extractTextFromImage(file, onProgress) {
-    if (onProgress) onProgress(`Memproses citra naskah ${file.name}...`, 25);
-    if (typeof window !== "undefined" && window.Tesseract) {
-      try {
-        if (onProgress) onProgress(`Menjalankan mesin OCR Tesseract untuk ${file.name}...`, 35);
-        const res = await window.Tesseract.recognize(file, "ind+eng", {
-          logger: (m) => {
-            if (m.status === "recognizing text" && onProgress) {
-              const pct = 35 + Math.round((m.progress || 0) * 55);
-              onProgress(`Mengenali isi citra naskah: ${pct}%`, pct);
-            }
-          }
-        });
-        if (res && res.data && res.data.text && res.data.text.trim().length > 10) {
-          return res.data.text;
-        }
-      } catch (tessErr) {
-        console.warn("Tesseract OCR fallback to filename & canvas:", tessErr);
-      }
-    }
-
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result;
-        const img = new Image();
-        img.onload = () => {
-          if (onProgress) onProgress("Binarisasi piksel citra naskah...", 80);
-          const fileNameHint = file.name.replace(/\.[^/.]+$/, "").replace(/[\_\-\.]+/g, " ");
-          resolve(fileNameHint);
-        };
-        img.onerror = () => resolve(file.name);
-        img.src = String(dataUrl);
-      };
-      reader.onerror = () => resolve(file.name);
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function analyzeDocumentText(rawText, partners, fileName = "") {
-    const text = (rawText || "") + "\n" + (fileName || "");
-    const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
-    const patch = {};
-    const findings = [];
-    const provenance = {};
-
-    const setPatch = (key, val, label, conf = "Tinggi") => {
-      if (val && !patch[key]) {
-        patch[key] = val;
-        provenance[key] = "EKSTRAKSI_CERDAS";
-        findings.push({ key, label, value: val, confidence: conf });
-      }
-    };
-
-    // 1. Jenis Naskah
-    if (/MEMORANDUM OF UNDERSTANDING|NOTA KESEPAHAMAN|NOTA KESEPAKATAN|\bMOU\b|\bLOI\b|LETTER OF INTENT/i.test(text)) {
-      setPatch("documentType", "MOU_LOI", "Jenis Naskah (MoU / LOI)");
-    } else if (/PERJANJIAN KERJA\s*SAMA|PERJANJIAN KERJASAMA|\bPKS\b|MEMORANDUM OF AGREEMENT|\bMOA\b|KONTRAK KERJA\s*SAMA/i.test(text)) {
-      setPatch("documentType", "PKS_MOA", "Jenis Naskah (PKS / MoA)");
-    } else if (/IMPLEMENTATION ARRANGEMENT|\bIA\b|RENCANA KERJA PELAKSANAAN|NASKAH PELAKSANAAN|KERANGKA ACUAN KERJA/i.test(text)) {
-      setPatch("documentType", "IA", "Jenis Naskah (IA / Pelaksanaan)");
-    } else if (/PROPOSAL/i.test(text)) {
-      setPatch("documentType", "PROPOSAL", "Jenis Naskah (Proposal)");
-    } else if (/LAPORAN|\bLPJ\b|PERTANGGUNGJAWABAN/i.test(text)) {
-      setPatch("documentType", "LAPORAN", "Jenis Naskah (Laporan)");
-    } else {
-      setPatch("documentType", "MOU_LOI", "Jenis Naskah (Default MoU)", "Standar");
-    }
-
-    // 2. Nomor Dokumen (Mendukung multiline, format Del, format Mitra, dan Nomor Bersama)
-    const numRegexes = [
-      /(?:nomor|n\s*o\s*m\s*o\s*r|no\.?)\s*(?:naskah|dokumen|pihak\s+pertama|itdel|it\s+del)?\s*[:=]?\s*[\r\n\s]*([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)/i,
-      /(?:nomor|n\s*o\s*m\s*o\s*r|no\.?)\s*(?:naskah|dokumen)?\s*[:=]?\s*[\r\n\s]*([0-9]{1,4}\/[0-9A-Za-z\.\-]+\/(?:MoU|PKS|IA|MoA)\/[0-9]{4})/i,
-      /(?:nomor|n\s*o\s*m\s*o\s*r|no\.?)\s*[:=]?\s*[\r\n\s]*([0-9A-Za-z\.\-\/]+(?:MoU|PKS|IA|MoA)[0-9A-Za-z\.\-\/]*)/i,
-      /(?:nomor|n\s*o\s*m\s*o\s*r|no\.?)\s*[:=]?\s*[\r\n\s]*([0-9]{1,4}(?:\.[0-9]{1,3})?\/[0-9A-Za-z\.\-\/]+)/i,
-      /\b([0-9]{1,4}\/(?:ITDel|IT-Del|DEL)\/[A-Za-z0-9\.\-\/]+)\b/i,
-      /\b([0-9]{1,4}\/[A-Za-z0-9\.\-]+\/(?:MoU|PKS|IA|MoA)\/[0-9]{4})\b/i
-    ];
-    for (const reg of numRegexes) {
-      const m = text.match(reg);
-      if (m && m[1] && m[1].length >= 4 && !/^(induk|hp|telepon|rekening|fax)/i.test(m[1])) {
-        setPatch("documentNumber", m[1].trim(), "Nomor Dokumen Resmi");
-        break;
-      }
-    }
-
-    // 3. Judul Kerja Sama
-    const titleRegexes = [
-      /(?:TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G|HAL|PERIHAL)\s*[:\s]*[\r\n]*([^\r\n]+(?:\r?\n[^\r\n]+){0,3})/i,
-      /(?:KERJA\s*SAMA|KERJASAMA)\s+([^\r\n]+(?:\r?\n[^\r\n]+){0,2})/i
-    ];
-    for (const reg of titleRegexes) {
-      const m = text.match(reg);
-      if (m && m[1]) {
-        let rawTitle = cleanString(m[1]);
-        rawTitle = rawTitle.replace(/\b(NOMOR|NO\.?|PASAL|PIHAK|DITETAPKAN|HARI INI|PADA HARI INI|BAB|KEDUA BELAH PIHAK)\b.*$/is, "").trim();
-        rawTitle = rawTitle.replace(/^[:\s\-]+/, "").replace(/[:\s\-]+$/, "");
-        if (rawTitle.length > 8) {
-          setPatch("title", rawTitle, "Judul Kerja Sama");
-          break;
-        }
-      }
-    }
-    if (!patch.title) {
-      for (let i = 0; i < Math.min(lines.length, 15); i++) {
-        if (/kerja sama|pengembangan|pelatihan|penelitian|magang|pengabdian/i.test(lines[i]) && lines[i].length > 15) {
-          let lineTitle = cleanString(lines[i]).replace(/\b(NOMOR|NO\.?|PASAL)\b.*$/i, "").trim();
-          if (lineTitle.length > 8) {
-            setPatch("title", lineTitle, "Judul Kerja Sama (Baris Naskah)", "Sedang");
-            break;
-          }
-        }
-      }
-    }
-
-    // 4. Mitra Kerja Sama (Katalog Luas & Auto-Registrasi Pintar)
-    let detectedPartner = null;
-    const lowerText = text.toLowerCase();
-    for (const p of partners) {
-      const pNameLower = p.name.toLowerCase();
-      const pShortLower = (p.shortName || "").toLowerCase();
-      if (lowerText.includes(pNameLower) || (pShortLower.length >= 3 && lowerText.includes(pShortLower))) {
-        detectedPartner = p;
-        break;
-      }
-    }
-
-    if (detectedPartner) {
-      setPatch("partnerId", detectedPartner.id, "Mitra Terdaftar: " + detectedPartner.name);
-    } else {
-      // Deteksi mitra dari klausa ANTARA ... DENGAN [MITRA] atau PIHAK KEDUA: [MITRA]
-      const partnerPats = [
-        /(?:DENGAN|D\s*E\s*N\s*G\s*A\s*N)\s*[\r\n\s]+([A-Z0-9\s\.,\(\)\-]{5,85}?)(?:[\r\n]+|TENTANG|T\s*E\s*N\s*T\s*A\s*N\s*G|PASAL|,|\.|$)/i,
-        /(?:PIHAK\s+KEDUA|Pihak\s+Kedua)[:\s]*[\r\n\s]*([A-Za-z0-9\s\.,\(\)\-]{5,85}?)(?:[\r\n]+|bertindak|selaku|TENTANG|,|\.|$)/i,
-        /(?:bertindak\s+untuk\s+dan\s+atas\s+nama)\s+([A-Za-z0-9\s\.,\(\)\-]{5,80}?)(?:[\r\n]+|,|\.|$)/i
-      ];
-
-      for (const pReg of partnerPats) {
-        const mPart = text.match(pReg);
-        if (mPart && mPart[1]) {
-          const cand = cleanString(mPart[1]).replace(/^(?:antara|dan|atas nama|pihak kedua|pihak pertama)\s+/i, "").trim();
-          if (cand.length >= 4 && !/^(institut|rektor|dekan|itdel|it\s+del)/i.test(cand)) {
-            const newId = "PRT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-            const newPartner = {
-              id: newId,
-              name: cand,
-              shortName: cand.length > 25 ? cand.substring(0, 22) + "..." : cand,
-              type: /PEMERINTAH|KABUPATEN|KOTA|DINAS|KEMENTERIAN|PEMKAB|PEMPROV/i.test(cand) ? "PEMERINTAH" :
-                    /UNIVERSITAS|INSTITUT|POLITEKNIK|SEKOLAH|AKADEMI/i.test(cand) ? "PERGURUAN_TINGGI" :
-                    /BUMN|PERSERO/i.test(cand) ? "BUMN" : "SWASTA",
-              country: "Indonesia",
-              city: /Toba|Balige|Laguboti/i.test(cand) ? "Balige" : /Medan|Sumut/i.test(cand) ? "Medan" : "Jakarta"
-            };
-            partners.push(newPartner);
-            setPatch("partnerId", newPartner.id, "Mitra Baru Terdeteksi & Terdaftar: " + cand);
-            patch.partnerDraft = cand;
-            break;
-          }
-        }
-      }
-    }
-
-    // 5. Pejabat Penandatangan IT Del (Terkini 2025–2026/2029)
-    if (/Arnaldo\s+Marulitua\s+Sinaga|Arnaldo\s+Sinaga/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del (Rektor)");
-      setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del");
-    } else if (/Good\s+Fried\s+Panggabean|Good\s+Fried/i.test(text)) {
-      setPatch("itdelSignatory", "Good Fried Panggabean, S.T., M.T., Ph.D.", "Penandatangan IT Del (WR 1)");
-      setPatch("itdelSignatoryTitle", "Wakil Rektor I Bidang Akademik dan Kemahasiswaan IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Rosni\s+Lumbantoruan/i.test(text)) {
-      setPatch("itdelSignatory", "Rosni Lumbantoruan, Ph.D.", "Penandatangan IT Del (WR 2)");
-      setPatch("itdelSignatoryTitle", "Wakil Rektor II Bidang Perencanaan, Keuangan, dan Sumber Daya IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Ellyas\s+(?:Alga\s+)?Nainggolan/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Ellyas Alga Nainggolan, S.TP., M.Sc., Ph.D.", "Penandatangan IT Del (WR 3 Kemitraan)");
-      setPatch("itdelSignatoryTitle", "Wakil Rektor III Bidang Kemitraan, Inovasi, dan Kewirausahaan IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Indra\s+Hartarto\s+Tambunan|Indra\s+Tambunan/i.test(text)) {
-      setPatch("itdelSignatory", "Indra Hartarto Tambunan, Ph.D.", "Penandatangan IT Del (Dekan FITE)");
-      setPatch("itdelSignatoryTitle", "Dekan Fakultas Informatika dan Teknik Elektro IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Fitriani\s+Tupa\s+Ronauli\s+Silalahi|Fitriani\s+(?:Tupa\s+)?Silalahi/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Fitriani Tupa Ronauli Silalahi, S.Si., M.Si.", "Penandatangan IT Del (Dekan FTI)");
-      setPatch("itdelSignatoryTitle", "Dekan Fakultas Teknologi Industri IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Merry\s+(?:Meryam\s+)?Martgrita/i.test(text)) {
-      setPatch("itdelSignatory", "Dr. Merry Meryam Martgrita, S.Si., M.Si.", "Penandatangan IT Del (Dekan FB)");
-      setPatch("itdelSignatoryTitle", "Dekan Fakultas Bioteknologi IT Del", "Jabatan Penandatangan IT Del");
-    } else if (/Riyanthi\s+(?:Angrainy\s+)?Sianturi/i.test(text)) {
-      setPatch("itdelSignatory", "Riyanthi Angrainy Sianturi, S.Sos., M.Ds.", "Penandatangan IT Del (Dekan FV)");
-      setPatch("itdelSignatoryTitle", "Dekan Fakultas Vokasi IT Del", "Jabatan Penandatangan IT Del");
-    } else {
-      setPatch("itdelSignatory", "Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech.", "Penandatangan IT Del (Default Rektor)", "Baku");
-      setPatch("itdelSignatoryTitle", "Rektor Institut Teknologi Del", "Jabatan Penandatangan IT Del", "Baku");
-    }
-
-    // 6. Pejabat Penandatangan Mitra
-    const itDelPersons = /Arnaldo|Sinaga|Good\s*Fried|Panggabean|Rosni|Lumbantoruan|Ellyas|Nainggolan|Indra\s*Hartarto|Tambunan|Fitriani\s*(?:Tupa|Silalahi)|Merry\s*(?:Meryam|Martgrita)|Riyanthi|Sianturi/i;
-    const signatoryPats = [
-      /(?:Prof\.|Dr\.|Ir\.|Drs\.|Dra\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}(?:,\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D|B\.Eng|M\.Eng|Sc|Si|Kom|T|E|M|H|Pd)\b[A-Za-z\.,\s]*)?)/g,
-      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}),\s*(?:S\.[A-Za-z]+|M\.[A-Za-z]+|Ph\.D\.|B\.Eng\.|M\.Eng\.|S\.Kom\.|M\.Kom\.|S\.T\.|M\.T\.|S\.Si\.|M\.Si\.|S\.E\.|M\.M\.|S\.H\.|M\.H\.)/g,
-      /(?:Pihak Kedua|PIHAK KEDUA)[^:\n]*[:\n\r]+\s*([A-Za-z\.,\s]{4,60}?)(?:,\s*(?:bertindak|selaku|dalam hal|Bupati|Kepala|Direktur|Rektor|Dekan|Pimpinan)|$)/img
-    ];
-
-    for (const reg of signatoryPats) {
-      let match;
-      while ((match = reg.exec(text)) !== null) {
-        let cand = cleanString(match[0]).replace(/^(?:dan|atau|selaku|bertindak|pihak kedua|pihak pertama)[:\s]*/i, "");
-        if (!itDelPersons.test(cand) && isPersonName(cand)) {
-          setPatch("partnerSignatory", cand, "Penandatangan Pihak Mitra");
-          break;
-        }
-      }
-      if (patch.partnerSignatory) break;
-    }
-
-    const titlePats = [
-      /(?:Bupati\s+[A-Za-z]+|Wakil Bupati\s+[A-Za-z]+|Gubernur\s+[A-Za-z\s]+|Walikota\s+[A-Za-z]+)/i,
-      /(?:Direktur\s+Utama|Direktur\s+Operasional|Direktur\s+Eksekutif|Direktur)/i,
-      /(?:Kepala\s+Dinas\s+[A-Za-z\s]+|Kepala\s+Badan\s+[A-Za-z\s]+|Kepala\s+Sekolah)/i,
-      /(?:Dekan\s+[A-Za-z\s\-]+|Rektor\s+[A-Za-z\s]+|Ketua\s+[A-Za-z\s]+)/i
-    ];
-    for (const reg of titlePats) {
-      const m = text.match(reg);
-      if (m && !/Rektor\s+Institut\s+Teknologi\s+Del|Dekan\s+Fakultas\s+(?:Informatika|Teknologi Industri|Bioteknologi|Vokasi)\s+IT\s+Del/i.test(m[0])) {
-        setPatch("partnerSignatoryTitle", cleanString(m[0]), "Jabatan Penandatangan Mitra");
-        break;
-      }
-    }
-
-    // 7. Kategori Fakultas & Program Studi (4 Fakultas & 9 Program Studi IT Del)
-    if (/fakultas vokasi|\bfv\b|rekayasa perangkat lunak|\btrpl\b|d3 teknologi informasi|d3 ti|d3 teknologi komputer|d3 tk|vokasi|terapan/i.test(lowerText)) {
-      setPatch("facultyId", "FV", "Fakultas Terkait (FV - Fakultas Vokasi)");
-      if (/rekayasa perangkat lunak|\btrpl\b/i.test(lowerText)) {
-        setPatch("programId", "TRPL", "Program Studi (D4 Teknologi Rekayasa Perangkat Lunak)");
-      } else if (/teknologi komputer|d3 tk|jaringan komputer|hardware|embedded/i.test(lowerText)) {
-        setPatch("programId", "D3TK", "Program Studi (D3 Teknologi Komputer)");
-      } else {
-        setPatch("programId", "D3TI", "Program Studi (D3 Teknologi Informasi)");
-      }
-    } else if (/fakultas informatika|teknik elektro|\bfite\b|sistem informasi|software|komputer|cyber|data|ai\b/i.test(lowerText)) {
-      setPatch("facultyId", "FITE", "Fakultas Terkait (FITE)");
-      if (/teknik elektro|arus kuat|arus lemah|tenaga listrik|telekomunikasi|elektronika/i.test(lowerText)) {
-        setPatch("programId", "TE", "Program Studi (S1 Teknik Elektro)");
-      } else if (/sistem informasi|erp|bisnis digital|crm|analisis bisnis|tata kelola/i.test(lowerText)) {
-        setPatch("programId", "SI", "Program Studi (S1 Sistem Informasi)");
-      } else {
-        setPatch("programId", "IF", "Program Studi (S1 Informatika)");
-      }
-    } else if (/teknologi industri|\bfti\b|manajemen rekayasa|teknik metalurgi|metalurgi|rantai pasok|manufaktur|logistik|pabrik|optimasi|material/i.test(lowerText)) {
-      setPatch("facultyId", "FTI", "Fakultas Terkait (FTI)");
-      if (/metalurgi|material|smelter|ekstraksi logam|korosi/i.test(lowerText)) {
-        setPatch("programId", "TM", "Program Studi (S1 Teknik Metalurgi)");
-      } else {
-        setPatch("programId", "MR", "Program Studi (S1 Manajemen Rekayasa)");
-      }
-    } else if (/bioteknologi|\bfb\b|bioproses|mikrobiologi|lingkungan|fermentasi|hayati|pangan/i.test(lowerText)) {
-      setPatch("facultyId", "FB", "Fakultas Terkait (FB)");
-      setPatch("programId", "BP", "Program Studi (S1 Teknik Bioproses)");
-    } else {
-      setPatch("facultyId", "FITE", "Fakultas (Default FITE)");
-      setPatch("programId", "IF", "Program Studi (S1 Informatika)");
-    }
-
-    // 8. Klasifikasi Tri Dharma
-    const triParts = [];
-    if (/pendidikan|kuliah|magang|praktik kerja|kurikulum|mahasiswa|beasiswa|dosen tamu|pengajaran|workshop|mbkm/i.test(lowerText)) {
-      triParts.push("PENDIDIKAN");
-    }
-    if (/penelitian|riset|publikasi|jurnal|laboratorium|kajian|eksperimen|paten|haki|inovasi/i.test(lowerText)) {
-      triParts.push("PENELITIAN");
-    }
-    if (/pengabdian|masyarakat|desa binaan|pelatihan warga|sosialisasi|pemberdayaan|umkm|aparatur desa|pkm/i.test(lowerText)) {
-      triParts.push("PENGABDIAN");
-    }
-    if (triParts.length === 0) triParts.push("PENDIDIKAN");
-    setPatch("triDharma", triParts.join("; "), "Klasifikasi Tri Dharma (" + triParts.join("; ") + ")");
-
-    // 9. Tanggal & Masa Berlaku
-    const months = {
-      januari: "01", feb: "02", februari: "02", mar: "03", maret: "03", apr: "04", april: "04",
-      mei: "05", jun: "06", juni: "06", jul: "07", juli: "07", agu: "08", agustus: "08",
-      sep: "09", september: "09", okt: "10", oktober: "10", nov: "11", november: "11", des: "12", desember: "12"
-    };
-
-    const dateIndoReg = /(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})/i;
-    const mDate = text.match(dateIndoReg);
-    if (mDate) {
-      const day = mDate[1].padStart(2, "0");
-      const month = months[mDate[2].toLowerCase()] || "01";
-      const year = mDate[3];
-      const isoDate = `${year}-${month}-${day}`;
-      setPatch("startDate", isoDate, "Tanggal Mulai Berlaku");
-      setPatch("signedDate", isoDate, "Tanggal Penandatanganan");
-    } else {
-      const mDmy = text.match(/\b(0[1-9]|[12]\d|3[01])[-/.](0[1-9]|1[0-2])[-/.](20\d{2})\b/);
-      if (mDmy) {
-        const isoDate = `${mDmy[3]}-${mDmy[2]}-${mDmy[1]}`;
-        setPatch("startDate", isoDate, "Tanggal Mulai Berlaku");
-        setPatch("signedDate", isoDate, "Tanggal Penandatanganan");
-      } else {
-        const mIso = text.match(/\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b/);
-        if (mIso) {
-          setPatch("startDate", mIso[0], "Tanggal Mulai Berlaku");
-          setPatch("signedDate", mIso[0], "Tanggal Penandatanganan");
-        } else {
-          // Default hari ini jika tidak tertulis eksplisit
-          const todayIso = new Date().toISOString().slice(0, 10);
-          setPatch("startDate", todayIso, "Tanggal Mulai (Hari Ini)", "Standar");
-          setPatch("signedDate", todayIso, "Tanggal Tandatangan (Hari Ini)", "Standar");
-        }
-      }
-    }
-
-    const mEnd = text.match(/(?:sampai\s+dengan|berakhir\s+pada|berlaku\s+hingga|s\.d\.?)\s*(?:tanggal\s+)?(\d{1,2})(?:\s*\([^)]*\))?\s*(?:bulan\s+)?(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(?:tahun\s+)?(\d{4})/i);
-    if (mEnd) {
-      const day = mEnd[1].padStart(2, "0");
-      const month = months[mEnd[2].toLowerCase()] || "01";
-      const year = mEnd[3];
-      setPatch("endDate", `${year}-${month}-${day}`, "Tanggal Berakhir");
-    } else {
-      const mEndDmy = text.match(/(?:sampai\s+dengan|berakhir|s\.d\.?)\s*(0[1-9]|[12]\d|3[01])[-/.](0[1-9]|1[0-2])[-/.](20\d{2})/i);
-      if (mEndDmy) {
-        setPatch("endDate", `${mEndDmy[3]}-${mEndDmy[2]}-${mEndDmy[1]}`, "Tanggal Berakhir");
-      } else {
-        const mDur = text.match(/(?:jangka\s+waktu|selama|masa\s+berlaku)\s*(?:adalah\s*)?(\d+)\s*(?:\([a-z\s]+\))?\s*tahun/i);
-        if (mDur && patch.startDate) {
-          const years = parseInt(mDur[1], 10);
-          const parts = patch.startDate.split("-").map(Number);
-          const endYear = parts[0] + years;
-          const d = new Date(endYear, parts[1] - 1, parts[2] - 1);
-          const isoEnd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-          setPatch("endDate", isoEnd, `Tanggal Berakhir (Durasi ${years} Tahun)`);
-        } else if (patch.startDate) {
-          // Default masa berlaku kerja sama perguruan tinggi = 3 tahun
-          const parts = patch.startDate.split("-").map(Number);
-          const endYear = parts[0] + 3;
-          const d = new Date(endYear, parts[1] - 1, parts[2] - 1);
-          const isoEnd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-          setPatch("endDate", isoEnd, "Tanggal Berakhir (Standar 3 Tahun)", "Standar");
-        }
-      }
-    }
-
-    // 10. Anggaran & Lokasi
-    const mBudget = text.match(/(?:Rp\.?|sebesar)\s*([0-9\.\,]{4,15})/i);
-    if (mBudget) {
-      setPatch("budget", "Rp " + mBudget[1].trim().replace(/\.+$/, ""), "Nilai Anggaran");
-    }
-
-    const locs = ["Laguboti", "Balige", "Toba", "Medan", "Danau Toba", "Jakarta", "Bandung", "Surabaya"];
-    for (const loc of locs) {
-      if (new RegExp(`\\b${loc}\\b`, "i").test(text)) {
-        setPatch("location", loc, "Lokasi Pelaksanaan");
-        break;
-      }
-    }
-
-    if (patch.title) {
-      setPatch("activityName", patch.title, "Nama Kegiatan");
-      setPatch("scope", patch.title, "Ruang Lingkup");
-    }
-
-    setPatch("pic", "Staf Unit Kerja Sama", "Penanggung Jawab (PIC)", "Baku");
-    setPatch("status", "AKTIF", "Status Operasional (Langsung Aktif di Tabel)", "Tinggi");
-
-    return { patch, provenance, findings };
-  }
-
-  function parseDocumentSummary(text, partners, fileName = "") {
-    const lines = text.split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
-    const patch = {};
-    const provenance = {};
-    for (const line of lines) {
-      const m = line.match(/^([^:=]+)[:=]\s*(.+)$/);
-      if (m) {
-        const rawKey = norm(m[1]);
-        const val = m[2].trim();
-        const alias = HEADER_ALIASES[rawKey];
-        if (alias && val) {
-          patch[alias] = val;
-          provenance[alias] = "BERKAS_RINGKASAN";
-        }
-      }
-    }
-    if (Object.keys(patch).length < 2) {
-      const rows = parseDelimited(text);
-      if (rows.length >= 2) {
-        const mapped = mapSheet(rows);
-        if (mapped.rows.length) {
-          const first = mapped.rows[0].values;
-          Object.assign(patch, first);
-          Object.keys(first).forEach((k) => { provenance[k] = "BERKAS_RINGKASAN"; });
-        }
-      }
-    }
-
-    const smart = analyzeDocumentText(text, partners, fileName);
-    const findings = [...smart.findings];
-
-    const resolved = {};
-    Object.assign(resolved, smart.patch);
-    Object.assign(provenance, smart.provenance);
-
-    if (patch.documentType) resolved.documentType = parseDocType(patch.documentType) || patch.documentType;
-    if (patch.documentNumber) resolved.documentNumber = patch.documentNumber;
-    if (patch.title) resolved.title = patch.title;
-    if (patch.startDate) resolved.startDate = parseDate(patch.startDate) || patch.startDate;
-    if (patch.endDate) resolved.endDate = parseDate(patch.endDate) || patch.endDate;
-    if (patch.signedDate) resolved.signedDate = parseDate(patch.signedDate) || patch.signedDate;
-    if (patch.faculty) resolved.facultyId = matchFaculty(patch.faculty);
-    if (patch.program) resolved.programId = matchProgram(patch.program);
-    if (patch.unit) resolved.unitId = matchUnit(patch.unit);
-    if (patch.scope) resolved.scope = patch.scope;
-    if (patch.activityName) resolved.activityName = patch.activityName;
-    if (patch.pic) resolved.pic = patch.pic;
-    if (patch.partnerSignatory) resolved.partnerSignatory = patch.partnerSignatory;
-    if (patch.partnerSignatoryTitle) resolved.partnerSignatoryTitle = patch.partnerSignatoryTitle;
-    if (patch.itdelSignatory) resolved.itdelSignatory = patch.itdelSignatory;
-    if (patch.itdelSignatoryTitle) resolved.itdelSignatoryTitle = patch.itdelSignatoryTitle;
-    if (patch.location) resolved.location = patch.location;
-    if (patch.budget) resolved.budget = patch.budget;
-    if (patch.fundingSource) resolved.fundingSource = patch.fundingSource;
-    if (patch.notes) resolved.notes = patch.notes;
-    if (patch.tri) resolved.triDharma = parseTri(patch.tri).join("; ");
-    if (patch.status) resolved.status = parseStoredStatus(patch.status);
-    if (patch.partnerName) {
-      const pname = norm(patch.partnerName);
-      const found = partners.find((p) => norm(p.name).includes(pname) || norm(p.shortName) === pname || pname.includes(norm(p.shortName)));
-      if (found) resolved.partnerId = found.id;
-    }
-    return { patch: resolved, provenance, findings };
-  }
   function naskahFromValues(values, partners, now = /* @__PURE__ */ new Date()) {
     const doc = blankNaskah(now);
     const warnings = [];
@@ -2189,6 +1551,7 @@ ${example.map(csvCell).join(",")}
       if (h === "impor" || h === "migrasi") return "impor";
       if (h === "relasi") return "relasi";
       if (h === "panduan") return "panduan";
+      if (h === "penyimpanan" || h === "storage") return "penyimpanan";
     } catch {
     }
     return "beranda";
@@ -2232,10 +1595,171 @@ ${example.map(csvCell).join(",")}
       aiExtractionResult: null
     };
   }
+  /* ---------------- Jembatan ke mesin ekstraksi dan OCR ---------------- */
+  var ocrWorker = null, ocrProgressCb = null;
+  function extractEnv() {
+    return { JSZip: window.JSZip, pdfjsLib: window.pdfjsLib, document, basePath: "", ocr: ocrRecognize };
+  }
+  function extractCtx() {
+    const L = LEADERSHIP_DIRECTORY;
+    return {
+      partners: state.partners,
+      docs: state.documents,
+      leaders: [L.rektorat.rektor, L.rektorat.wr1, L.rektorat.wr2, L.rektorat.wr3, ...L.fakultas.map((f) => ({ name: f.dekan, title: "Dekan " + f.name }))]
+    };
+  }
+  async function ocrRecognize(src, label, onProgress) {
+    if (!window.Tesseract) throw new Error("Mesin OCR tidak tersedia pada halaman ini.");
+    ocrProgressCb = onProgress;
+    const abs = (rel) => new URL(rel, document.baseURI).href;
+    if (!ocrWorker) {
+      ocrWorker = await window.Tesseract.createWorker(["ind", "eng"], 1, {
+        workerPath: abs("js/ocr/worker.min.js"),
+        corePath: abs("js/ocr/"),
+        langPath: abs("js/ocr/lang"),
+        gzip: true,
+        logger: (m) => {
+          if (ocrProgressCb && m.status === "recognizing text") ocrProgressCb("OCR " + Math.round((m.progress || 0) * 100) + "%", 30 + Math.round((m.progress || 0) * 50));
+          else if (ocrProgressCb && m.status) ocrProgressCb("OCR: " + m.status, 20);
+        }
+      });
+    }
+    const res = await ocrWorker.recognize(src);
+    return { text: res.data.text || "", confidence: res.data.confidence };
+  }
+  function normalizeDoc(d) {
+    const doc = { ...blankNaskah(), ...d };
+    if (!Array.isArray(doc.triDharma)) doc.triDharma = parseTri(String(doc.triDharma || ""));
+    if (!doc.validation || !doc.validation.state) doc.validation = { state: "VALIDATED", by: "Data awal", at: "" };
+    doc.provenance = doc.provenance || {};
+    return doc;
+  }
+  function isEmptyDraft(d) {
+    return !d.documentNumber && !d.title && !d.fileName && !d.partnerId && (!d.validation || d.validation.state === "DRAFT");
+  }
+  /* ---------------- Penyimpanan, memori, dan simulasi ---------------- */
+  function pctOf(a, b) { return b ? Math.min(100, Math.round((a / b) * 1000) / 10) : 0; }
+  function storageView(role) {
+    const st = state.storage;
+    const mode = KSDASStore.mode;
+    const srv = st && st.server;
+    const sim = state.simResult;
+    const b = st && st.browser ? st.browser : {};
+    const mem = st && st.memory ? st.memory : {};
+    const canAct = role.canWrite;
+    const act = (id, label, cls = "btn-subtle", write = false) => `<button type="button" id="${id}" class="${cls}" ${write && !canAct ? "disabled" : ""}>${label}</button>`;
+    return `
+    <h1>Penyimpanan, Storage, dan Memori</h1>
+    <p class="muted">Halaman ini mendemonstrasikan bagaimana KSDAS menyimpan data, berkas, audit, dan cadangan, serta memantau pemakaian ruang dan memori. Tombol simulasi memakai data uji sendiri dan tidak menyentuh data naskah.</p>
+    <section class="modebanner ${mode === "local-server" ? "m-local" : "m-browser"}" role="status">
+      <b>Mode: ${mode === "local-server" ? "Server lokal (KSDAS_ITDel.exe)" : "Peramban (GitHub Pages)"}</b>
+      <p>${mode === "local-server"
+        ? `Data ditulis ke folder pada disk komputer ini: <code>${esc(srv ? srv.dbDir : (KSDASStore.serverInfo && KSDASStore.serverInfo.dbDir) || "ksdas_local_database")}</code>. Data tetap ada walau peramban dibersihkan.`
+        : `Data disimpan di IndexedDB dan localStorage peramban ini. Data tidak dikirim ke server mana pun, dan hilang bila data situs dibersihkan. Untuk penyimpanan berbasis folder di disk, jalankan KSDAS_ITDel.exe.`}
+      </p>
+    </section>
+    <div class="row">${act("st-refresh", "Segarkan data", "btn-primary")}
+      ${mode === "browser" ? act("st-persist", "Minta penyimpanan persisten") : act("st-open-folder", "Tampilkan folder basis data")}
+    </div>
+    ${!st ? `<p role="status">Memuat statistik penyimpanan...</p>` : `
+    <div class="cards">
+      <div class="card"><h2>Kuota peramban</h2>
+        ${b.quota ? `<progress max="100" value="${pctOf(b.usage, b.quota)}" aria-label="Pemakaian kuota"></progress><p><b>${esc(fmtBytes(b.usage))}</b> dari ${esc(fmtBytes(b.quota))} (${pctOf(b.usage, b.quota)}%)</p>` : `<p>Tidak tersedia pada peramban ini.</p>`}
+        <p class="small">Persisten: <b>${b.persisted === true ? "Ya" : b.persisted === false ? "Belum" : "—"}</b> &middot; IndexedDB: <b>${b.idb ? "Aktif" : "Tidak tersedia"}</b></p></div>
+      <div class="card"><h2>Data aplikasi</h2>
+        <p><b>${st.tables[0].rows}</b> naskah, <b>${st.tables[1].rows}</b> mitra</p>
+        <p class="small">Ukuran data (JSON): <b>${esc(fmtBytes(st.stateBytes))}</b><br>localStorage: <b>${esc(fmtBytes(b.localStorageBytes))}</b></p></div>
+      <div class="card"><h2>Berkas lampiran</h2>
+        <p><b>${st.fileCount ?? (srv ? srv.fileCount : 0)}</b> berkas</p>
+        <p class="small">Total: <b>${esc(fmtBytes(st.fileBytes ?? (srv ? srv.fileBytes : 0)))}</b></p></div>
+      <div class="card"><h2>Audit dan cadangan</h2>
+        <p><b>${st.auditCount ?? (srv ? srv.auditCount : 0)}</b> catatan audit</p>
+        <p class="small"><b>${st.backupCount ?? (srv ? srv.backupCount : 0)}</b> cadangan</p></div>
+      <div class="card"><h2>Memori ${mode === "local-server" ? "(proses server)" : "(peramban)"}</h2>
+        ${srv && srv.workingSetBytes != null ? `<p>Working set: <b>${esc(fmtBytes(srv.workingSetBytes))}</b></p><p class="small">Heap terkelola (GC): <b>${esc(fmtBytes(srv.gcBytes))}</b><br>Waktu hidup: <b>${esc(String(srv.uptimeSec))} detik</b></p>` : ""}
+        ${mem.jsHeapUsed != null ? `<progress max="100" value="${pctOf(mem.jsHeapUsed, mem.jsHeapLimit)}" aria-label="Heap JavaScript"></progress><p>Heap JS: <b>${esc(fmtBytes(mem.jsHeapUsed))}</b> dari batas ${esc(fmtBytes(mem.jsHeapLimit))}</p>` : `<p class="small">Pengukuran heap JS hanya tersedia di peramban berbasis Chromium.</p>`}
+        ${mem.deviceMemoryGB ? `<p class="small">Perkiraan RAM perangkat: ${mem.deviceMemoryGB} GB</p>` : ""}
+        <p class="small">Memori simulasi aktif: <b>${mem.simulatedMB || 0} MB</b></p></div>
+      ${srv ? `<div class="card"><h2>Disk komputer</h2>
+        <progress max="100" value="${pctOf(srv.diskTotalBytes - srv.diskFreeBytes, srv.diskTotalBytes)}" aria-label="Pemakaian disk"></progress>
+        <p>Kosong <b>${esc(fmtBytes(srv.diskFreeBytes))}</b> dari ${esc(fmtBytes(srv.diskTotalBytes))}</p>
+        <p class="small">Folder basis data: <b>${esc(fmtBytes(srv.dbBytes))}</b></p></div>` : ""}
+    </div>
+
+    <section><h2>Tabel basis data</h2>
+      <div class="tablewrap"><table><caption class="sr">Tabel basis data dan ukurannya</caption>
+        <thead><tr><th scope="col">Tabel</th><th scope="col">Baris</th><th scope="col">Ukuran data</th>${srv ? '<th scope="col">Berkas di disk</th>' : ""}</tr></thead>
+        <tbody>${st.tables.map((t) => {
+          const f = srv && srv.tables ? srv.tables.find((x) => x.name === t.name) : null;
+          return `<tr><td><code>${esc(t.name)}</code></td><td>${t.rows}</td><td>${esc(fmtBytes(t.bytes))}</td>${srv ? `<td>${f ? esc(f.path) + " (" + esc(fmtBytes(f.bytes)) + ")" : "belum ditulis"}</td>` : ""}</tr>`;
+        }).join("")}</tbody></table></div>
+      ${srv && srv.tree ? `<details><summary>Isi folder basis data (${srv.tree.length} entri)</summary><ul class="tree">${srv.tree.map((e) => `<li><code>${esc(e.path)}</code> ${e.dir ? "" : "(" + esc(fmtBytes(e.bytes)) + ")"}</li>`).join("")}</ul></details>` : ""}
+    </section>`}
+
+    <section><h2>Simulasi tulis dan baca</h2>
+      <p class="muted">Menulis sejumlah rekaman uji ke ${mode === "local-server" ? "disk lewat server lokal" : "IndexedDB"}, membacanya kembali, lalu mengukur waktu. Hasil bergantung pada perangkat.</p>
+      <div class="row">
+        <label>Jumlah rekaman <input id="sim-count" type="number" min="1" max="5000" value="${esc(String(state.simCount || 200))}"></label>
+        <label>Ukuran per rekaman (KB) <input id="sim-kb" type="number" min="1" max="256" value="${esc(String(state.simKb || 4))}"></label>
+        ${act("st-sim-io", "Jalankan simulasi", "btn-primary")}
+        ${act("st-sim-clear", "Bersihkan data simulasi")}
+      </div>
+      ${state.simBusy ? `<p role="status">Menjalankan simulasi...</p>` : ""}
+      ${sim ? `<div class="tablewrap"><table><caption class="sr">Hasil simulasi tulis dan baca</caption><thead><tr><th scope="col">Rekaman</th><th scope="col">Total data</th><th scope="col">Waktu tulis</th><th scope="col">Waktu baca</th><th scope="col">Laju tulis</th></tr></thead>
+        <tbody><tr><td>${sim.count} &times; ${sim.kb} KB</td><td>${esc(fmtBytes(sim.bytes))}</td><td>${sim.writeMs} ms${sim.serverWriteMs != null ? ` (server ${sim.serverWriteMs} ms)` : ""}</td><td>${sim.readMs} ms</td><td>${sim.writeMs ? (sim.bytes / 1048576 / (sim.writeMs / 1000)).toFixed(1) : "—"} MB/dtk</td></tr></tbody></table></div>` : ""}
+    </section>
+
+    <section><h2>Simulasi memori</h2>
+      <p class="muted">Mengalokasikan blok memori di ${mode === "local-server" ? "peramban yang menampilkan antarmuka" : "peramban ini"} untuk menunjukkan beda memori kerja (RAM, hilang saat ditutup) dan penyimpanan (disk, tetap ada).</p>
+      <div class="row">
+        <label>Alokasi (MB) <input id="mem-mb" type="number" min="1" max="256" value="${esc(String(state.memMb || 32))}"></label>
+        ${act("st-mem-alloc", "Alokasikan", "btn-primary")}
+        ${act("st-mem-release", "Lepaskan")}
+      </div>
+      ${state.memNote ? `<p role="status">${esc(state.memNote)}</p>` : ""}
+    </section>
+
+    <section><h2>Cadangan dan pemulihan</h2>
+      <div class="row">
+        ${act("st-backup", "Buat cadangan sekarang", "btn-primary", true)}
+        ${act("st-drill", "Uji pemulihan (tidak mengubah data)")}
+        ${act("st-export", "Ekspor JSON")}
+        <label class="btn-subtle filebtn ${canAct ? "" : "dis"}">Impor JSON<input id="st-import" type="file" accept=".json,application/json" hidden ${canAct ? "" : "disabled"}></label>
+      </div>
+      ${state.drillNote ? `<p role="status" class="${state.drillOk ? "ok" : "bad"}">${esc(state.drillNote)}</p>` : ""}
+      ${(state.backups || []).length ? `<div class="tablewrap"><table><caption class="sr">Daftar cadangan</caption><thead><tr><th scope="col">Nama</th><th scope="col">Waktu</th><th scope="col">Ukuran</th><th scope="col">Naskah</th><th scope="col">SHA-256</th><th scope="col"><span class="sr">Aksi</span></th></tr></thead>
+        <tbody>${state.backups.slice(0, 10).map((x) => `<tr><td>${esc(x.name)}</td><td>${esc((x.at || "").slice(0, 19).replace("T", " "))}</td><td>${esc(fmtBytes(x.bytes))}</td><td>${x.documents ?? "—"}</td><td><code>${esc((x.sha256 || "").slice(0, 10))}</code></td>
+          <td>${canAct ? `<button type="button" class="link" data-restore="${esc(x.name)}">Pulihkan</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Belum ada cadangan.</p>`}
+    </section>
+
+    <section><h2>Catatan audit terbaru</h2>
+      ${(state.auditItems || []).length ? `<div class="tablewrap"><table><caption class="sr">Catatan audit</caption><thead><tr><th scope="col">Waktu</th><th scope="col">Pelaku</th><th scope="col">Aksi</th><th scope="col">Objek</th><th scope="col">Rincian</th></tr></thead>
+        <tbody>${state.auditItems.slice(0, 20).map((x) => `<tr><td>${esc((x.at || "").slice(0, 19).replace("T", " "))}</td><td>${esc(x.actor || "")}</td><td>${esc(x.action || "")}</td><td>${esc(x.target || "")}</td><td>${esc(x.detail || "")}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Belum ada catatan audit.</p>`}
+    </section>
+    <p class="muted small">Penyimpanan ini adalah prototipe. Basis data, penyimpanan berkas, dan cadangan produksi ditentukan SDI/TSI/DukTek. Lihat dokumen Runbook Integrasi.</p>`;
+  }
+  async function refreshStorage(rerender = true) {
+    try {
+      state.storage = await KSDASStore.stats(state);
+      state.backups = await KSDASStore.listBackups().catch(() => []);
+      state.auditItems = await KSDASStore.listAudit(30).catch(() => []);
+    } catch (e) {
+      state.notice = "Gagal membaca statistik penyimpanan: " + String(e && e.message || e);
+    }
+    if (rerender && state.view === "penyimpanan") render();
+  }
   var state = load();
+  state.documents = state.documents.map(normalizeDoc);
   seedAudit();
   function save() {
-    localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners }));
+    state.documents = state.documents.filter((d) => !isEmptyDraft(d) || d.id === state.editingId);
+    const snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: new Date().toISOString() };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(snap));
+    } catch (e) {
+      state.notice = "Cache peramban penuh. Data tetap disimpan di penyimpanan utama (IndexedDB atau disk).";
+    }
+    KSDASStore.saveState(state);
   }
   function esc(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
@@ -2254,6 +1778,7 @@ ${example.map(csvCell).join(",")}
       ["analisis", "Analisis"],
       ["spmi", "SPMI & AMI"],
       ["struktur", "Struktur & Pejabat"],
+      ["penyimpanan", "Penyimpanan & Memori"],
       ["panduan", "Panduan"]
     ];
     root.innerHTML = `
@@ -2297,6 +1822,7 @@ ${example.map(csvCell).join(",")}
     if (state.view === "analisis") return analysisView(role);
     if (state.view === "spmi") return spmiView(role, visible);
     if (state.view === "struktur") return structureView();
+    if (state.view === "penyimpanan") return storageView(role);
     if (state.view === "panduan") return guideView();
     const gaps = followUpGaps(state.documents).filter((gap) => visible.some((doc) => doc.id === gap.documentId));
     const attention = visible.filter((doc) => ["AKAN_BERAKHIR", "BERAKHIR"].includes(displayStatus(doc)) || missingFields(doc).length);
@@ -2380,6 +1906,7 @@ ${example.map(csvCell).join(",")}
       <th data-sort="title">Judul</th>
       <th data-sort="partner">Mitra</th>
       <th data-sort="status">Status</th>
+      <th>Validasi</th>
       <th data-sort="endDate">Berakhir</th>
     </tr></thead><tbody>
       ${rows.map((doc) => {
@@ -2390,6 +1917,7 @@ ${example.map(csvCell).join(",")}
           <td>${esc(doc.title)}</td>
           <td>${esc(partnerName(state.partners, doc.partnerId))}</td>
           <td><b>${STATUS_LABEL[displayStatus(doc)]}</b></td>
+          <td>${validationBadge(doc)}</td>
           <td>${esc(doc.endDate || "\u2014")}</td>
         </tr>`;
       }).join("")}
@@ -2397,169 +1925,191 @@ ${example.map(csvCell).join(",")}
     ${role.facultyId ? `<p class="muted">Fakultas terkunci: ${esc(facultyName(role.facultyId))}</p>` : ""}
     ${role.programId ? `<p class="muted">Prodi terkunci: ${esc(programName(role.programId))}</p>` : ""}`;
   }
+  var VALIDATION_LABEL = {
+    DRAFT: "Draf manual",
+    NEEDS_REVIEW: "Perlu ditinjau",
+    VALIDATED: "Tervalidasi",
+    CORRECTED: "Tervalidasi (dikoreksi staf)",
+    REJECTED: "Ditolak"
+  };
+  var VALIDATION_ICON = { DRAFT: "✎", NEEDS_REVIEW: "▲", VALIDATED: "✔", CORRECTED: "✔", REJECTED: "✖" };
+  var LEVEL_TEXT = { TINGGI: "✔ Keyakinan tinggi", SEDANG: "▲ Sedang, periksa", RENDAH: "⚠ Rendah, periksa" };
+  var EXTRACT_ACCEPT = ".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg,.bmp,.webp";
+  function validationBadge(doc) {
+    const st = doc.validation && doc.validation.state ? doc.validation.state : "VALIDATED";
+    return `<span class="vbadge v-${st}">${VALIDATION_ICON[st] || ""} ${esc(VALIDATION_LABEL[st] || st)}</span>`;
+  }
+  function fmtBytes(n) {
+    if (n == null || isNaN(n)) return "—";
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    if (n < 1073741824) return (n / 1048576).toFixed(1) + " MB";
+    return (n / 1073741824).toFixed(2) + " GB";
+  }
+  function extractedField(doc, key) {
+    const f = doc.extraction && doc.extraction.fields ? doc.extraction.fields[key] : null;
+    return f || null;
+  }
+  /** Tanda keyakinan + sumber di bawah input. Bila staf mengubah nilai, ditandai "dikoreksi". */
+  function fieldNote(doc, key) {
+    const f = extractedField(doc, key);
+    if (!f) return "";
+    const cur = key === "triDharma" ? (Array.isArray(doc.triDharma) ? doc.triDharma.join("; ") : String(doc.triDharma || "")) : String(doc[key] ?? "");
+    const edited = String(f.value) !== cur;
+    const where = f.sheet ? `sheet ${esc(f.sheet)}` : (f.page ? `hlm. ${f.page}` : "");
+    return `<span class="fnote ${edited ? "fn-edit" : "fn-" + f.level}">${edited ? "✎ Dikoreksi staf" : LEVEL_TEXT[f.level] || ""}</span>
+      <details class="fsrc"><summary>Sumber${where ? " (" + where + ")" : ""}</summary>
+        <div>Metode: ${esc(f.method || "")}</div>
+        <div>Kutipan: <q>${esc(f.source || "")}</q></div>
+        ${f.note ? `<div>Catatan: ${esc(f.note)}</div>` : ""}
+      </details>`;
+  }
+  function field(label, control, doc, key) {
+    const f = doc && key ? extractedField(doc, key) : null;
+    const cls = f ? " has-ex lv-" + f.level : "";
+    return `<label class="${cls.trim()}">${label}${control}${doc && key ? fieldNote(doc, key) : ""}</label>`;
+  }
+  function queueDocs() {
+    const ids = state.sessionIds || [];
+    return ids.map((id) => state.documents.find((d) => d.id === id)).filter(Boolean);
+  }
+  function overallLevel(doc) {
+    const ex = doc.extraction;
+    if (!ex || !ex.fields) return "—";
+    const lv = Object.values(ex.fields).map((f) => f.level);
+    if (!lv.length) return "—";
+    if (lv.includes("RENDAH")) return "Rendah";
+    if (lv.includes("SEDANG")) return "Sedang";
+    return "Tinggi";
+  }
+  function canAutoValidate(doc) {
+    return doc.validation && doc.validation.state === "NEEDS_REVIEW" && !missingFields(doc).length && !dateOrderError(doc) &&
+      overallLevel(doc) === "Tinggi" && !(doc.extraction.flags || []).some((f) => ["new_partner", "partner_similar", "type_conflict", "invalid_date_range", "multi_program", "faculty_program_mismatch", "low_ocr_confidence", "legacy_format"].includes(f.code));
+  }
   function entryView(role) {
+    const writable = role.canWrite;
     let doc = state.documents.find((item) => item.id === state.editingId) ?? null;
-    if (!doc) {
+    if (!doc && writable) {
       doc = blankNaskah();
       state.documents = [doc, ...state.documents];
       state.editingId = doc.id;
     }
-    const docTriStr = Array.isArray(doc.triDharma) ? doc.triDharma.join("; ") : String(doc.triDharma || "PENDIDIKAN");
+    const queue = queueDocs();
+    const docTriStr = doc ? (Array.isArray(doc.triDharma) ? doc.triDharma.join("; ") : String(doc.triDharma || "")) : "";
     const suggestion = doc ? suggestParent(doc, state.documents) : null;
-    const detectedKeys = new Set(
-      state.aiExtractionResult && state.aiExtractionResult.findings
-        ? state.aiExtractionResult.findings.map((f) => f.key)
-        : []
-    );
+    const ex = doc && doc.extraction ? doc.extraction : null;
+    const parentSug = ex && ex.parent ? ex.parent : null;
+    const dis = writable ? "" : "disabled";
     return `
     <h1>Pencatatan Naskah</h1>
-    <p class="muted">Unggah berkas dokumen naskah (Word DOCX, PDF, kumpulan gambar/scan halaman, atau teks) ke KSDAS. Sistem secara otomatis mengekstraksi seluruh atribut, mengisi kolom formulir, dan langsung mendaftarkan naskah ke tabel repositori basis data tanpa harus diketik manual.</p>
-    
-    <div id="entry-dropzone" style="border: 2px dashed #1a73e8; background: #f8fbff; border-radius: 8px; padding: 1.25rem 1rem; text-align: center; margin-bottom: 1rem; transition: background 0.2s, border-color 0.2s;">
-      <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">📂 📄 🖼️</div>
-      <div style="font-weight: 700; color: var(--navy); font-size: 1rem; margin-bottom: 0.25rem;">
-        Unggah Berkas Naskah (Word .docx, PDF, atau Kumpulan Gambar Scan)
-      </div>
-      <p class="muted" style="margin: 0 0 0.8rem; font-size: 0.86rem;">
-        Pilih satu atau beberapa berkas naskah sekaligus. Jika mengunggah kumpulan foto/scan halaman naskah, sistem akan menggabungkan seluruh halaman dan mengenali naskah secara utuh.
-      </p>
-      <div style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; align-items:center;">
-        <label class="drop" style="margin:0; cursor:pointer; background:var(--navy); color:#fff; border-color:var(--navy); font-weight:600; padding:0.55rem 1.1rem; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-          📁 Pilih Berkas Dokumen / Kumpulan Gambar
-          <input id="files" type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp,.webp" style="display:none;" />
+    <p class="muted">Unggah dokumen (PDF, Word, Excel, CSV, atau gambar scan). KSDAS membaca isinya dan mengisi kolom formulir sebagai <b>usulan</b>. Nilai yang tidak tertulis di dokumen sengaja dibiarkan kosong, bukan ditebak. Staf memeriksa, melengkapi yang kosong, lalu memvalidasi.</p>
+    ${writable ? `
+    <div id="entry-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Area unggah dokumen. Tekan Enter untuk memilih berkas, atau seret berkas ke sini.">
+      <div class="dz-title">Seret berkas ke sini atau pilih berkas</div>
+      <p class="muted">PDF, DOCX, DOC, XLSX, XLS, CSV, TXT, PNG, JPG. Maksimal ${KSDASExtract.MAX_FILES_PER_BATCH} berkas per kelompok, 25 MB per berkas. Beberapa berkas sekaligus diproses berurutan.</p>
+      <div class="btnrow">
+        <label class="btn-primary filebtn">Pilih berkas dokumen
+          <input id="files" type="file" multiple accept="${EXTRACT_ACCEPT}" hidden />
         </label>
-        <button id="blank" type="button" style="border-radius:6px;">Formulir Baru Kosong</button>
+        <button id="blank" type="button" class="btn-subtle">Formulir kosong</button>
+        <button id="btn-toggle-ai-paste" type="button" class="btn-subtle">Tempel teks naskah</button>
       </div>
-    </div>
-
-    <div class="ocr-ai-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-        <h2 style="margin:0; font-size:1.05rem; color:var(--navy); display:flex; align-items:center; gap:0.4rem;">
-          🔍 Ekstraksi Cerdas & OCR Dokumen Naskah
-        </h2>
-        <span style="font-size:0.8rem; background:#e8f0fe; color:#1a73e8; padding:0.2rem 0.55rem; border-radius:12px; font-weight:600;">
-          Modul OCR Presisi & Semantic Extractor (Offline 100%)
-        </span>
-      </div>
-      <p class="muted" style="margin:0.35rem 0 0.65rem; font-size:0.88rem;">
-        Mendukung Word DOCX, PDF, dan kumpulan gambar naskah. Sistem mengenali nomor dokumen, judul naskah, mitra, pejabat penandatangan, taksonomi fakultas-prodi, masa berlaku, dan klasifikasi Tri Dharma. Field formulir dan tabel repositori terisi sendiri secara otomatis.
-      </p>
-      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-        <label class="drop" style="margin:0; padding:0.5rem 0.9rem; font-size:0.88rem; cursor:pointer; background:var(--navy); color:#fff; border-color:var(--navy); border-radius:5px;">
-          📂 Pindai Berkas / Kumpulan Gambar (OCR)
-          <input id="ai-ocr-file" type="file" multiple accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.bmp,.webp" style="display:none;" />
-        </label>
-        <button id="btn-toggle-ai-paste" type="button" class="btn-subtle" style="font-size:0.88rem; padding:0.5rem 0.85rem; border-radius:5px;">
-          📋 Tempel Teks Naskah Manual
-        </button>
-      </div>
+      <p class="muted small">Seluruh pemrosesan berjalan di komputer ini. Isi dokumen tidak dikirim ke layanan luar. Isi dokumen dianggap data, bukan perintah.</p>
       ${state.ocrProgress ? `
-      <div class="ocr-progress-box">
+      <div class="ocr-progress-box" role="status" aria-live="polite">
         <div style="display:flex; justify-content:space-between; font-weight:600;">
-          <span id="ocr-progress-status">⏳ ${esc(state.ocrProgress.status)}</span>
-          <span>${state.ocrProgress.percent}%</span>
+          <span id="ocr-progress-status">${esc(state.ocrProgress.status)}</span>
+          <span id="ocr-progress-pct">${state.ocrProgress.percent}%</span>
         </div>
-        <div class="ocr-progress-bar">
-          <div id="ocr-progress-fill" class="ocr-progress-fill" style="width:${state.ocrProgress.percent}%;"></div>
-        </div>
+        <div class="ocr-progress-bar"><div id="ocr-progress-fill" class="ocr-progress-fill" style="width:${state.ocrProgress.percent}%;"></div></div>
       </div>` : ""}
       <div id="ai-paste-box" style="display:none; margin-top:0.6rem;">
-        <textarea id="ai-ocr-text" rows="5" placeholder="Tempelkan teks dokumen naskah kerja sama (MoU/PKS/IA) atau hasil OCR di sini..."></textarea>
-        <div style="margin-top:0.35rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button id="btn-run-ai-extract" type="button" class="btn-primary" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Jalankan Analisis & Ekstraksi</button>
-          <button id="btn-ai-sample-1" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Isi Contoh MoU Pemkab Toba (FITE/SI)</button>
-          <button id="btn-ai-sample-2" type="button" class="btn-subtle" style="font-size:0.85rem; padding:0.4rem 0.85rem;">Isi Contoh PKS Industri (FTI/MR)</button>
-        </div>
+        <label for="ai-ocr-text">Teks naskah</label>
+        <textarea id="ai-ocr-text" rows="5" placeholder="Tempelkan teks naskah kerja sama (MoU/PKS/IA) di sini."></textarea>
+        <div class="btnrow"><button id="btn-run-ai-extract" type="button" class="btn-primary">Ekstrak dari teks</button></div>
       </div>
-
-      ${state.aiExtractionResult && state.aiExtractionResult.findings && state.aiExtractionResult.findings.length ? `
-      <div class="ai-status-card" id="ai-detection-status" style="border-left: 5px solid #107c41; background: #f0fff4; margin-top: 0.85rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-          <h3 style="margin:0; font-size:1.05rem; color:#0f5132; display:flex; align-items:center; gap:0.4rem;">
-            ✅ Field Formulir & Tabel Basis Data Terisi Otomatis (${state.aiExtractionResult.findings.length} Atribut Dikenali)
-          </h3>
-          <a href="#naskah" class="btn-primary" style="font-size:0.85rem; padding:0.35rem 0.85rem; text-decoration:none; background:#107c41; border-color:#107c41; color:#fff; font-weight:600; border-radius:4px;">
-            📊 Buka Tabel Repositori Naskah
-          </a>
-        </div>
-        <p style="margin: 0.35rem 0 0.65rem; color:#1e4620; font-size:0.88rem;">
-          ✓ Dokumen telah diekstraksi dan langsung dicatat ke sistem basis data dengan status <b>AKTIF</b>. Staf tidak perlu mengetik manual. Kolom formulir di bawah ini telah terisi secara otomatis dan ditandai dengan warna hijau.
-        </p>
-        <div class="tablewrap" style="background:#fff; border-radius:6px; margin:0.4rem 0 0.6rem; border:1px solid #c3e6cb;">
-          <table style="width:100%; font-size:0.85rem; margin:0; border-collapse:collapse;">
-            <thead>
-              <tr style="background:#e8f5e9;">
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Nomor Dokumen</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Judul Naskah</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Mitra Kerja Sama</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Jenis</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Masa Berlaku</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Fakultas / Prodi</th>
-                <th style="padding:0.45rem 0.6rem; text-align:left;">Status Tabel</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="padding:0.45rem 0.6rem; font-weight:700; color:#0f5132;">${esc(doc.documentNumber || "—")}</td>
-                <td style="padding:0.45rem 0.6rem;">${esc(doc.title || "—")}</td>
-                <td style="padding:0.45rem 0.6rem; font-weight:600;">${esc(partnerName(state.partners, doc.partnerId))}</td>
-                <td style="padding:0.45rem 0.6rem;"><span class="tag">${esc(TYPE_LABEL[doc.documentType] || doc.documentType)}</span></td>
-                <td style="padding:0.45rem 0.6rem;">${esc(doc.startDate || "—")} s.d. ${esc(doc.endDate || "—")}</td>
-                <td style="padding:0.45rem 0.6rem;">${esc(facultyName(doc.facultyId))} — ${esc(programName(doc.programId))}</td>
-                <td style="padding:0.45rem 0.6rem;"><span class="badge-status status-aktif" style="background:#107c41; color:#fff; font-weight:600; padding:0.2rem 0.5rem; border-radius:4px;">AKTIF DI TABEL</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <ul class="ai-findings-list">
-          ${state.aiExtractionResult.findings.map((f) => `<li><b>${esc(f.label)}:</b> ${esc(f.value)} <span class="badge-detected">${esc(f.confidence)}</span></li>`).join("")}
+      <details class="samples"><summary>Dokumen uji (data fiktif) untuk mencoba</summary>
+        <ul>
+          ${["MoU_ITDel_Samosir_2026.docx", "PKS_FTI_DanauNusaTeknik_2025.docx", "IA_Magang_DanauNusaTeknik_2025.pdf", "Lembar_Isian_PKS.xlsx", "Daftar_Kerja_Sama.xlsx", "Scan_MoU_Contoh.png"].map((n) => `<li><a href="sample-data/uji/${n}" download>${n}</a></li>`).join("")}
         </ul>
-        <div style="margin-top:0.45rem; display:flex; gap:0.5rem;">
-          <button type="button" id="btn-clear-ai" class="btn-subtle" style="font-size:0.8rem; padding:0.25rem 0.6rem;">Bersihkan Tanda</button>
-        </div>
-      </div>` : `<div id="ai-detection-status" style="display:none;"></div>`}
-    </div>
+      </details>
+    </div>` : `<p class="note">Peran ini hanya dapat melihat. Unggah dan validasi dilakukan oleh Staf Unit Kerja Sama.</p>`}
 
-    <form id="form" class="form">
-        ${field("Jenis Naskah", `<select name="documentType">${["", ...Object.keys(TYPE_LABEL)].map((t) => `<option value="${t}" ${doc.documentType === t ? "selected" : ""}>${t ? TYPE_LABEL[t] : "Pilih jenis naskah"}</option>`).join("")}</select>`, detectedKeys.has("documentType"))}
-        ${field("Nomor Dokumen", `<input name="documentNumber" value="${esc(doc.documentNumber)}" placeholder="Contoh: 014/ITDel/MoU/2026" />`, detectedKeys.has("documentNumber"))}
-        ${field("Judul Naskah", `<input name="title" value="${esc(doc.title)}" placeholder="Judul kerja sama..." />`, detectedKeys.has("title"))}
-        ${field("Mitra Kerja Sama", `<select name="partnerId"><option value="">Pilih mitra</option>${state.partners.map((p2) => `<option value="${p2.id}" ${doc.partnerId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, detectedKeys.has("partnerId") || detectedKeys.has("partnerDraft"))}
-        ${field("Tanggal Mulai Berlaku", `<input type="date" name="startDate" value="${esc(doc.startDate)}" />`, detectedKeys.has("startDate"))}
-        ${field("Tanggal Berakhir", `<input type="date" name="endDate" value="${esc(doc.endDate)}" />`, detectedKeys.has("endDate"))}
-        ${field("Status Operasional", `<select name="status"><option value="DRAFT" ${doc.status === "DRAFT" ? "selected" : ""}>Draf</option><option value="AKTIF" ${doc.status === "AKTIF" ? "selected" : ""}>Aktif</option><option value="ARSIP" ${doc.status === "ARSIP" ? "selected" : ""}>Arsip</option></select>`)}
-        ${field("Fakultas Terkait", `<select name="facultyId"><option value="">Pilih fakultas</option>${FACULTIES.map((f) => `<option value="${f.id}" ${doc.facultyId === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("")}</select>`, detectedKeys.has("facultyId"))}
-        ${field("Program Studi", `<select name="programId"><option value="">Pilih prodi</option>${PROGRAMS.map((p2) => `<option value="${p2.id}" ${doc.programId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, detectedKeys.has("programId"))}
-        ${field("Klasifikasi Tri Dharma", `<select name="triDharma">
-          <option value="">Pilih Tri Dharma</option>
-          <option value="PENDIDIKAN" ${norm(docTriStr) === "pendidikan" ? "selected" : ""}>Pendidikan</option>
-          <option value="PENELITIAN" ${norm(docTriStr) === "penelitian" ? "selected" : ""}>Penelitian</option>
-          <option value="PENGABDIAN" ${norm(docTriStr) === "pengabdian" ? "selected" : ""}>Pengabdian</option>
-          <option value="PENDIDIKAN; PENELITIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("penelitian") && !norm(docTriStr).includes("pengabdian") ? "selected" : ""}>Pendidikan & Penelitian</option>
-          <option value="PENDIDIKAN; PENGABDIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("pengabdian") && !norm(docTriStr).includes("penelitian") ? "selected" : ""}>Pendidikan & Pengabdian</option>
-          <option value="PENDIDIKAN; PENELITIAN; PENGABDIAN" ${norm(docTriStr).includes("pendidikan") && norm(docTriStr).includes("penelitian") && norm(docTriStr).includes("pengabdian") ? "selected" : ""}>Pendidikan, Penelitian & Pengabdian</option>
-        </select>`, detectedKeys.has("triDharma"))}
-        ${field("Unit Pengelola", `<select name="unitId"><option value="">Pilih unit</option>${UNITS.map((u) => `<option value="${u.id}" ${doc.unitId === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>`, detectedKeys.has("unitId"))}
-        ${field("Nama Kegiatan Implementasi", `<input name="activityName" value="${esc(doc.activityName)}" placeholder="Nama kegiatan Tri Dharma..." />`, detectedKeys.has("activityName"))}
-        ${field("Penanggung Jawab (PIC)", `<input name="pic" value="${esc(doc.pic)}" placeholder="Nama staf / dosen PIC..." />`, detectedKeys.has("pic"))}
-        ${field("Penandatangan Pihak Mitra", `<input name="partnerSignatory" value="${esc(doc.partnerSignatory)}" placeholder="Nama pejabat mitra (orang)..." />`, detectedKeys.has("partnerSignatory"))}
-        ${field("Jabatan Penandatangan Mitra", `<input name="partnerSignatoryTitle" value="${esc(doc.partnerSignatoryTitle)}" placeholder="Jabatan di pihak mitra..." />`, detectedKeys.has("partnerSignatoryTitle"))}
-        ${field("Penandatangan IT Del (Default Terisi)", `<input name="itdelSignatory" value="${esc(doc.itdelSignatory)}" />`, detectedKeys.has("itdelSignatory"))}
-        ${field("Jabatan Penandatangan IT Del", `<input name="itdelSignatoryTitle" value="${esc(doc.itdelSignatoryTitle)}" />`, detectedKeys.has("itdelSignatoryTitle"))}
-        ${field("Ruang Lingkup Kerja Sama", `<input name="scope" value="${esc(doc.scope)}" placeholder="Ruang lingkup kerja sama..." />`, detectedKeys.has("scope"))}
-        ${field("Lokasi Pelaksanaan", `<input name="location" value="${esc(doc.location)}" />`, detectedKeys.has("location"))}
-        ${field("Anggaran (Bila ada)", `<input name="budget" value="${esc(doc.budget)}" placeholder="Contoh: Rp 50.000.000" />`, detectedKeys.has("budget"))}
-        ${field("Sumber Dana", `<input name="fundingSource" value="${esc(doc.fundingSource)}" placeholder="APBN / Mandiri / Mitra..." />`, detectedKeys.has("fundingSource"))}
-        ${field("Catatan Tambahan", `<input name="notes" value="${esc(doc.notes)}" placeholder="Catatan naskah..." />`, detectedKeys.has("notes"))}
-        ${suggestion ? `<p class="note" style="grid-column: 1 / -1;">Saran relasi naskah: tautkan ke ${esc(suggestion.number)}. ${esc(suggestion.reason)} <button type="button" id="use-parent" style="margin-left:0.5rem;">Pakai saran</button></p>` : ""}
-        ${missingFields(doc).length ? `<p class="muted" style="grid-column: 1 / -1;">Belum lengkap: <b>${esc(missingFields(doc).join(", "))}</b>. Draf tetap dapat disimpan untuk dilengkapi nanti.</p>` : ""}
-        <div style="grid-column: 1 / -1; margin-top:0.4rem;">
-          <button type="submit" class="btn-primary">Simpan ke Basis Data</button>
+    ${state.lastBatch ? `
+    <section class="batchsum" aria-live="polite">
+      <h2>Ringkasan kelompok terakhir</h2>
+      <p><b>${state.lastBatch.ok}</b> berkas diproses, <b>${state.lastBatch.rows}</b> baris tabel dibaca, <b>${state.lastBatch.skipped.length}</b> dilewati.</p>
+      ${state.lastBatch.skipped.length ? `<ul>${state.lastBatch.skipped.map((s) => `<li>${esc(s.name)}: ${esc(s.reason)}</li>`).join("")}</ul>` : ""}
+    </section>` : ""}
+
+    ${queue.length ? `
+    <section class="queue">
+      <div class="qhead"><h2>Antrean validasi (${queue.length})</h2>
+        ${writable ? `<button id="btn-bulk-validate" type="button" class="btn-primary" ${queue.some(canAutoValidate) ? "" : "disabled"}>Validasi semua yang lengkap dan berkeyakinan tinggi (${queue.filter(canAutoValidate).length})</button>` : ""}
+      </div>
+      <div class="tablewrap"><table>
+        <caption class="sr">Antrean naskah hasil ekstraksi yang menunggu validasi staf</caption>
+        <thead><tr><th scope="col">Berkas</th><th scope="col">Jenis</th><th scope="col">Nomor</th><th scope="col">Mitra</th><th scope="col">Keyakinan</th><th scope="col">Perlu diisi manual</th><th scope="col">Validasi</th><th scope="col"><span class="sr">Aksi</span></th></tr></thead>
+        <tbody>${queue.map((d) => `<tr class="${d.id === state.editingId ? "cur" : ""}">
+          <td>${esc(d.fileName || "(tanpa berkas)")}</td>
+          <td>${esc(typeLabel(d.documentType))}</td>
+          <td>${esc(d.documentNumber || "—")}</td>
+          <td>${esc(partnerName(state.partners, d.partnerId))}</td>
+          <td>${esc(overallLevel(d))}</td>
+          <td>${missingFields(d).length ? esc(missingFields(d).join(", ")) : "Lengkap"}</td>
+          <td>${validationBadge(d)}</td>
+          <td><button type="button" class="link" data-review="${d.id}">Tinjau</button></td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+    </section>` : ""}
+
+    ${doc ? `
+    <section class="review" aria-labelledby="rv-h">
+      <div class="qhead">
+        <h2 id="rv-h">Tinjau dan lengkapi</h2>
+        <div>${validationBadge(doc)}</div>
+      </div>
+      ${doc.fileName ? `<p class="muted">Berkas sumber: <b>${esc(doc.fileName)}</b> (${esc(fmtBytes(doc.fileSize))})${doc.fileHash ? ` &middot; SHA-256 <code title="${esc(doc.fileHash)}">${esc(doc.fileHash.slice(0, 12))}…</code>` : ""}
+        ${doc.fileRef ? ` &middot; <button type="button" class="link" id="btn-dl-original">Unduh berkas asli</button>` : ""}</p>` : ""}
+      ${ex && ex.flags && ex.flags.length ? `<div class="flags" role="note"><b>Perlu perhatian:</b><ul>${ex.flags.map((f) => `<li>${esc(f.message)}</li>`).join("")}</ul></div>` : ""}
+      ${ex ? `<p class="muted small">Diekstraksi ${esc(ex.at ? ex.at.slice(0, 16).replace("T", " ") : "")} &middot; ${Object.keys(ex.fields || {}).length} field terisi otomatis &middot; ${missingFields(doc).length} field wajib masih kosong.</p>` : ""}
+      ${missingFields(doc).length ? `<p class="manual" role="note"><b>Perlu diisi manual:</b> ${esc(missingFields(doc).join(", "))}.</p>` : `<p class="manual ok" role="note">Seluruh field wajib sudah terisi. Periksa kesesuaiannya dengan berkas asli sebelum validasi.</p>`}
+      ${parentSug ? `<p class="note">Saran induk: ${parentSug.id ? `<b>${esc(parentSug.number)}</b>` : `nomor <b>${esc(parentSug.number)}</b> (belum ada di basis data)`}. ${esc(parentSug.reason)} ${parentSug.id && doc.parentId !== parentSug.id && writable ? `<button type="button" id="use-parent-ex" class="btn-subtle">Tautkan</button>` : ""}${parentSug.id && doc.parentId === parentSug.id ? " <b>Sudah ditautkan.</b>" : ""}</p>` : ""}
+      <form id="form" class="form" novalidate>
+        <fieldset ${dis} class="fs">
+        <legend class="sr">Data naskah</legend>
+        ${field("Jenis naskah", `<select name="documentType">${["", ...Object.keys(TYPE_LABEL)].map((t) => `<option value="${t}" ${doc.documentType === t ? "selected" : ""}>${t ? TYPE_LABEL[t] : "Pilih jenis naskah"}</option>`).join("")}</select>`, doc, "documentType")}
+        ${field("Nomor dokumen", `<input name="documentNumber" value="${esc(doc.documentNumber)}" placeholder="Contoh: 014/ITDel/MoU/2026" />`, doc, "documentNumber")}
+        ${field("Judul naskah", `<input name="title" value="${esc(doc.title)}" placeholder="Judul kerja sama" />`, doc, "title")}
+        ${field("Mitra kerja sama", `<select name="partnerId"><option value="">Pilih mitra</option>${state.partners.map((p2) => `<option value="${esc(p2.id)}" ${doc.partnerId === p2.id ? "selected" : ""}>${esc(p2.name)}${p2.draft ? " (baru, konfirmasi)" : ""}</option>`).join("")}</select>`, doc, "partnerId")}
+        ${field("Tanggal tanda tangan", `<input type="date" name="signedDate" value="${esc(doc.signedDate)}" />`, doc, "signedDate")}
+        ${field("Tanggal mulai berlaku", `<input type="date" name="startDate" value="${esc(doc.startDate)}" />`, doc, "startDate")}
+        ${field("Tanggal berakhir", `<input type="date" name="endDate" value="${esc(doc.endDate)}" />`, doc, "endDate")}
+        ${field("Status operasional", `<select name="status">${Object.keys(STATUS_LABEL).filter((k) => k !== "AKAN_BERAKHIR" && k !== "BERAKHIR").map((k) => `<option value="${k}" ${doc.status === k ? "selected" : ""}>${STATUS_LABEL[k]}</option>`).join("")}</select>`)}
+        ${field("Fakultas terkait", `<select name="facultyId"><option value="">Pilih fakultas</option>${FACULTIES.map((f) => `<option value="${f.id}" ${doc.facultyId === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("")}</select>`, doc, "facultyId")}
+        ${field("Program studi", `<select name="programId"><option value="">Pilih prodi</option>${PROGRAMS.map((p2) => `<option value="${p2.id}" ${doc.programId === p2.id ? "selected" : ""}>${esc(p2.name)}</option>`).join("")}</select>`, doc, "programId")}
+        ${field("Tri Dharma", `<input name="triDharma" value="${esc(docTriStr)}" placeholder="PENDIDIKAN; PENELITIAN; PENGABDIAN" list="tri-list" /><datalist id="tri-list"><option value="PENDIDIKAN"><option value="PENELITIAN"><option value="PENGABDIAN"><option value="PENDIDIKAN; PENELITIAN"><option value="PENDIDIKAN; PENGABDIAN"><option value="PENELITIAN; PENGABDIAN"><option value="PENDIDIKAN; PENELITIAN; PENGABDIAN"></datalist>`, doc, "triDharma")}
+        ${field("Unit pengelola", `<select name="unitId"><option value="">Pilih unit</option>${UNITS.map((u) => `<option value="${u.id}" ${doc.unitId === u.id ? "selected" : ""}>${esc(u.name)}</option>`).join("")}</select>`)}
+        ${field("Nama kegiatan implementasi", `<input name="activityName" value="${esc(doc.activityName)}" placeholder="Nama kegiatan" />`, doc, "activityName")}
+        ${field("Penanggung jawab (PIC)", `<input name="pic" value="${esc(doc.pic)}" placeholder="Nama PIC" />`, doc, "pic")}
+        ${field("Penandatangan pihak mitra", `<input name="partnerSignatory" value="${esc(doc.partnerSignatory)}" />`, doc, "partnerSignatory")}
+        ${field("Jabatan penandatangan mitra", `<input name="partnerSignatoryTitle" value="${esc(doc.partnerSignatoryTitle)}" />`, doc, "partnerSignatoryTitle")}
+        ${field("Penandatangan IT Del", `<input name="itdelSignatory" value="${esc(doc.itdelSignatory)}" />`, doc, "itdelSignatory")}
+        ${field("Jabatan penandatangan IT Del", `<input name="itdelSignatoryTitle" value="${esc(doc.itdelSignatoryTitle)}" />`, doc, "itdelSignatoryTitle")}
+        ${field("Ruang lingkup", `<input name="scope" value="${esc(doc.scope)}" placeholder="Ruang lingkup kerja sama" />`, doc, "scope")}
+        ${field("Lokasi pelaksanaan", `<input name="location" value="${esc(doc.location)}" />`, doc, "location")}
+        ${field("Anggaran (bila ada)", `<input name="budget" value="${esc(doc.budget)}" placeholder="Contoh: Rp 50.000.000" />`, doc, "budget")}
+        ${field("Sumber dana", `<input name="fundingSource" value="${esc(doc.fundingSource)}" placeholder="APBN, mandiri, mitra" />`, doc, "fundingSource")}
+        ${field("Catatan", `<input name="notes" value="${esc(doc.notes)}" />`, doc, "notes")}
+        ${suggestion ? `<p class="note" style="grid-column: 1 / -1;">Saran relasi: tautkan ke ${esc(suggestion.number)}. ${esc(suggestion.reason)} <button type="button" id="use-parent" class="btn-subtle">Tautkan</button></p>` : ""}
+        </fieldset>
+        <div class="btnrow" style="grid-column: 1 / -1;">
+          ${writable ? `<button type="submit" id="btn-save" class="btn-subtle" data-act="save">Simpan sebagai draf</button>
+          <button type="submit" id="btn-validate" class="btn-primary" data-act="validate">Validasi dan aktifkan</button>
+          <button type="button" id="btn-reject" class="btn-subtle">Tolak naskah ini</button>` : ""}
         </div>
-      </form>`;
-  }
-  function field(label, control, isDetected = false) {
-    return `<label>${label}${isDetected ? ` <span class="badge-detected">Terdeteksi Cerdas</span>` : ""}${control}</label>`;
+      </form>
+    </section>` : ""}`;
   }
   function importView() {
     return `
@@ -2567,8 +2117,8 @@ ${example.map(csvCell).join(",")}
     <p class="muted">Fasilitas pemindahan data dari Google Sheets, Microsoft OneDrive, dan Notion ke server lokal intranet IT Del. Kolom dipetakan secara deterministik. Data baru langsung tercatat di basis data lokal.</p>
     <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; margin-bottom: 0.8rem;">
       <label class="drop" style="margin:0; cursor:pointer;">
-        📂 Pilih berkas Spreadsheet (CSV / TSV / TXT)
-        <input id="import-file" type="file" accept=".csv,.tsv,.txt" style="display:none;" />
+        Pilih berkas Spreadsheet (XLSX / CSV / TSV / TXT)
+        <input id="import-file" type="file" accept=".xlsx,.csv,.tsv,.txt" style="display:none;" />
       </label>
       <button id="template" type="button">Unduh template CSV</button>
     </div>
@@ -3013,6 +2563,7 @@ ${example.map(csvCell).join(",")}
       else if (h === "impor" || h === "migrasi") targetView = "impor";
       else if (h === "relasi") targetView = "relasi";
       else if (h === "panduan") targetView = "panduan";
+      else if (h === "penyimpanan" || h === "storage") targetView = "penyimpanan";
       else if (h === "beranda") targetView = "beranda";
       if (targetView && state.view !== targetView) {
         state.view = targetView;
@@ -3179,434 +2730,325 @@ ${example.map(csvCell).join(",")}
       const docs = scopeDocuments(state.documents, role);
       downloadText("matriks-kepatuhan-spmi-itdel.csv", amiToCsv(docs, state.partners), "text/csv");
     });
-    function syncFormDom(patch, currentDoc) {
-      setTimeout(() => {
-        const formEl = document.getElementById("form");
-        if (formEl) {
-          for (const [k, v] of Object.entries(patch)) {
-            const el = formEl.elements[k];
-            if (el) {
-              if (k === "triDharma" && Array.isArray(currentDoc.triDharma)) {
-                el.value = currentDoc.triDharma.join("; ");
-              } else {
-                el.value = v;
-              }
-              el.style.borderColor = "#107c41";
-              el.style.backgroundColor = "#f0fff4";
-              el.dispatchEvent(new Event("input", { bubbles: true }));
-              el.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-          }
-        }
-      }, 50);
-    }
+    /* ---------------- Alur unggah dan ekstraksi ---------------- */
+    const setProgress = (status, percent) => {
+      state.ocrProgress = { status, percent };
+      const el = document.getElementById("ocr-progress-status");
+      const bar = document.getElementById("ocr-progress-fill");
+      const pct = document.getElementById("ocr-progress-pct");
+      if (el) el.textContent = status;
+      if (bar) bar.style.width = percent + "%";
+      if (pct) pct.textContent = percent + "%";
+    };
 
     async function handleUniversalFileUpload(fileOrFiles) {
-      if (!fileOrFiles) return;
-      const files = Array.isArray(fileOrFiles) ? fileOrFiles : (fileOrFiles instanceof FileList ? Array.from(fileOrFiles) : [fileOrFiles]);
+      if (!role.canWrite || !fileOrFiles) return;
+      if (state.busy) { state.notice = "Masih ada proses ekstraksi yang berjalan. Tunggu hingga selesai."; render(); return; }
+      const files = Array.isArray(fileOrFiles) ? fileOrFiles : Array.from(fileOrFiles);
       if (!files.length) return;
-
-      // Pastikan berada pada tampilan pencatatan / formulir naskah
+      state.busy = true;
       state.view = "entri";
-      try { window.location.hash = "entri"; } catch {}
-
-      const isAllImages = files.every((f) => /\.(png|jpe?g|bmp|webp|tiff?)$/i.test(f.name));
-
-      // KASUS 1: KUMPULAN GAMBAR SCAN MULTI-HALAMAN
-      if (isAllImages && files.length > 1) {
-        // Urutkan secara alami berdasarkan nomor halaman pada nama file
-        files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
-
-        state.ocrProgress = { status: `Mempersiapkan pemindaian kumpulan gambar (${files.length} halaman)...`, percent: 10 };
-        state.notice = `⏳ Sedang memproses kumpulan scan gambar (${files.length} halaman)...`;
-        render();
-
-        const pageTexts = [];
-        for (let i = 0; i < files.length; i++) {
-          const curImg = files[i];
-          const basePct = Math.round((i / files.length) * 80);
-          const updateP = (msg, pct) => {
-            const totalPct = basePct + Math.round((pct / 100) * (80 / files.length));
-            state.ocrProgress = { status: `[Halaman ${i + 1}/${files.length}] ${msg}`, percent: totalPct };
-            const el = document.getElementById("ocr-progress-status");
-            if (el) el.textContent = state.ocrProgress.status;
-            const bar = document.getElementById("ocr-progress-fill");
-            if (bar) bar.style.width = totalPct + "%";
-          };
-          const text = await extractTextFromImage(curImg, updateP);
-          pageTexts.push(`--- HALAMAN ${i + 1} (${curImg.name}) ---\n` + (text || curImg.name));
-        }
-
-        const combinedText = pageTexts.join("\n\n");
-        const combinedNames = files.map((f) => f.name).join(", ");
-        const totalSize = files.reduce((acc, f) => acc + f.size, 0);
-
-        const parsed = parseDocumentSummary(combinedText, state.partners, files[0].name);
-
-        const newDoc = blankNaskah();
-        newDoc.fileName = combinedNames;
-        newDoc.fileSize = totalSize;
-        newDoc.status = "AKTIF"; // LANGSUNG TERSIMPAN DAN AKTIF DI TABEL
-
-        for (const [k, v] of Object.entries(parsed.patch)) {
-          if (k === "triDharma") newDoc.triDharma = parseTri(v);
-          else newDoc[k] = v;
-        }
-        Object.assign(newDoc.provenance, parsed.provenance);
-
-        state.documents = [newDoc, ...state.documents];
-        state.editingId = newDoc.id;
-        state.aiExtractionResult = parsed;
-        state.ocrProgress = null;
-        state.notice = `✓ Ekstraksi Kumpulan Gambar Berhasil! (${files.length} halaman dipindai). Naskah otomatis tercatat di Tabel Basis Data dan seluruh field formulir telah terisi.`;
-        save();
-        render();
-        syncFormDom(parsed.patch, newDoc);
-        return;
+      try { window.location.hash = "entri"; } catch { }
+      const batch = { ok: 0, rows: 0, skipped: [] };
+      const env = extractEnv();
+      let list = files;
+      if (list.length > KSDASExtract.MAX_FILES_PER_BATCH) {
+        batch.skipped.push({ name: `${list.length - KSDASExtract.MAX_FILES_PER_BATCH} berkas lainnya`, reason: `Melebihi batas ${KSDASExtract.MAX_FILES_PER_BATCH} berkas per kelompok.` });
+        list = list.slice(0, KSDASExtract.MAX_FILES_PER_BATCH);
       }
-
-      // KASUS 2: DOKUMEN TUNGGAL ATAU BATCH DOKUMEN (WORD DOCX, PDF, GAMBAR TUNGGAL)
-      const addedDocs = [];
-      for (let fIdx = 0; fIdx < files.length; fIdx++) {
-        const file = files[fIdx];
-        const name = file.name.toLowerCase();
-
-        state.ocrProgress = { status: `Membaca berkas ${file.name} (${fIdx + 1}/${files.length})...`, percent: 20 };
-        state.notice = `⏳ Sedang memproses ${file.name} dan menjalankan Ekstraksi Cerdas & OCR...`;
-        render();
-
-        const updateProgress = (msg, pct = 50) => {
-          state.ocrProgress = { status: msg, percent: pct };
-          const el = document.getElementById("ocr-progress-status");
-          if (el) el.textContent = msg;
-          const bar = document.getElementById("ocr-progress-fill");
-          if (bar) bar.style.width = pct + "%";
-        };
-
-        let extractedText = "";
-        let sourceLabel = "berkas dokumen";
-
+      state.ocrProgress = { status: "Menyiapkan pemrosesan...", percent: 3 };
+      state.notice = "";
+      render();
+      const parsedList = [];
+      const seenHash = new Set(state.documents.map((d) => d.fileHash).filter(Boolean));
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        const base = Math.round((i / list.length) * 90);
+        const span = 90 / list.length;
+        const prog = (msg, pct) => setProgress(`[${i + 1}/${list.length}] ${file.name}: ${msg}`, Math.min(97, base + Math.round((pct / 100) * span)));
         try {
-          if (name.endsWith(".docx")) {
-            sourceLabel = "dokumen Word DOCX";
-            updateProgress("Mengekstrak teks & struktur dari berkas Word DOCX...", 35);
-            const buffer = await file.arrayBuffer();
-            extractedText = await extractTextFromDocx(buffer);
-          } else if (name.endsWith(".doc")) {
-            sourceLabel = "dokumen Word DOC";
-            updateProgress("Mengekstrak teks dari berkas Word DOC...", 35);
-            const buffer = await file.arrayBuffer();
-            extractedText = extractTextFromDoc(buffer);
-          } else if (name.endsWith(".pdf")) {
-            sourceLabel = "dokumen PDF";
-            updateProgress("Mengekstrak teks dari dokumen PDF...", 30);
-            const buffer = await file.arrayBuffer();
-            extractedText = await extractTextFromPdf(buffer, (msg, pct) => updateProgress(msg, pct));
-          } else if (/\.(png|jpe?g|bmp|webp)$/i.test(name)) {
-            sourceLabel = "hasil pindai gambar naskah (OCR)";
-            updateProgress("Menjalankan OCR pada citra naskah...", 35);
-            extractedText = await extractTextFromImage(file, (msg, pct) => updateProgress(msg, pct));
-          } else {
-            sourceLabel = "berkas teks naskah";
-            updateProgress("Membaca isi teks...", 50);
-            extractedText = await file.text();
+          prog("memvalidasi berkas", 5);
+          const read = await KSDASExtract.readFile(file, env, prog);
+          const buf = await file.arrayBuffer();
+          const hash = await KSDASStore.hashBuffer(buf);
+          if (seenHash.has(hash)) { batch.skipped.push({ name: file.name, reason: "Berkas yang sama persis sudah pernah diunggah." }); continue; }
+          seenHash.add(hash);
+          const registry = read.sheets ? KSDASExtract.detectRegistry(read.sheets) : null;
+          if (registry) { parsedList.push({ file, read, registry, hash }); continue; }
+          if (!read.pages.some((p) => (p.text || "").trim().length > 15)) {
+            batch.skipped.push({ name: file.name, reason: (read.warnings && read.warnings[0]) || "Tidak ada teks yang dapat dibaca. Isi manual atau gunakan berkas yang lebih jelas." });
+            continue;
           }
+          prog("menganalisis isi dokumen", 80);
+          const result = KSDASExtract.analyze({ pages: read.pages, fileName: file.name }, extractCtx());
+          const f = result.fields;
+          if (!(f.documentType || f.documentNumber || f.partnerId || f.title)) {
+            batch.skipped.push({ name: file.name, reason: "Tidak dikenali sebagai naskah kerja sama (tidak ada jenis, nomor, judul, atau mitra yang terbaca)." });
+            continue;
+          }
+          result.warnings = read.warnings || [];
+          parsedList.push({ file, read, result, hash });
         } catch (err) {
-          console.warn("Universal file upload extraction error:", err);
-        }
-
-        updateProgress("Menganalisis entitas dokumen dengan sistem cerdas...", 90);
-        const parsed = parseDocumentSummary(extractedText || file.name, state.partners, file.name);
-
-        const newDoc = blankNaskah();
-        newDoc.fileName = file.name;
-        newDoc.fileSize = file.size;
-        newDoc.status = "AKTIF"; // LANGSUNG TERCATAT DAN AKTIF DI TABEL
-
-        for (const [k, v] of Object.entries(parsed.patch)) {
-          if (k === "triDharma") newDoc.triDharma = parseTri(v);
-          else newDoc[k] = v;
-        }
-        Object.assign(newDoc.provenance, parsed.provenance);
-
-        state.documents = [newDoc, ...state.documents];
-        addedDocs.push({ doc: newDoc, parsed });
-        if (fIdx === 0) {
-          state.editingId = newDoc.id;
-          state.aiExtractionResult = parsed;
+          batch.skipped.push({ name: file.name, reason: String(err && err.message || err) });
         }
       }
-
+      // Urutkan menurut hirarki agar induk diproses lebih dulu (MoU, PKS, IA, Proposal, Laporan)
+      const order = { MOU_LOI: 0, PKS_MOA: 1, IA: 2, PROPOSAL: 3, LAPORAN: 4 };
+      parsedList.sort((a, b) => ((a.result && order[a.result.patch.documentType]) ?? 9) - ((b.result && order[b.result.patch.documentType]) ?? 9));
+      const created = [];
+      for (const item of parsedList) {
+        if (item.registry) {
+          const out = await importRegistryRows(item.registry, item.file.name, item.hash);
+          batch.rows += out.added;
+          out.skipped.forEach((s) => batch.skipped.push(s));
+          created.push(...out.docs);
+          continue;
+        }
+        // Analisis ulang dengan basis data terkini agar mitra dan induk yang baru dibuat dalam kelompok ini dikenali
+        const fresh = KSDASExtract.analyze({ pages: item.read.pages, fileName: item.file.name }, extractCtx());
+        fresh.warnings = item.result.warnings;
+        const doc = await createDocFromExtraction(fresh, item.file, item.hash);
+        created.push(doc);
+        batch.ok += 1;
+      }
       state.ocrProgress = null;
-      state.notice = `✓ Ekstraksi Berhasil! ${files.length} naskah otomatis tercatat di Tabel Basis Data dan seluruh field formulir telah terisi.`;
+      state.busy = false;
+      state.lastBatch = batch;
+      if (created.length) {
+        state.sessionIds = [...created.map((d) => d.id), ...(state.sessionIds || []).filter((id) => !created.some((d) => d.id === id))];
+        state.editingId = created[0].id;
+      }
+      state.notice = created.length
+        ? `${created.length} naskah masuk antrean validasi. Data hasil ekstraksi berstatus usulan sampai divalidasi staf.`
+        : "Tidak ada naskah yang dapat dibuat. Lihat ringkasan di bawah.";
+      KSDASStore.audit("UPLOAD", `${list.length} berkas`, `${created.length} naskah dibuat, ${batch.skipped.length} dilewati`, role.name);
       save();
       render();
+    }
 
-      if (addedDocs.length) {
-        syncFormDom(addedDocs[0].parsed.patch, addedDocs[0].doc);
+    async function createDocFromExtraction(result, file, hash, sourceName) {
+      const doc = blankNaskah();
+      if (result.partnerDraft) state.partners = [...state.partners, result.partnerDraft];
+      for (const [k, v] of Object.entries(result.patch)) {
+        if (k === "triDharma") doc.triDharma = parseTri(String(v));
+        else doc[k] = v;
       }
+      doc.provenance = { ...doc.provenance, ...result.provenance };
+      doc.fileName = file ? file.name : (sourceName || "teks-tempel.txt");
+      doc.fileSize = file ? file.size : 0;
+      doc.fileHash = hash || "";
+      doc.status = "DRAFT";
+      doc.validation = { state: "NEEDS_REVIEW", by: "", at: "" };
+      const parent = resolveParent(doc, result);
+      if (parent) {
+        doc.extraction = { parent };
+        if (parent.id && parent.level === "TINGGI") { doc.parentId = parent.id; parent.linked = true; }
+      }
+      doc.extraction = {
+        ...(doc.extraction || {}),
+        at: new Date().toISOString(),
+        fields: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, { value: f.value, level: f.level, page: f.page, sheet: f.sheet, source: f.source, method: f.method, note: f.note }])),
+        flags: [...result.flags, ...(result.warnings || []).map((m) => ({ code: "reader_warning", message: m }))],
+        parent: parent || null,
+        overall: result.overall
+      };
+      if (duplicateNumber(state.documents, doc.documentNumber)) {
+        doc.extraction.flags.push({ code: "duplicate_document", message: `Nomor ${doc.documentNumber} sudah dipakai naskah lain. Periksa apakah ini duplikat.` });
+      }
+      if (file) {
+        try {
+          const saved = await KSDASStore.putFile(doc.id, file);
+          doc.fileRef = saved.ref;
+          doc.fileHash = saved.sha256 || doc.fileHash;
+        } catch (e) {
+          doc.extraction.flags.push({ code: "file_not_stored", message: "Berkas asli tidak dapat disimpan: " + String(e.message || e) });
+        }
+      }
+      state.documents = [doc, ...state.documents];
+      return doc;
+    }
+
+    function resolveParent(doc, result) {
+      const sug = result.parentSuggestion;
+      if (sug && sug.id) return { ...sug };
+      if (sug && sug.number) {
+        const hit = state.documents.find((d) => norm(d.documentNumber) === norm(sug.number));
+        if (hit) return { id: hit.id, number: hit.documentNumber, level: "TINGGI", reason: `Dokumen merujuk nomor ${sug.number}.`, page: sug.page, source: sug.source };
+      }
+      const guess = suggestParent(doc, state.documents);
+      if (guess) return { id: guess.id, number: guess.number, level: "SEDANG", reason: guess.reason };
+      return sug || null;
+    }
+
+    async function importRegistryRows(rows, fileName, hash) {
+      const out = { added: 0, skipped: [], docs: [] };
+      for (const row of rows) {
+        const v = row.values;
+        if (!v.title && !v.documentNumber && !v.partnerName) { out.skipped.push({ name: `${fileName} baris ${row.line}`, reason: "Baris tanpa judul, nomor, atau mitra." }); continue; }
+        const built = naskahFromValues(v, state.partners);
+        if (built.doc.documentNumber && duplicateNumber(state.documents, built.doc.documentNumber)) {
+          out.skipped.push({ name: `${fileName} baris ${row.line}`, reason: `Nomor ${built.doc.documentNumber} sudah ada (duplikat).` });
+          continue;
+        }
+        if (built.partnerDraft) state.partners = [...state.partners, { ...built.partnerDraft, draft: true }];
+        const doc = built.doc;
+        doc.fileName = fileName; doc.fileHash = hash || "";
+        doc.status = "DRAFT";
+        doc.validation = { state: "NEEDS_REVIEW", by: "", at: "" };
+        const ex = KSDASExtract.analyzeRegistryRow(row, fileName);
+        doc.extraction = {
+          at: new Date().toISOString(), fields: Object.fromEntries(Object.entries(ex.fields).map(([k, f]) => [k, f])),
+          flags: built.warnings.map((m) => ({ code: "registry_warning", message: m })), parent: null
+        };
+        if (built.parentNumber) {
+          const parent = state.documents.find((d) => norm(d.documentNumber) === norm(built.parentNumber));
+          if (parent) doc.parentId = parent.id;
+          else doc.extraction.flags.push({ code: "unresolved_parent", message: `Nomor induk ${built.parentNumber} belum ada di basis data.` });
+        }
+        state.documents = [doc, ...state.documents];
+        out.docs.push(doc);
+        out.added += 1;
+      }
+      return out;
     }
 
     const files = document.getElementById("files");
     if (files) files.onchange = () => {
-      if (files.files && files.files.length) handleUniversalFileUpload(files.files);
+      if (files.files && files.files.length) handleUniversalFileUpload(Array.from(files.files));
+      files.value = "";
     };
-
     const blank = document.getElementById("blank");
     if (blank) blank.addEventListener("click", () => {
       const doc = blankNaskah();
+      doc.validation = { state: "DRAFT", by: "", at: "" };
       state.documents = [doc, ...state.documents];
       state.editingId = doc.id;
-      state.aiExtractionResult = null;
-      save();
       render();
     });
-
-    const autofillFile = document.getElementById("autofill-file");
-    if (autofillFile) {
-      autofillFile.onchange = () => {
-        if (autofillFile.files && autofillFile.files.length) handleUniversalFileUpload(autofillFile.files);
-      };
-    }
-
-    const aiOcrFile = document.getElementById("ai-ocr-file");
-    if (aiOcrFile) {
-      aiOcrFile.onchange = () => {
-        if (aiOcrFile.files && aiOcrFile.files.length) handleUniversalFileUpload(aiOcrFile.files);
-      };
-    }
-
     const dropZone = document.getElementById("entry-dropzone");
     if (dropZone) {
-      dropZone.ondragover = (e) => {
-        e.preventDefault();
-        dropZone.style.background = "#e8f0fe";
-        dropZone.style.borderColor = "#107c41";
-      };
-      dropZone.ondragleave = () => {
-        dropZone.style.background = "#f8fbff";
-        dropZone.style.borderColor = "#1a73e8";
-      };
+      dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add("over"); };
+      dropZone.ondragleave = () => dropZone.classList.remove("over");
       dropZone.ondrop = (e) => {
         e.preventDefault();
-        dropZone.style.background = "#f8fbff";
-        dropZone.style.borderColor = "#1a73e8";
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-          handleUniversalFileUpload(e.dataTransfer.files);
-        }
+        dropZone.classList.remove("over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) handleUniversalFileUpload(Array.from(e.dataTransfer.files));
       };
+      dropZone.onkeydown = (e) => { if ((e.key === "Enter" || e.key === " ") && e.target === dropZone && files) { e.preventDefault(); files.click(); } };
     }
-
-
     const toggleAiPaste = document.getElementById("btn-toggle-ai-paste");
     const aiPasteBox = document.getElementById("ai-paste-box");
-    if (toggleAiPaste && aiPasteBox) {
-      toggleAiPaste.onclick = () => {
-        aiPasteBox.style.display = aiPasteBox.style.display === "none" ? "block" : "none";
-      };
-    }
-
-    const sampleMoU = `MEMORANDUM OF UNDERSTANDING (NOTA KESEPAHAMAN)
-ANTARA
-INSTITUT TEKNOLOGI DEL
-DENGAN
-PEMERINTAH KABUPATEN TOBA
-TENTANG
-KERJA SAMA PENGEMBANGAN SISTEM INFORMASI DESA DAN PELATIHAN SUMBER DAYA MANUSIA
-DI KABUPATEN TOBA
-
-NOMOR: 014/ITDel/MoU/2026
-NOMOR: 100.3/042/Tapem/2026
-
-Pada hari ini, Jumat tanggal 15 bulan Januari tahun 2026 (15-01-2026), bertempat di Laguboti:
-1. Dr. Arnaldo Marulitua Sinaga, S.T., M.InfoTech., Rektor Institut Teknologi Del, selanjutnya disebut PIHAK PERTAMA.
-2. Ir. Poltak Sitorus, M.Sc., Bupati Toba, bertindak untuk dan atas nama Pemerintah Kabupaten Toba, selanjutnya disebut PIHAK KEDUA.
-
-PASAL 1: RUANG LINGKUP
-Ruang lingkup Nota Kesepahaman ini meliputi bidang Pendidikan, Penelitian dan Pengabdian Kepada Masyarakat dalam bidang teknologi informasi, rekayasa perangkat lunak, dan tata kelola digital desa.
-
-PASAL 2: MASA BERLAKU
-Nota Kesepahaman ini berlaku untuk jangka waktu 3 (tiga) tahun terhitung sejak tanggal ditandatangani.`;
-
-    const samplePKS = `PERJANJIAN KERJA SAMA
-ANTARA
-FAKULTAS TEKNOLOGI INDUSTRI INSTITUT TEKNOLOGI DEL
-DENGAN
-PT TOBA DIGITAL NUSANTARA
-TENTANG
-PROGRAM MAGANG MAHASISWA DAN OPTIMASI RANTAI PASOK INDUSTRI MANUFAKTUR
-
-NOMOR: 028/ITDel/FTI/PKS/2025
-NOMOR: TDN/HRD/VIII/2025-019
-
-Pada hari ini Senin tanggal 18 Agustus 2025, bertempat di Balige:
-Pihak Pertama: Dr. Rizal Sinaga, S.T., M.T., Dekan Fakultas Teknologi Industri IT Del.
-Pihak Kedua: Hendra Simanjuntak, S.T., M.M., Direktur Utama PT Toba Digital Nusantara.
-
-Ruang lingkup kerja sama mencakup kegiatan magang industri dan efisiensi logistik pabrik.
-Perjanjian ini berlaku sejak tanggal 18 Agustus 2025 sampai dengan 17 Agustus 2027.
-Nilai kompensasi operasional sebesar Rp 75.000.000.`;
-
-    const btnSample1 = document.getElementById("btn-ai-sample-1");
-    if (btnSample1) {
-      btnSample1.onclick = () => {
-        const txtArea = document.getElementById("ai-ocr-text");
-        if (txtArea) txtArea.value = sampleMoU;
-        state.view = "entri";
-        const parsed = parseDocumentSummary(sampleMoU, state.partners, "MoU_014_ITDel_Pemkab_Toba_2026.pdf");
-        let current = state.documents.find((item) => item.id === state.editingId);
-        if (!current || (!current.id.startsWith("DRAFT-") && current.id.startsWith("DOC-0"))) {
-          const blankDoc = blankNaskah();
-          state.documents = [blankDoc, ...state.documents];
-          state.editingId = blankDoc.id;
-          current = blankDoc;
-        }
-        for (const [k, v] of Object.entries(parsed.patch)) {
-          if (k === "triDharma") current.triDharma = parseTri(v);
-          else current[k] = v;
-        }
-        Object.assign(current.provenance, parsed.provenance);
-        state.aiExtractionResult = parsed;
-        state.notice = `✓ Ekstraksi Sampel MoU Pemkab Toba Berhasil: ${parsed.findings.length} atribut terdeteksi dan langsung diisikan ke formulir.`;
-        save();
-        render();
-        setTimeout(() => {
-          const formEl = document.getElementById("form");
-          if (formEl) {
-            for (const [k, v] of Object.entries(parsed.patch)) {
-              const el = formEl.elements[k];
-              if (el) {
-                el.value = (k === "triDharma" && Array.isArray(current.triDharma)) ? current.triDharma.join("; ") : v;
-                el.style.borderColor = "#107c41";
-                el.style.backgroundColor = "#f0fff4";
-                el.dispatchEvent(new Event("input", { bubbles: true }));
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-              }
-            }
-          }
-        }, 50);
-      };
-    }
-
-    const btnSample2 = document.getElementById("btn-ai-sample-2");
-    if (btnSample2) {
-      btnSample2.onclick = () => {
-        const txtArea = document.getElementById("ai-ocr-text");
-        if (txtArea) txtArea.value = samplePKS;
-        state.view = "entri";
-        const parsed = parseDocumentSummary(samplePKS, state.partners, "PKS_028_ITDel_FTI_Toba_Digital_2025.docx");
-        let current = state.documents.find((item) => item.id === state.editingId);
-        if (!current || (!current.id.startsWith("DRAFT-") && current.id.startsWith("DOC-0"))) {
-          const blankDoc = blankNaskah();
-          state.documents = [blankDoc, ...state.documents];
-          state.editingId = blankDoc.id;
-          current = blankDoc;
-        }
-        for (const [k, v] of Object.entries(parsed.patch)) {
-          if (k === "triDharma") current.triDharma = parseTri(v);
-          else current[k] = v;
-        }
-        Object.assign(current.provenance, parsed.provenance);
-        state.aiExtractionResult = parsed;
-        state.notice = `✓ Ekstraksi Sampel PKS Industri Berhasil: ${parsed.findings.length} atribut terdeteksi dan langsung diisikan ke formulir.`;
-        save();
-        render();
-        setTimeout(() => {
-          const formEl = document.getElementById("form");
-          if (formEl) {
-            for (const [k, v] of Object.entries(parsed.patch)) {
-              const el = formEl.elements[k];
-              if (el) {
-                el.value = (k === "triDharma" && Array.isArray(current.triDharma)) ? current.triDharma.join("; ") : v;
-                el.style.borderColor = "#107c41";
-                el.style.backgroundColor = "#f0fff4";
-                el.dispatchEvent(new Event("input", { bubbles: true }));
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-              }
-            }
-          }
-        }, 50);
-      };
-    }
+    if (toggleAiPaste && aiPasteBox) toggleAiPaste.onclick = () => { aiPasteBox.style.display = aiPasteBox.style.display === "none" ? "block" : "none"; };
 
     const runAiExtract = document.getElementById("btn-run-ai-extract");
-    if (runAiExtract) {
-      runAiExtract.onclick = () => {
-        const txt = document.getElementById("ai-ocr-text")?.value || "";
-        if (!txt.trim()) return;
-        const parsed = parseDocumentSummary(txt, state.partners);
-        let current = state.documents.find((item) => item.id === state.editingId);
-        if (!current) {
-          const blankDoc = blankNaskah();
-          state.documents = [blankDoc, ...state.documents];
-          state.editingId = blankDoc.id;
-          current = blankDoc;
-        }
-        Object.assign(current, parsed.patch);
-        Object.assign(current.provenance, parsed.provenance);
-        state.aiExtractionResult = parsed;
-        state.notice = `✓ Analisis Teks Berhasil: ${parsed.findings.length} atribut naskah terdeteksi dan diisikan ke formulir.`;
-        save();
-        render();
-        setTimeout(() => {
-          const formEl = document.getElementById("form");
-          if (formEl) {
-            for (const [k, v] of Object.entries(parsed.patch)) {
-              if (formEl.elements[k]) formEl.elements[k].value = v;
-            }
-          }
-        }, 50);
-      };
-    }
+    if (runAiExtract) runAiExtract.onclick = async () => {
+      const txt = document.getElementById("ai-ocr-text")?.value || "";
+      if (!txt.trim()) return;
+      const result = KSDASExtract.analyze({ pages: [{ n: 1, text: txt, method: "TEKS_TEMPEL" }], fileName: "" }, extractCtx());
+      const doc = await createDocFromExtraction(result, null, "", "teks-tempel.txt");
+      state.sessionIds = [doc.id, ...(state.sessionIds || [])];
+      state.editingId = doc.id;
+      state.notice = "Teks dianalisis. Hasil berstatus usulan, silakan tinjau.";
+      KSDASStore.audit("EXTRACT_TEXT", doc.id, "Ekstraksi dari teks tempel", role.name);
+      save();
+      render();
+    };
 
-    const btnClearAi = document.getElementById("btn-clear-ai");
-    if (btnClearAi) {
-      btnClearAi.onclick = () => {
-        state.aiExtractionResult = null;
-        render();
-      };
-    }
-
+    document.querySelectorAll("[data-review]").forEach((b) => {
+      b.onclick = () => { state.editingId = b.dataset.review; render(); const r = document.querySelector(".review"); if (r) r.scrollIntoView({ block: "start" }); };
+    });
+    const bulk = document.getElementById("btn-bulk-validate");
+    if (bulk) bulk.onclick = () => {
+      const targets = queueDocs().filter(canAutoValidate);
+      const now = new Date().toISOString();
+      targets.forEach((d) => {
+        d.validation = { state: "VALIDATED", by: role.name, at: now };
+        d.status = "AKTIF";
+        d.updatedAt = now;
+        KSDASStore.audit("VALIDATE", d.id, `Validasi massal: ${d.documentNumber}`, role.name);
+      });
+      state.notice = `${targets.length} naskah divalidasi.`;
+      save();
+      render();
+    };
+    const dlOriginal = document.getElementById("btn-dl-original");
+    if (dlOriginal) dlOriginal.onclick = async () => {
+      const cur = state.documents.find((d) => d.id === state.editingId);
+      const blob = cur ? await KSDASStore.getFile(cur.id) : null;
+      if (!blob) { state.notice = "Berkas asli tidak ditemukan di penyimpanan."; render(); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = cur.fileName || "berkas"; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      KSDASStore.audit("DOWNLOAD", cur.id, cur.fileName, role.name);
+    };
+    const useParentEx = document.getElementById("use-parent-ex");
+    if (useParentEx) useParentEx.onclick = () => {
+      const cur = state.documents.find((d) => d.id === state.editingId);
+      if (!cur || !cur.extraction || !cur.extraction.parent) return;
+      cur.parentId = cur.extraction.parent.id;
+      KSDASStore.audit("LINK", cur.id, `Tautkan ke ${cur.extraction.parent.number}`, role.name);
+      save();
+      render();
+    };
+    const btnReject = document.getElementById("btn-reject");
+    if (btnReject) btnReject.onclick = () => {
+      const cur = state.documents.find((d) => d.id === state.editingId);
+      if (!cur) return;
+      if (!confirm("Tolak naskah ini? Naskah diarsipkan dan tidak dihitung sebagai naskah aktif.")) return;
+      cur.validation = { state: "REJECTED", by: role.name, at: new Date().toISOString() };
+      cur.status = "ARSIP";
+      KSDASStore.audit("REJECT", cur.id, cur.documentNumber || cur.fileName, role.name);
+      state.notice = "Naskah ditolak dan diarsipkan.";
+      save();
+      render();
+    };
 
     const form = document.getElementById("form");
     if (form) form.onsubmit = (event) => {
       event.preventDefault();
+      if (!role.canWrite) return;
+      const act = (event.submitter && event.submitter.dataset && event.submitter.dataset.act) || "save";
       const current = state.documents.find((item) => item.id === state.editingId);
       if (!current) return;
       const data = new FormData(form);
-      const next = { ...current, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
-      for (const key of ["documentType", "documentNumber", "title", "partnerId", "startDate", "endDate", "status", "facultyId", "programId", "triDharma", "unitId", "activityName", "pic", "partnerSignatory", "partnerSignatoryTitle", "itdelSignatory", "itdelSignatoryTitle", "scope", "location", "budget", "fundingSource", "notes"]) {
-        const value = String(data.get(key) ?? "");
-        if (key === "triDharma") {
-          next.triDharma = parseTri(value);
-        } else {
-          next[key] = value;
-        }
-        next.provenance = { ...next.provenance, [key]: next.provenance[key] === "SISTEM" && value === String(current[key] ?? "") ? "SISTEM" : "MANUAL" };
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const next = { ...current, updatedAt: now, provenance: { ...(current.provenance || {}) } };
+      const keys = ["documentType", "documentNumber", "title", "partnerId", "signedDate", "startDate", "endDate", "status", "facultyId", "programId", "triDharma", "unitId", "activityName", "pic", "partnerSignatory", "partnerSignatoryTitle", "itdelSignatory", "itdelSignatoryTitle", "scope", "location", "budget", "fundingSource", "notes"];
+      const exf = (current.extraction && current.extraction.fields) || {};
+      let changedExtracted = false;
+      for (const key of keys) {
+        if (!data.has(key)) continue;
+        const value = String(data.get(key) ?? "").trim();
+        const before = key === "triDharma" ? (Array.isArray(current.triDharma) ? current.triDharma.join("; ") : "") : String(current[key] ?? "");
+        if (key === "triDharma") next.triDharma = parseTri(value);
+        else next[key] = value;
+        const after = key === "triDharma" ? next.triDharma.join("; ") : value;
+        if (exf[key]) {
+          const same = String(exf[key].value) === after;
+          next.provenance[key] = same ? "EKSTRAKSI" : "MANUAL";
+          if (!same) changedExtracted = true;
+        } else if (after !== before) next.provenance[key] = "MANUAL";
       }
+      const fail = (msg) => { state.notice = msg; render(); };
       const order = dateOrderError(next);
-      if (order) {
-        state.notice = order;
-        render();
-        return;
-      }
-      if (!next.documentNumber.trim() || !next.title.trim()) {
-        state.notice = "Nomor dokumen dan judul wajib diisi.";
-        render();
-        return;
-      }
-      if (duplicateNumber(state.documents, next.documentNumber, next.id)) {
-        state.notice = "Nomor dokumen sudah dipakai naskah lain.";
-        render();
-        return;
-      }
-      if (next.status === "AKTIF" && missingFields(next).length) {
-        state.notice = `Belum bisa ditandai aktif. Masih kosong: ${missingFields(next).join(", ")}.`;
-        render();
-        return;
+      if (order) return fail(order);
+      if (!next.documentNumber.trim() || !next.title.trim()) return fail("Nomor dokumen dan judul wajib diisi.");
+      if (duplicateNumber(state.documents, next.documentNumber, next.id)) return fail("Nomor dokumen sudah dipakai naskah lain.");
+      const vstate = (current.validation && current.validation.state) || "VALIDATED";
+      if (act === "validate") {
+        if (missingFields(next).length) return fail(`Belum bisa divalidasi. Masih kosong: ${missingFields(next).join(", ")}.`);
+        next.validation = { state: changedExtracted || vstate === "CORRECTED" ? "CORRECTED" : "VALIDATED", by: role.name, at: now };
+        if (next.status === "DRAFT" || next.status === "ARSIP") next.status = "AKTIF";
+        state.partners = state.partners.map((pt) => pt.id === next.partnerId && pt.draft ? { ...pt, draft: false } : pt);
+      } else {
+        if (next.status === "AKTIF" && vstate === "NEEDS_REVIEW") return fail("Naskah hasil ekstraksi harus divalidasi lebih dulu. Gunakan tombol Validasi dan aktifkan.");
+        if (next.status === "AKTIF" && missingFields(next).length) return fail(`Belum bisa ditandai aktif. Masih kosong: ${missingFields(next).join(", ")}.`);
+        if ((vstate === "VALIDATED") && changedExtracted) next.validation = { ...current.validation, state: "CORRECTED" };
       }
       state.documents = state.documents.map((item) => item.id === next.id ? next : item);
-      state.notice = "Tersimpan pada peramban ini.";
+      state.notice = act === "validate" ? "Naskah divalidasi dan menjadi data resmi." : "Draf tersimpan.";
+      KSDASStore.audit(act === "validate" ? "VALIDATE" : "UPDATE", next.id, `${next.documentNumber || next.title}${changedExtracted ? " (ada koreksi staf atas hasil ekstraksi)" : ""}`, role.name);
       save();
       render();
     };
@@ -3626,6 +3068,7 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
       importFile.onchange = () => {
         const file = importFile.files?.[0];
         if (!file) return;
+        if (/\.xlsx$/i.test(file.name)) { handleUniversalFileUpload([file]); importFile.value = ""; return; }
         const reader = new FileReader();
         reader.onload = (e) => {
           const content = String(e.target?.result || "");
@@ -3671,6 +3114,100 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
         render();
       });
     });
+    /* ---------------- Halaman Penyimpanan ---------------- */
+    if (state.view === "penyimpanan") {
+      if (!state.storage && !state.storageLoading) {
+        state.storageLoading = true;
+        refreshStorage(true).finally(() => { state.storageLoading = false; });
+      }
+      const $ = (id) => document.getElementById(id);
+      const snapshotHash = (docs, partners) => KSDASStore.hash(JSON.stringify({ documents: docs, partners: partners }));
+      const done = async (msg) => { state.notice = msg; await refreshStorage(false); render(); };
+      if ($("st-refresh")) $("st-refresh").onclick = () => { refreshStorage(true); };
+      if ($("st-persist")) $("st-persist").onclick = async () => { const ok = await KSDASStore.requestPersist(); await done(ok ? "Penyimpanan persisten diberikan peramban." : "Peramban belum memberikan penyimpanan persisten."); };
+      if ($("st-open-folder")) $("st-open-folder").onclick = async () => { try { await KSDASStore.api("POST", "api/open-folder", {}); state.notice = "Folder basis data dibuka di komputer ini."; } catch (e) { state.notice = "Gagal membuka folder: " + e.message; } render(); };
+      if ($("st-sim-io")) $("st-sim-io").onclick = async () => {
+        state.simCount = parseInt($("sim-count").value, 10) || 200;
+        state.simKb = parseInt($("sim-kb").value, 10) || 4;
+        state.simBusy = true; render();
+        try {
+          state.simResult = await KSDASStore.simulateIO(state.simCount, state.simKb);
+          KSDASStore.audit("SIMULASI_IO", "sim", `${state.simCount} rekaman x ${state.simKb} KB`, role.name);
+        } catch (e) { state.notice = "Simulasi gagal: " + e.message; }
+        state.simBusy = false;
+        await done(state.notice || "Simulasi selesai.");
+      };
+      if ($("st-sim-clear")) $("st-sim-clear").onclick = async () => { await KSDASStore.clearSim(); state.simResult = null; await done("Data simulasi dibersihkan."); };
+      if ($("st-mem-alloc")) $("st-mem-alloc").onclick = async () => {
+        state.memMb = parseInt($("mem-mb").value, 10) || 32;
+        const before = performance.memory ? performance.memory.usedJSHeapSize : null;
+        KSDASStore.allocateMemory(state.memMb);
+        await new Promise((r) => setTimeout(r, 50));
+        const after = performance.memory ? performance.memory.usedJSHeapSize : null;
+        state.memNote = before != null ? `Heap JS naik dari ${fmtBytes(before)} menjadi ${fmtBytes(after)}. Memori ini hilang saat halaman ditutup, berbeda dengan data di penyimpanan.` : `${state.memMb} MB dialokasikan. Peramban ini tidak melaporkan ukuran heap.`;
+        await done("Memori simulasi dialokasikan.");
+      };
+      if ($("st-mem-release")) $("st-mem-release").onclick = async () => { KSDASStore.releaseMemory(); state.memNote = "Memori simulasi dilepas. Pengosongan oleh pengumpul sampah dapat tertunda beberapa saat."; await done("Memori simulasi dilepas."); };
+      if ($("st-backup")) $("st-backup").onclick = async () => {
+        try { const r = await KSDASStore.backup(state); KSDASStore.audit("BACKUP", r.name, `${r.documents} naskah, ${fmtBytes(r.bytes)}`, role.name); await done(`Cadangan ${r.name} dibuat.`); }
+        catch (e) { await done("Cadangan gagal: " + e.message); }
+      };
+      if ($("st-drill")) $("st-drill").onclick = async () => {
+        try {
+          const before = await snapshotHash(state.documents, state.partners);
+          const b = await KSDASStore.backup(state);
+          const data = await KSDASStore.restore(b.name, true);
+          const after = await snapshotHash(data.documents, data.partners);
+          state.drillOk = before === after;
+          state.drillNote = state.drillOk
+            ? `Uji pemulihan LULUS: ${data.documents.length} naskah dipulihkan dari ${b.name} dan checksum identik (${before.slice(0, 12)}).`
+            : "Uji pemulihan GAGAL: checksum hasil pemulihan berbeda dari data saat ini.";
+          KSDASStore.audit("RESTORE_DRILL", b.name, state.drillOk ? "lulus" : "gagal", role.name);
+        } catch (e) { state.drillOk = false; state.drillNote = "Uji pemulihan GAGAL: " + e.message; }
+        await done("");
+      };
+      document.querySelectorAll("[data-restore]").forEach((b) => {
+        b.onclick = async () => {
+          if (!role.canWrite || !confirm("Pulihkan data dari cadangan ini? Data saat ini akan diganti (cadangan baru dibuat lebih dulu).")) return;
+          try {
+            await KSDASStore.backup(state);
+            const data = await KSDASStore.restore(b.dataset.restore);
+            state.documents = data.documents.map(normalizeDoc);
+            state.partners = data.partners;
+            KSDASStore.audit("RESTORE", b.dataset.restore, `${data.documents.length} naskah`, role.name);
+            save();
+            await done(`Data dipulihkan dari ${b.dataset.restore}.`);
+          } catch (e) { await done("Pemulihan gagal: " + e.message); }
+        };
+      });
+      if ($("st-export")) $("st-export").onclick = async () => {
+        const payload = { schema: "ksdas-export/1", exportedAt: new Date().toISOString(), documents: state.documents, partners: state.partners };
+        payload.checksum = await snapshotHash(payload.documents, payload.partners);
+        downloadText(`ksdas-ekspor-${todayISO()}.json`, JSON.stringify(payload, null, 2), "application/json");
+        KSDASStore.audit("EXPORT", "json", `${state.documents.length} naskah`, role.name);
+        state.notice = "Berkas ekspor dibuat beserta checksum integritas.";
+        render();
+      };
+      if ($("st-import")) $("st-import").onchange = async () => {
+        const f = $("st-import").files[0];
+        if (!f) return;
+        try {
+          const data = JSON.parse(await f.text());
+          if (data.schema !== "ksdas-export/1" || !Array.isArray(data.documents) || !Array.isArray(data.partners)) throw new Error("Berkas bukan ekspor KSDAS yang valid.");
+          if (data.documents.some((d) => typeof d.id !== "string" || typeof d.documentNumber !== "string")) throw new Error("Struktur naskah tidak valid.");
+          const sum = await snapshotHash(data.documents, data.partners);
+          if (data.checksum && data.checksum !== sum) throw new Error("Checksum tidak cocok. Berkas berubah setelah diekspor.");
+          const clash = data.documents.filter((d) => state.documents.some((x) => x.id === d.id)).length;
+          if (!confirm(`Impor ${data.documents.length} naskah (${clash} berbenturan ID dengan data saat ini)? Data saat ini akan DIGANTI. Cadangan dibuat lebih dulu.`)) return;
+          await KSDASStore.backup(state);
+          state.documents = data.documents.map(normalizeDoc);
+          state.partners = data.partners;
+          KSDASStore.audit("IMPORT", f.name, `${data.documents.length} naskah`, role.name);
+          save();
+          await done(`Impor selesai: ${data.documents.length} naskah.`);
+        } catch (e) { await done("Impor ditolak: " + e.message); }
+      };
+    }
     const reset = document.getElementById("reset");
     if (reset) reset.addEventListener("click", () => {
       if (!confirm("Kembalikan sepuluh data contoh?")) return;
@@ -3682,4 +3219,24 @@ Nilai kompensasi operasional sebesar Rp 75.000.000.`;
     });
   }
   render();
+  (async () => {
+    try {
+      await KSDASStore.init();
+      const saved = await KSDASStore.loadState();
+      let localAt = "";
+      try { localAt = (JSON.parse(localStorage.getItem(KEY) || "{}").savedAt) || ""; } catch { }
+      if (saved && saved.documents && (KSDASStore.isServer() || !localAt || (saved.savedAt || "") > localAt)) {
+        state.documents = saved.documents.map(normalizeDoc);
+        state.partners = saved.partners && saved.partners.length ? saved.partners : state.partners;
+        if (saved.roleId) state.roleId = saved.roleId;
+        try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, savedAt: saved.savedAt })); } catch { }
+      } else {
+        await KSDASStore.saveState(state, true);
+      }
+      KSDASStore.audit("SESSION", KSDASStore.mode, "Aplikasi dibuka", "Sistem");
+    } catch (e) {
+      state.notice = "Penyimpanan tidak dapat diinisialisasi: " + String(e && e.message || e);
+    }
+    render();
+  })();
 })();
