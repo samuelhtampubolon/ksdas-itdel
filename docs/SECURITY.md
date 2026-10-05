@@ -72,7 +72,7 @@ Pada tahap pembuktian konsep (*Proof-of-Concept*) saat ini yang berjalan di GitH
 ### C. Kebijakan Keamanan Konten (Content Security Policy - CSP)
 Header CSP aktif di dalam `<head>` file `index.html` membatasi eksekusi skrip hanya dari sumber lokal (*self*) dan CDN terverifikasi:
 ```html
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 ```
 
 ### D. Validasi Berkas Unggahan
@@ -146,6 +146,6 @@ Untuk mencegah perubahan kode yang tidak disengaja atau *force-push* langsung ke
 ## 6. PROSEDUR PELAPORAN INSIDEN KEAMANAN
 
 Bila ditemukan potensi celah keamanan atau paparan data yang tidak diharapkan, laporkan segera ke:
-* **Unit Kerja Sama IT Del:** `kemitraan@del.ac.id`
-* **Direktorat SDI / TSI IT Del:** `sdi@del.ac.id`
+* **Unit Kerja Sama IT Del:** `<KONTAK-UNIT-KERJA-SAMA-TBD>`
+* **Direktorat SDI / TSI IT Del:** `<KONTAK-SDI-TSI-TBD>`
 * **Helpdesk Kampus:** Institut Teknologi Del, Sitoluama, Laguboti.

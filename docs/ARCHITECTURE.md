@@ -63,7 +63,7 @@ flowchart TD
     end
 
     subgraph Campus_Backend ["Lapisan Server Kampus IT Del (Direktorat SDI / TSI)"]
-        APIGateway["Nginx Reverse Proxy & SSL Gateway (kerjasama.del.ac.id)"]
+        APIGateway["Nginx Reverse Proxy & SSL Gateway (<DOMAIN-KSDAS-TBD>)"]
         REST_API["Backend REST API (FastAPI / Node.js Express)"]
         DB[(PostgreSQL 14+ Relational Database)]
         FileStore["MinIO S3 On-Premise Object Storage"]

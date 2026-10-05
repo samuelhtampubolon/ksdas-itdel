@@ -28,8 +28,10 @@ app = FastAPI(
     title="KSDAS IT Del REST API",
     description="Backend API resmi Sistem Informasi Kerja Sama & Analitik Data Institut Teknologi Del",
     version="0.3.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    # Dokumentasi interaktif hanya untuk pengembangan; dimatikan di produksi.
+    docs_url=None if os.getenv("KSDAS_ENV", "development").lower() == "production" else "/docs",
+    redoc_url=None if os.getenv("KSDAS_ENV", "development").lower() == "production" else "/redoc",
+    openapi_url=None if os.getenv("KSDAS_ENV", "development").lower() == "production" else "/openapi.json",
 )
 
 # This demo API has no SSO implementation yet.  Never leave state-changing
@@ -85,7 +87,7 @@ def get_allowed_origins() -> list[str]:
     if configured:
         return [origin.strip() for origin in configured.split(",") if origin.strip()]
     # Secure production defaults. Local origins are opt-in only for development.
-    origins = ["https://kerjasama.del.ac.id", "https://ksdas.del.ac.id"]
+    origins = []  # produksi: wajib diisi lewat CORS_ORIGINS (origin HTTPS resmi)
     if os.getenv("KSDAS_ENV", "development").lower() != "production":
         origins.extend(["http://localhost:8080", "http://localhost:8088", "http://127.0.0.1:8080", "http://127.0.0.1:8088"])
     return origins
@@ -94,9 +96,9 @@ def get_allowed_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "X-API-Key", "X-Request-ID"],
 )
 
 @app.middleware("http")
@@ -110,8 +112,12 @@ async def security_and_tracing_middleware(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Process-Time"] = f"{process_time:.4f}s"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    response.headers["Cache-Control"] = "no-store"
     return response
 
 # ------------------------------------------------------------------------------
@@ -126,7 +132,7 @@ demo_partners = [
         "country": "Indonesia",
         "city": "Jakarta",
         "contact_person": "Budi Santoso",
-        "email": "budi@huawei.com",
+        "email": "contoh1@example.invalid",
         "website": "https://www.huawei.com",
         "is_world_class": True,
         "active_mou_count": 1,
@@ -139,7 +145,7 @@ demo_partners = [
         "country": "Indonesia",
         "city": "Jakarta",
         "contact_person": "Siti Rahma",
-        "email": "siti@microsoft.com",
+        "email": "contoh2@example.invalid",
         "website": "https://www.microsoft.com",
         "is_world_class": True,
         "active_mou_count": 1,
@@ -152,7 +158,7 @@ demo_partners = [
         "country": "Indonesia",
         "city": "Jakarta",
         "contact_person": "Joko Widodo",
-        "email": "csr@astra.co.id",
+        "email": "contoh3@example.invalid",
         "website": "https://www.astra.co.id",
         "is_world_class": True,
         "active_mou_count": 1,
@@ -165,8 +171,8 @@ demo_partners = [
         "country": "Indonesia",
         "city": "Balige",
         "contact_person": "Sekretaris Daerah Kab. Toba",
-        "email": "setda@tobakab.go.id",
-        "website": "https://tobakab.go.id",
+        "email": "contoh4@example.invalid",
+        "website": "https://contoh.invalid",
         "is_world_class": False,
         "active_mou_count": 1,
         "active_pks_count": 1

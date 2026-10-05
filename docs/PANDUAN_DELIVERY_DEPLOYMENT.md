@@ -20,7 +20,7 @@ Penggunaan Google Drive, OneDrive, Google Sheets, Microsoft 365, dan Notion saat
 
 1. **Kedaulatan & Keamanan Data Naskah Dinas**:
    - Naskah kerja sama memuat hak kekayaan intelektual, klausul kerahasiaan (*NDA*), anggaran hibah, dan identitas pejabat mitra.
-   - Menyimpan dosir di server lokal kampus IT Del (Sitoluama, Laguboti) menjamin kepatuhan regulasi institusional dan mencegah kebocoran data ke server luar negeri.
+   - Menyimpan dosir di server lokal kampus IT Del (Sitoluama, Laguboti) mendukung kepatuhan regulasi institusional dan mencegah kebocoran data ke server luar negeri.
 2. **Keterikatan Relasi Dokumen (*Single Source of Truth*)**:
    - Google Drive dan OneDrive hanya menyimpan file statis tanpa validasi hierarki.
    - KSDAS memastikan MoU memiliki turunan PKS, PKS memiliki turunan IA, dan proposal memiliki laporan pelaksanaan.

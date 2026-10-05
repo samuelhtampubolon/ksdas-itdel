@@ -723,7 +723,13 @@
 ${example.map(csvCell).join(",")}
 `;
   }
+  /** Netralkan injeksi rumus spreadsheet (=, +, -, @, tab, CR di awal sel). */
+  function neutralizeFormula(value) {
+    const v = String(value ?? "");
+    return v !== "-" && /^[=+\-@\t\r]/.test(v) ? "'" + v : v;
+  }
   function csvCell(value) {
+    value = neutralizeFormula(value);
     if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
     return value;
   }
@@ -774,32 +780,32 @@ ${example.map(csvCell).join(",")}
       const parent = docs.find((d) => d.id === doc.parentId);
       rowsHtml += `<tr>
         <td style="text-align:center;">${idx + 1}</td>
-        <td>${esc(doc.documentNumber || "-")}</td>
-        <td>${esc(typeLabel(doc.documentType))}</td>
-        <td>${esc(doc.title || "-")}</td>
-        <td>${esc(partner?.name || "-")}</td>
-        <td>${esc(partner ? PARTNER_TYPE_LABEL[partner.type] : "-")}</td>
-        <td>${esc(partner?.city || "-")}, ${esc(partner?.country || "Indonesia")}</td>
-        <td>${esc(facultyName(doc.facultyId) === "\u2014" ? "" : facultyName(doc.facultyId))}</td>
-        <td>${esc(programName(doc.programId) === "\u2014" ? "" : programName(doc.programId))}</td>
-        <td>${esc(unitName(doc.unitId) === "\u2014" ? "" : unitName(doc.unitId))}</td>
-        <td>${esc(doc.signedDate || "-")}</td>
-        <td>${esc(doc.startDate || "-")}</td>
-        <td>${esc(doc.endDate || "-")}</td>
-        <td>${esc(STATUS_LABEL[displayStatus(doc)])}</td>
-        <td>${esc(Array.isArray(doc.triDharma) ? doc.triDharma.map((t) => TRI_LABEL[t] || t).join("; ") : String(doc.triDharma || ""))}</td>
-        <td>${esc(doc.activityName || "-")}</td>
-        <td>${esc(doc.pic || "-")}</td>
-        <td>${esc(doc.itdelSignatory || "-")}</td>
-        <td>${esc(doc.itdelSignatoryTitle || "-")}</td>
-        <td>${esc(doc.partnerSignatory || "-")}</td>
-        <td>${esc(doc.partnerSignatoryTitle || "-")}</td>
-        <td>${esc(parent?.documentNumber || "-")}</td>
-        <td>${esc(doc.scope || "-")}</td>
-        <td>${esc(doc.location || "-")}</td>
-        <td>${esc(doc.budget || "-")}</td>
-        <td>${esc(doc.fundingSource || "-")}</td>
-        <td>${esc(doc.notes || "-")}</td>
+        <td>${esc(neutralizeFormula(doc.documentNumber || "-"))}</td>
+        <td>${esc(neutralizeFormula(typeLabel(doc.documentType)))}</td>
+        <td>${esc(neutralizeFormula(doc.title || "-"))}</td>
+        <td>${esc(neutralizeFormula(partner?.name || "-"))}</td>
+        <td>${esc(neutralizeFormula(partner ? PARTNER_TYPE_LABEL[partner.type] : "-"))}</td>
+        <td>${esc(neutralizeFormula(partner?.city || "-"))}, ${esc(neutralizeFormula(partner?.country || "Indonesia"))}</td>
+        <td>${esc(neutralizeFormula(facultyName(doc.facultyId) === "\u2014" ? "" : facultyName(doc.facultyId)))}</td>
+        <td>${esc(neutralizeFormula(programName(doc.programId) === "\u2014" ? "" : programName(doc.programId)))}</td>
+        <td>${esc(neutralizeFormula(unitName(doc.unitId) === "\u2014" ? "" : unitName(doc.unitId)))}</td>
+        <td>${esc(neutralizeFormula(doc.signedDate || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.startDate || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.endDate || "-"))}</td>
+        <td>${esc(neutralizeFormula(STATUS_LABEL[displayStatus(doc)]))}</td>
+        <td>${esc(neutralizeFormula(Array.isArray(doc.triDharma) ? doc.triDharma.map((t) => TRI_LABEL[t] || t).join("; ") : String(doc.triDharma || "")))}</td>
+        <td>${esc(neutralizeFormula(doc.activityName || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.pic || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.itdelSignatory || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.itdelSignatoryTitle || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.partnerSignatory || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.partnerSignatoryTitle || "-"))}</td>
+        <td>${esc(neutralizeFormula(parent?.documentNumber || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.scope || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.location || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.budget || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.fundingSource || "-"))}</td>
+        <td>${esc(neutralizeFormula(doc.notes || "-"))}</td>
       </tr>`;
     });
     return `\uFEFF<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -1654,8 +1660,21 @@ ${example.map(csvCell).join(",")}
     }
     next.extraction = { ...next.extraction, learned: true };
   }
+  var SAFE_ID = /^[A-Za-z0-9_-]{1,48}$/;
+  function safeId(id, prefix) {
+    return typeof id === "string" && SAFE_ID.test(id) ? id : `${prefix}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  }
+  function normalizePartner(pt) {
+    const p2 = pt && typeof pt === "object" ? { ...pt } : {};
+    p2.id = safeId(p2.id, "PRT");
+    for (const k of ["name", "shortName", "country", "city", "province", "type"]) if (p2[k] != null) p2[k] = String(p2[k]).slice(0, 300);
+    return p2;
+  }
   function normalizeDoc(d) {
     const doc = { ...blankNaskah(), ...d };
+    doc.id = safeId(d && d.id, "DOC");
+    if (doc.parentId && !SAFE_ID.test(String(doc.parentId))) doc.parentId = "";
+    if (doc.partnerId && !SAFE_ID.test(String(doc.partnerId))) doc.partnerId = "";
     if (!Array.isArray(doc.triDharma)) doc.triDharma = parseTri(String(doc.triDharma || ""));
     if (!doc.validation || !doc.validation.state) doc.validation = { state: "VALIDATED", by: "Data awal", at: "" };
     doc.provenance = doc.provenance || {};
@@ -1781,6 +1800,7 @@ ${example.map(csvCell).join(",")}
   }
   var state = load();
   state.documents = state.documents.map(normalizeDoc);
+  state.partners = state.partners.map(normalizePartner);
   seedAudit();
   function save() {
     state.documents = state.documents.filter((d) => !isEmptyDraft(d) || d.id === state.editingId);
@@ -1947,8 +1967,8 @@ ${example.map(csvCell).join(",")}
       ${rows.map((doc) => {
         const isChecked = state.selectedIds.includes(doc.id);
         return `<tr style="${isChecked ? "background:#f4f8fc;" : ""}">
-          <td style="text-align:center;"><input type="checkbox" class="doc-select" data-id="${doc.id}" ${isChecked ? "checked" : ""} /></td>
-          <td><button data-open="${doc.id}" class="link">${esc(doc.documentNumber || "Tanpa nomor")}</button></td>
+          <td style="text-align:center;"><input type="checkbox" class="doc-select" data-id="${esc(doc.id)}" ${isChecked ? "checked" : ""} /></td>
+          <td><button data-open="${esc(doc.id)}" class="link">${esc(doc.documentNumber || "Tanpa nomor")}</button></td>
           <td>${esc(doc.title)}</td>
           <td>${esc(partnerName(state.partners, doc.partnerId))}</td>
           <td><b>${STATUS_LABEL[displayStatus(doc)]}</b></td>
@@ -2107,7 +2127,7 @@ ${example.map(csvCell).join(",")}
           <td>${esc(overallLevel(d))}</td>
           <td>${missingFields(d).length ? esc(missingFields(d).join(", ")) : "Lengkap"}</td>
           <td>${validationBadge(d)}</td>
-          <td><button type="button" class="link" data-review="${d.id}">Tinjau</button></td>
+          <td><button type="button" class="link" data-review="${esc(d.id)}">Tinjau</button></td>
         </tr>`).join("")}</tbody>
       </table></div>
     </section>` : ""}
@@ -3253,7 +3273,7 @@ ${example.map(csvCell).join(",")}
             await KSDASStore.backup(state);
             const data = await KSDASStore.restore(b.dataset.restore);
             state.documents = data.documents.map(normalizeDoc);
-            state.partners = data.partners;
+            state.partners = data.partners.map(normalizePartner);
             KSDASStore.audit("RESTORE", b.dataset.restore, `${data.documents.length} naskah`, role.name);
             save();
             await done(`Data dipulihkan dari ${b.dataset.restore}.`);
@@ -3302,7 +3322,7 @@ ${example.map(csvCell).join(",")}
           if (!confirm(`Impor ${data.documents.length} naskah (${clash} berbenturan ID dengan data saat ini)? Data saat ini akan DIGANTI. Cadangan dibuat lebih dulu.`)) return;
           await KSDASStore.backup(state);
           state.documents = data.documents.map(normalizeDoc);
-          state.partners = data.partners;
+          state.partners = data.partners.map(normalizePartner);
           if (data.memory) state.memory = normalizeMemory(data.memory);
           KSDASStore.audit("IMPORT", f.name, `${data.documents.length} naskah`, role.name);
           save();
@@ -3330,7 +3350,7 @@ ${example.map(csvCell).join(",")}
       try { localAt = (JSON.parse(localStorage.getItem(KEY) || "{}").savedAt) || ""; } catch { }
       if (saved && saved.documents && (KSDASStore.isServer() || !localAt || (saved.savedAt || "") > localAt)) {
         state.documents = saved.documents.map(normalizeDoc);
-        state.partners = saved.partners && saved.partners.length ? saved.partners : state.partners;
+        state.partners = saved.partners && saved.partners.length ? saved.partners.map(normalizePartner) : state.partners;
         if (saved.roleId) state.roleId = saved.roleId;
         if (saved.memory) state.memory = normalizeMemory(saved.memory);
         try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory, savedAt: saved.savedAt })); } catch { }

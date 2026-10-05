@@ -126,9 +126,9 @@ Untuk menjamin keandalan dan stabilitas layanan, pengembangan tidak boleh dilaku
 
 | Lingkungan | Domain / Subdomain Konseptual | Basis Data | Fungsi Utama |
 | :--- | :--- | :--- | :--- |
-| **Development** | `http://localhost:8080` / `dev-ksdas.del.ac.id` | PostgreSQL Lokal / Docker | Pengembangan fitur baru |
-| **Staging** | `https://staging-kerjasama.del.ac.id` | PostgreSQL Staging (Data Sintetis) | Pengujian integrasi & UAT |
-| **Production** | `https://kerjasama.del.ac.id` | PostgreSQL Produksi (Data Resmi) | Operasional resmi kampus IT Del |
+| **Development** | `http://localhost:8080` / `<DOMAIN-DEV-TBD>` | PostgreSQL Lokal / Docker | Pengembangan fitur baru |
+| **Staging** | `https://<DOMAIN-STAGING-TBD>` | PostgreSQL Staging (Data Sintetis) | Pengujian integrasi & UAT |
+| **Production** | `https://<DOMAIN-KSDAS-TBD>` | PostgreSQL Produksi (Data Resmi) | Operasional resmi kampus IT Del |
 
 ---
 
@@ -136,10 +136,10 @@ Untuk menjamin keandalan dan stabilitas layanan, pengembangan tidak boleh dilaku
 
 | Layanan | Nama Domain Target (Konseptual) | Tipe Rekaman | Keterangan |
 | :--- | :--- | :---: | :--- |
-| **Aplikasi Web KSDAS** | `kerjasama.del.ac.id` | `A` / `CNAME` | Diarahkan ke reverse proxy Nginx DMZ |
-| **REST API Gateway** | `kerjasama.del.ac.id/api/v1` | Reverse Proxy Path | Jalur rute ke backend kontainer |
-| **Storage Konsol (MinIO)** | `s3-kerjasama.del.ac.id` | `A` (Internal LAN) | Akses manajemen storage oleh tim TSI |
-| **Identity Provider** | `sso.del.ac.id` | `A` | Server SSO resmi kampus IT Del |
+| **Aplikasi Web KSDAS** | `<DOMAIN-KSDAS-TBD>` | `A` / `CNAME` | Diarahkan ke reverse proxy Nginx DMZ |
+| **REST API Gateway** | `<DOMAIN-KSDAS-TBD>/api/v1` | Reverse Proxy Path | Jalur rute ke backend kontainer |
+| **Storage Konsol (MinIO)** | `<DOMAIN-STORAGE-TBD>` | `A` (Internal LAN) | Akses manajemen storage oleh tim TSI |
+| **Identity Provider** | `<IDP-KAMPUS-TBD>` | `A` | Server SSO resmi kampus IT Del |
 
 ---
 
@@ -210,7 +210,7 @@ Konfigurasi reverse proxy resmi disediakan pada berkas [`nginx.conf`](../nginx.c
 1. KSDAS tidak menyimpan kata sandi pengguna (*zero password storage*).
 2. Autentikasi didelegasikan ke penyedia identitas resmi kampus IT Del melalui protokol **OpenID Connect (OIDC) / OAuth2**.
 3. **Alur Token JWT:**
-   - Frontend mengalihkan pengguna ke `https://sso.del.ac.id`.
+   - Frontend mengalihkan pengguna ke `https://<IDP-KAMPUS-TBD>`.
    - Setelah login sukses, backend KSDAS memvalidasi tanda tangan JWT menggunakan kunci publik IdP (*JWKS endpoint*).
    - Backend menerbitkan *secure session cookie* (`HttpOnly`, `SameSite=Strict`, `Secure`).
 
@@ -400,7 +400,7 @@ Metrik yang dipantau melalui Prometheus & Grafana kampus IT Del:
 
 ## 26. DAFTAR PERIKSA SEBELUM GO-LIVE (CHECKLIST GO-LIVE)
 
-- [ ] DNS `kerjasama.del.ac.id` telah diarahkan ke IP server kampus IT Del.
+- [ ] DNS `<DOMAIN-KSDAS-TBD>` telah diarahkan ke IP server kampus IT Del.
 - [ ] Sertifikat SSL/TLS terpasang aktif dengan status HTTPS terenkripsi.
 - [ ] Aturan firewall memblokir port 5432 (DB) dan 9000 (MinIO) dari internet publik.
 - [ ] Skrip DDL PostgreSQL telah dieksekusi dan 18 tabel terverifikasi.
@@ -462,7 +462,7 @@ Prototipe ini **TIDAK MENGARANG-NGARANG** parameter infrastruktur aktual kampus.
 | 2 | **Distribusi Sistem Operasi Server** | Ubuntu Server 22.04 LTS / Debian 12 / Rocky Linux | **TBD (TSI)** |
 | 3 | **Mode Akses Jaringan Resmi** | Mode D (Hybrid: Publik HTTPS + Internal LAN Validasi) | **TBD (Pimpinan/TSI)** |
 | 4 | **Penyedia Identitas SSO Aktual** | Keycloak Kampus IT Del / CAS Server IT Del | **TBD (SDI)** |
-| 5 | **Nama Domain Resmi Kampus** | `kerjasama.del.ac.id` | **TBD (SDI)** |
+| 5 | **Nama Domain Resmi Kampus** | `<DOMAIN-KSDAS-TBD>` | **TBD (SDI)** |
 | 6 | **Penyedia Sertifikat SSL/TLS** | Wildcard `*.del.ac.id` / Let's Encrypt Otomatis | **TBD (TSI)** |
 | 7 | **Engine AI/OCR Produksi** | Tesseract Lokal + Python Worker / GPU Campus Server | **TBD (SDI/DukTek)** |
 | 8 | **Lokasi Server Cadangan (Off-site)**| Server NAS Ruang Server Gedung FITE / Cloud Backup | **TBD (TSI)** |

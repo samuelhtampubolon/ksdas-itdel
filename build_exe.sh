@@ -26,4 +26,6 @@ mcs -nologo -target:winexe -langversion:5 -optimize+ -out:"$OUT" \
   -resource:docs/data_dictionary_local.json,data_dictionary.json \
   desktop-app/KSDAS_DesktopApp.cs
 rm -rf "$TMP"
+sha256sum "$OUT" > "$OUT.sha256"
+cat "$OUT.sha256"
 ls -la "$OUT"
