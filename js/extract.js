@@ -685,11 +685,11 @@
     for (var ti = 0; ti < Math.min(lines.length, 40); ti++) {
       if (/^T\s?E\s?N\s?T\s?A\s?N\s?G\b/i.test(lines[ti].t) || /^(?:Perihal|Hal)\s*[:：]/i.test(lines[ti].t)) { tentangIdx = ti; break; }
     }
-    var STOP_TITLE = /^(?:NOMOR|NO\.?|PADA\s+HARI|HARI\s+INI|ANTARA|DENGAN|PASAL|BAB|TANGGAL|LAMPIRAN)\b/i;
+    var STOP_TITLE = /^(?:NOMOR|NO\.?|NUMBER|PADA\s+HARI|HARI\s+INI|ANTARA|BETWEEN|DENGAN|AND|PASAL|ARTICLE|BAB|TANGGAL|LAMPIRAN|THIS\s+)\b/i;
     var antaraIdx = -1, denganIdx = -1;
     for (var ci = 0; ci < Math.min(lines.length, 40); ci++) {
-      if (antaraIdx < 0 && /^ANTARA$/i.test(lines[ci].t)) antaraIdx = ci;
-      if (denganIdx < 0 && /^(?:DENGAN|DAN)$/i.test(lines[ci].t) && antaraIdx >= 0) denganIdx = ci;
+      if (antaraIdx < 0 && /^(?:ANTARA|BETWEEN)$/i.test(lines[ci].t)) antaraIdx = ci;
+      if (denganIdx < 0 && /^(?:DENGAN|DAN|AND)$/i.test(lines[ci].t) && antaraIdx >= 0) denganIdx = ci;
     }
     var coverEnd = tentangIdx >= 0 ? tentangIdx : Math.min(lines.length, 40);
     if (antaraIdx >= 0 && denganIdx > antaraIdx) {
@@ -698,12 +698,12 @@
     } else {
       var inlineAntara = -1, inlineDengan = -1;
       for (var qi = 0; qi < Math.min(lines.length, 30); qi++) {
-        if (inlineAntara < 0 && /^ANTARA\s+\S/.test(lines[qi].t)) inlineAntara = qi;
-        else if (inlineAntara >= 0 && inlineDengan < 0 && /^(?:DENGAN|DAN)\s+\S/.test(lines[qi].t)) inlineDengan = qi;
+        if (inlineAntara < 0 && /^(?:ANTARA|BETWEEN)\s+\S/.test(lines[qi].t)) inlineAntara = qi;
+        else if (inlineAntara >= 0 && inlineDengan < 0 && /^(?:DENGAN|DAN|AND)\s+\S/.test(lines[qi].t)) inlineDengan = qi;
       }
       if (inlineAntara >= 0 && inlineDengan > inlineAntara) {
-        cover.itdelSide = [{ t: lines[inlineAntara].t.replace(/^ANTARA\s+/, ""), page: lines[inlineAntara].page, method: lines[inlineAntara].method, ocrConf: lines[inlineAntara].ocrConf }];
-        cover.partnerSide = [{ t: lines[inlineDengan].t.replace(/^(?:DENGAN|DAN)\s+/, ""), page: lines[inlineDengan].page, method: lines[inlineDengan].method, ocrConf: lines[inlineDengan].ocrConf }];
+        cover.itdelSide = [{ t: lines[inlineAntara].t.replace(/^(?:ANTARA|BETWEEN)\s+/, ""), page: lines[inlineAntara].page, method: lines[inlineAntara].method, ocrConf: lines[inlineAntara].ocrConf }];
+        cover.partnerSide = [{ t: lines[inlineDengan].t.replace(/^(?:DENGAN|DAN|AND)\s+/, ""), page: lines[inlineDengan].page, method: lines[inlineDengan].method, ocrConf: lines[inlineDengan].ocrConf }];
         for (var q2 = inlineDengan + 1; q2 < coverEnd && !STOP_TITLE.test(lines[q2].t) && !/^T\s?E\s?N\s?T\s?A\s?N\s?G/i.test(lines[q2].t) && cover.partnerSide.length < 3; q2++) cover.partnerSide.push(lines[q2]);
       }
       for (var si = 0; si < Math.min(lines.length, 30) && !cover.partnerSide.length; si++) {
@@ -725,7 +725,7 @@
     if (!fields.title && typeHit) {
       var tp2 = [];
       for (var tk = typeHit.line.i + 1; tk < lines.length && tp2.length < 2; tk++) {
-        if (STOP_TITLE.test(lines[tk].t) || /^Nomor/i.test(lines[tk].t) || lines[tk].t.length > 120) break;
+        if (STOP_TITLE.test(lines[tk].t) || /^Nomor/i.test(lines[tk].t) || lines[tk].t.length > 120 || /[.:]$/.test(lines[tk].t) || findDates(lines[tk].t).length || /^[A-Za-z ]{2,30}\s*[:\uFF1A]/.test(lines[tk].t)) break;
         tp2.push(lines[tk].t);
       }
       if (tp2.length) put("title", smartCase(tp2.join(" ")), "SEDANG", lines[typeHit.line.i + 1], tp2.join(" / "), "BARIS_SETELAH_JUDUL");
@@ -754,7 +754,7 @@
       return lines[lines.length - 1] || { t: "", page: 1 };
     }
     function parsePerson(block) {
-      var b = block.replace(/\t/g, " ").replace(/\n+/g, " ").replace(/^\s*(?:dan\s+|serta\s+)?/i, "");
+      var b = block.replace(/\t/g, " ").replace(/\n+/g, " ").replace(/^\s*(?:dan\s+|serta\s+)?/i, "").replace(/^\s*PIHAK\s+(?:PERTAMA|KESATU|KEDUA|KETIGA|I|II)\s*[:\-]\s*/i, "");
       var lab = block.replace(/\t/g, " ");
       var lm = lab.match(/Nama\s*[:：]\s*([^\n]+)/i);
       var jm = lab.match(/Jabatan\s*[:：]\s*([^\n]+)/i);
@@ -818,10 +818,10 @@
         if (ln.t.length > 220 || /[:\uFF1A]\s*$/.test(ln.t)) return;
         var pp = parsePerson(ln.t);
         if (!pp || !isPerson(pp.name) || !pp.title) return;
-        pp.line = ln; pp.how = "BLOK_TANDA_TANGAN"; pp.org = "";
+        pp.line = ln; pp.how = "BLOK_TANDA_TANGAN"; pp.org = orgOf(ln.t);
         var del = !!canonicalLeader(pp.name) || (itdelRe.test(pp.title) && !partnerPerson);
-        if (del && !itdelPerson) itdelPerson = pp;
-        else if (!del && !partnerPerson && !canonicalLeader(pp.name)) partnerPerson = pp;
+        if (del && !itdelPerson) { itdelPerson = pp; persons.push(pp); }
+        else if (!del && !partnerPerson && !canonicalLeader(pp.name)) { partnerPerson = pp; persons.push(pp); }
       });
     }
     // Organisasi mitra dari kalimat pihak jika sampul tidak ada
@@ -834,7 +834,7 @@
       if (cand) { partnerNameRaw = cand.org; partnerNameLine = cand.line || lines[0]; partnerNameLevel = "SEDANG"; partnerNameMethod = "KALIMAT_PIHAK"; }
       else {
         var oi = full.match(/PIHAK\s+KEDUA[^\n]*?[:\-]\s*([^\n,]{4,80})/i);
-        if (oi) { partnerNameRaw = oi[1]; partnerNameLine = lineAt(oi.index); partnerNameLevel = "RENDAH"; partnerNameMethod = "LABEL_PIHAK_KEDUA"; }
+        if (oi && !isPerson(clean(oi[1]))) { partnerNameRaw = oi[1]; partnerNameLine = lineAt(oi.index); partnerNameLevel = "RENDAH"; partnerNameMethod = "LABEL_PIHAK_KEDUA"; }
       }
     }
     partnerNameRaw = clean(partnerNameRaw).replace(/^(?:dan|dengan)\s+/i, "").replace(/[,;:]+$/, "").replace(/(?<!\bTbk|\bPT|\bCV|\bUD|\bNo)\.$/, "");
@@ -909,10 +909,11 @@
     var signed = null, start = null, end = null;
     dated.forEach(function (x) {
       var b = x.before, a = x.after;
-      var isEndCtx = /(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|berakhir(?:\s+pada)?|batas\s+akhir|jatuh\s+tempo)\s*(?:dengan\s+)?(?:tanggal\s*)?$/i.test(b);
-      var isStartCtx = /(?:berlaku\s+(?:sejak|mulai|efektif)|terhitung\s+(?:sejak|mulai)|dimulai(?:\s+pada)?|mulai\s+(?:dari|tanggal|berlaku)|efektif\s+(?:sejak|mulai)|periode(?:\s+kerja\s+sama)?\s*[:：]?)\s*(?:tanggal\s*)?$/i.test(b);
-      var isSignCtx = /(?:pada\s+hari\s+ini|hari\s+\w+\s+tanggal|ditandatangani\s+(?:pada|di)|ditetapkan\s+(?:pada|di))/i.test(b + " ") || /^(?:hari\s+ini)/i.test(a);
-      var rangeNext = /^\s*(?:\)|,)?\s*(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|-|–)\s*(?:tanggal\s*)?$/i.test(a.replace(/\s*(?:tanggal)?\s*$/i, "")) && dated.some(function (y) { return y.idx === x.idx && y.d.index > x.d.index; });
+      var isEndCtx = /(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|berakhir(?:\s+pada)?|batas\s+akhir|jatuh\s+tempo|until|through|expires?\s+on|ends?\s+on|to)\s*(?:dengan\s+)?(?:tanggal\s*)?$/i.test(b);
+      var isStartCtx = /(?:berlaku\s+(?:sejak|mulai|efektif)|terhitung\s+(?:sejak|mulai)|dimulai(?:\s+pada)?|mulai\s+(?:dari|tanggal|berlaku)|efektif\s+(?:sejak|mulai)|effective\s+(?:from|as\s+of|on)|commenc\w+\s+on|periode(?:\s+kerja\s+sama)?\s*[:：]?)\s*(?:tanggal\s*)?$/i.test(b);
+      var isSignCtx = /(?:pada\s+hari\s+ini|hari\s+\w+\s+tanggal|ditandatangani\s+(?:pada|di)|ditetapkan\s+(?:pada|di)|(?:is\s+)?made\s+(?:and\s+entered\s+into\s+)?on|entered\s+into\s+on|signed\s+on|dated)/i.test(b + " ") || /^(?:hari\s+ini)/i.test(a);
+      var nextSame = dated.filter(function (y) { return y.idx === x.idx && y.d.index > x.d.index; })[0];
+      var rangeNext = !!nextSame && /^\s*[,)]?\s*(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|-|\u2013|to|until|through)\s*(?:tanggal\s*)?$/i.test(x.line.t.slice(x.d.end, nextSame.d.index));
       if (isEndCtx && !end) end = x;
       else if ((isStartCtx || rangeNext) && !start) start = x;
       else if (isSignCtx && !signed) signed = x;
@@ -933,13 +934,14 @@
     datePut("startDate", start, "TINGGI", "KONTEKS_BERLAKU");
     datePut("endDate", end, "TINGGI", "KONTEKS_BERAKHIR");
     if (!fields.startDate && fields.signedDate) {
-      var sgLine = lines.filter(function (l) { return /(?:berlaku|efektif)[^.]{0,60}(?:sejak|terhitung|mulai)[^.]{0,40}(?:ditandatangani|penandatanganan)/i.test(l.t); })[0];
+      var sgLine = lines.filter(function (l) { return /(?:berlaku|efektif|valid|effective)[^.]{0,60}(?:sejak|terhitung|mulai|from)[^.]{0,40}(?:ditandatangani|penandatanganan|signing|signature)/i.test(l.t); })[0];
       if (sgLine) put("startDate", fields.signedDate.value, "SEDANG", sgLine, sgLine.t, "BERLAKU_SEJAK_TTD", { note: "Berlaku sejak penandatanganan, sehingga sama dengan tanggal tanda tangan." });
     }
     if (!fields.endDate && fields.startDate) {
       var durLine = null, dur = null;
       lines.some(function (l) {
-        var m = l.t.match(/(?:jangka\s+waktu|berlaku\s+(?:selama|untuk)|selama|masa\s+berlaku)[^.0-9a-z]*(?:selama\s+)?(\d+|[a-z]+(?:\s+[a-z]+){0,2})\s*(?:\([^)]*\)\s*)?(tahun|bulan)\b/i);
+        var m = l.t.match(/(?:jangka\s+waktu|berlaku\s+(?:selama|untuk)|selama|masa\s+berlaku|valid\s+for|period\s+of|term\s+of)[^.0-9a-z]*(?:selama\s+)?(\d+|[a-z]+(?:\s+[a-z]+){0,2})\s*(?:\([^)]*\)\s*)?(tahun|bulan|years?|months?)\b/i);
+        if (m) m[2] = /^year/i.test(m[2]) ? "tahun" : /^month/i.test(m[2]) ? "bulan" : m[2];
         if (m) {
           var n = /^\d+$/.test(m[1]) ? parseInt(m[1], 10) : wordsToInt(m[1]);
           if (n && n > 0 && n <= 50) { dur = { n: n, unit: m[2].toLowerCase() }; durLine = l; return true; }

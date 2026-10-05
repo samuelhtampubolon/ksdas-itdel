@@ -11,7 +11,7 @@ jobs:
         with:
           node-version: 22
       - name: Uji ekstraksi
-        run: node --test tests/extract.test.js
+        run: node --test tests/extract.test.js tests/varian.test.js
   build-exe:
     runs-on: ubuntu-latest
     needs: test
