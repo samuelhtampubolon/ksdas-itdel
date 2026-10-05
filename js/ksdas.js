@@ -1724,6 +1724,7 @@ ${example.map(csvCell).join(",")}
         ${act("st-backup", "Buat cadangan sekarang", "btn-primary", true)}
         ${act("st-drill", "Uji pemulihan (tidak mengubah data)")}
         ${act("st-export", "Ekspor JSON")}
+        ${act("st-clear-all", "Kosongkan semua data (mulai dari nol)", "btn-subtle", true)}
         <label class="btn-subtle filebtn ${canAct ? "" : "dis"}">Impor JSON<input id="st-import" type="file" accept=".json,application/json" hidden ${canAct ? "" : "disabled"}></label>
       </div>
       ${state.drillNote ? `<p role="status" class="${state.drillOk ? "ok" : "bad"}">${esc(state.drillNote)}</p>` : ""}
@@ -1767,6 +1768,10 @@ ${example.map(csvCell).join(",")}
   function render() {
     const root = document.getElementById("app");
     if (!root) return;
+    if (state.booting) {
+      root.innerHTML = '<p class="boot" role="status" style="padding:2rem">Menyiapkan penyimpanan data...</p>';
+      return;
+    }
     const role = roleById(state.roleId);
     const visible = scopeDocuments(state.documents, role);
     const nav = [
@@ -3180,6 +3185,20 @@ ${example.map(csvCell).join(",")}
           } catch (e) { await done("Pemulihan gagal: " + e.message); }
         };
       });
+      if ($("st-clear-all")) $("st-clear-all").onclick = async () => {
+        if (!role.canWrite) return;
+        if (!confirm("Hapus SEMUA naskah dan mitra dari penyimpanan ini (termasuk data contoh)? Cadangan dibuat lebih dulu dan dapat dipulihkan.")) return;
+        try {
+          await KSDASStore.backup(state);
+          state.documents = [];
+          state.partners = [];
+          state.sessionIds = [];
+          state.editingId = null;
+          KSDASStore.audit("CLEAR_ALL", "semua", "Data dikosongkan oleh pengguna (cadangan dibuat)", role.name);
+          save();
+          await done("Seluruh data dikosongkan. Cadangan sebelum penghapusan tersedia di daftar cadangan.");
+        } catch (e) { await done("Gagal mengosongkan data: " + e.message); }
+      };
       if ($("st-export")) $("st-export").onclick = async () => {
         const payload = { schema: "ksdas-export/1", exportedAt: new Date().toISOString(), documents: state.documents, partners: state.partners };
         payload.checksum = await snapshotHash(payload.documents, payload.partners);
@@ -3218,10 +3237,11 @@ ${example.map(csvCell).join(",")}
       render();
     });
   }
+  state.booting = true;
   render();
   (async () => {
     try {
-      await KSDASStore.init();
+      await Promise.race([KSDASStore.init(), new Promise((_, rej) => setTimeout(() => rej(new Error("Waktu inisialisasi penyimpanan habis.")), 6000))]);
       const saved = await KSDASStore.loadState();
       let localAt = "";
       try { localAt = (JSON.parse(localStorage.getItem(KEY) || "{}").savedAt) || ""; } catch { }
@@ -3237,6 +3257,7 @@ ${example.map(csvCell).join(",")}
     } catch (e) {
       state.notice = "Penyimpanan tidak dapat diinisialisasi: " + String(e && e.message || e);
     }
+    state.booting = false;
     render();
   })();
 })();

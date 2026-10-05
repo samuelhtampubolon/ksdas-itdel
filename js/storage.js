@@ -223,6 +223,7 @@
     /* --------- Simulasi (demonstrasi). Tidak menyentuh data naskah. --------- */
     simulateIO: function (count, kb) {
       count = Math.max(1, Math.min(5000, count | 0)); kb = Math.max(1, Math.min(256, kb | 0));
+      if (count * kb > 65536) return Promise.reject(new Error('Total simulasi dibatasi 64 MB (jumlah x ukuran).'));
       var payload = "x".repeat(kb * 1024);
       var res = { count: count, kb: kb, mode: mode };
       var t0 = performance.now();
