@@ -1,0 +1,15 @@
+rules_version = '2';
+// KSDAS: hanya pengguna masuk yang surelnya terdaftar di dokumen ksdas_staff/{surel} yang boleh membaca/menulis.
+// Daftarkan staf lewat Firebase Console > Firestore (tambah dokumen dengan ID = surel, mis. nama@del.ac.id) atau Admin SDK.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/ksdas_staff/$(request.auth.token.email));
+    }
+    match /ksdas_staff/{email} { allow read, write: if false; }
+    match /{col}/{doc} {
+      allow read, write: if isStaff() && col.matches('ksdas_(state|state_chunks|audit|backups|backup_chunks|files|file_chunks|sim)');
+    }
+  }
+}

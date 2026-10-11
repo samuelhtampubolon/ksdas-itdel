@@ -167,3 +167,9 @@ Sistem ini hanya menyertakan tepat 10 naskah contoh terstandar (judul diawali ka
 
 Proyek ini dilisensikan di bawah lisensi terbuka [MIT License](LICENSE).  
 Hak Cipta (c) 2026 Samuel Hasudungan Tampubolon, Institut Teknologi Del.
+
+
+## OCR multibahasa dan penyimpanan cloud (opsional)
+
+- OCR ringan di peramban/EXE: `docs/OCR_RISET.md`.
+- Integrasi Cloudflare (Pages + D1 + R2 + KV), Supabase, Firebase Spark, Hugging Face Spaces, server Node: `docs/INTEGRASI_CLOUD.md`. Bawaan tetap tanpa cloud.

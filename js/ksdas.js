@@ -1686,15 +1686,17 @@ ${example.map(csvCell).join(",")}
     return `
     <h1>Penyimpanan, Storage, dan Memori</h1>
     <p class="muted">Halaman ini mendemonstrasikan bagaimana KSDAS menyimpan data, berkas, audit, dan cadangan, serta memantau pemakaian ruang dan memori. Tombol simulasi memakai data uji sendiri dan tidak menyentuh data naskah.</p>
-    <section class="modebanner ${mode === "local-server" ? "m-local" : "m-browser"}" role="status">
-      <b>Mode: ${mode === "local-server" ? "Server lokal (KSDAS_ITDel.exe)" : "Peramban (GitHub Pages)"}</b>
+    <section class="modebanner ${mode === "local-server" ? "m-local" : mode === "cloud" ? "m-local" : "m-browser"}" role="status">
+      <b>Mode: ${mode === "local-server" ? "Server lokal (KSDAS_ITDel.exe)" : mode === "cloud" ? "Cloud: " + esc(KSDASStore.cloudLabel) : "Peramban (GitHub Pages)"}</b>
       <p>${mode === "local-server"
         ? `Data ditulis ke folder pada disk komputer ini: <code>${esc(srv ? srv.dbDir : (KSDASStore.serverInfo && KSDASStore.serverInfo.dbDir) || "ksdas_local_database")}</code>. Data tetap ada walau peramban dibersihkan.`
+        : mode === "cloud"
+        ? `Data, berkas, audit, dan cadangan disimpan di penyedia cloud${srv && srv.endpoint ? ` (<code>${esc(srv.endpoint)}</code>)` : ""} sesuai berkas <code>js/config.js</code>. Akses dilindungi login. ${srv && srv.storageBucket ? esc(srv.storageBucket) : ""} <button type="button" id="st-logout" class="link">Keluar</button>`
         : `Data disimpan di IndexedDB dan localStorage peramban ini. Data tidak dikirim ke server mana pun, dan hilang bila data situs dibersihkan. Untuk penyimpanan berbasis folder di disk, jalankan KSDAS_ITDel.exe.`}
       </p>
     </section>
     <div class="row">${act("st-refresh", "Segarkan data", "btn-primary")}
-      ${mode === "browser" ? act("st-persist", "Minta penyimpanan persisten") : act("st-open-folder", "Tampilkan folder basis data")}
+      ${mode === "browser" ? act("st-persist", "Minta penyimpanan persisten") : mode === "local-server" ? act("st-open-folder", "Tampilkan folder basis data") : ""}
     </div>
     ${!st ? `<p role="status">Memuat statistik penyimpanan...</p>` : `
     <div class="cards">
@@ -1718,7 +1720,7 @@ ${example.map(csvCell).join(",")}
         ${mem.jsHeapUsed != null ? `<progress max="100" value="${pctOf(mem.jsHeapUsed, mem.jsHeapLimit)}" aria-label="Heap JavaScript"></progress><p>Heap JS: <b>${esc(fmtBytes(mem.jsHeapUsed))}</b> dari batas ${esc(fmtBytes(mem.jsHeapLimit))}</p>` : `<p class="small">Pengukuran heap JS hanya tersedia di peramban berbasis Chromium.</p>`}
         ${mem.deviceMemoryGB ? `<p class="small">Perkiraan RAM perangkat: ${mem.deviceMemoryGB} GB</p>` : ""}
         <p class="small">Memori simulasi aktif: <b>${mem.simulatedMB || 0} MB</b></p></div>
-      ${srv ? `<div class="card"><h2>Disk komputer</h2>
+      ${srv && srv.diskTotalBytes != null ? `<div class="card"><h2>Disk komputer</h2>
         <progress max="100" value="${pctOf(srv.diskTotalBytes - srv.diskFreeBytes, srv.diskTotalBytes)}" aria-label="Pemakaian disk"></progress>
         <p>Kosong <b>${esc(fmtBytes(srv.diskFreeBytes))}</b> dari ${esc(fmtBytes(srv.diskTotalBytes))}</p>
         <p class="small">Folder basis data: <b>${esc(fmtBytes(srv.dbBytes))}</b></p></div>` : ""}
@@ -1729,7 +1731,7 @@ ${example.map(csvCell).join(",")}
         <thead><tr><th scope="col">Tabel</th><th scope="col">Baris</th><th scope="col">Ukuran data</th>${srv ? '<th scope="col">Berkas di disk</th>' : ""}</tr></thead>
         <tbody>${st.tables.map((t) => {
           const f = srv && srv.tables ? srv.tables.find((x) => x.name === t.name) : null;
-          return `<tr><td><code>${esc(t.name)}</code></td><td>${t.rows}</td><td>${esc(fmtBytes(t.bytes))}</td>${srv ? `<td>${f ? esc(f.path) + " (" + esc(fmtBytes(f.bytes)) + ")" : "belum ditulis"}</td>` : ""}</tr>`;
+          return `<tr><td><code>${esc(t.name)}</code></td><td>${t.rows}</td><td>${esc(fmtBytes(t.bytes))}</td>${srv ? `<td>${f ? esc(f.path || "(penyedia cloud)") + " (" + esc(fmtBytes(f.bytes)) + ")" : "belum ditulis"}</td>` : ""}</tr>`;
         }).join("")}</tbody></table></div>
       ${srv && srv.tree ? `<details><summary>Isi folder basis data (${srv.tree.length} entri)</summary><ul class="tree">${srv.tree.map((e) => `<li><code>${esc(e.path)}</code> ${e.dir ? "" : "(" + esc(fmtBytes(e.bytes)) + ")"}</li>`).join("")}</ul></details>` : ""}
     </section>`}
@@ -3224,6 +3226,7 @@ ${example.map(csvCell).join(",")}
       const snapshotHash = (docs, partners) => KSDASStore.hash(JSON.stringify({ documents: docs, partners: partners }));
       const done = async (msg) => { state.notice = msg; await refreshStorage(false); render(); };
       if ($("st-refresh")) $("st-refresh").onclick = () => { refreshStorage(true); };
+      if ($("st-logout")) $("st-logout").onclick = () => { KSDASStore.logout(); location.reload(); };
       if ($("st-persist")) $("st-persist").onclick = async () => { const ok = await KSDASStore.requestPersist(); await done(ok ? "Penyimpanan persisten diberikan peramban." : "Peramban belum memberikan penyimpanan persisten."); };
       if ($("st-open-folder")) $("st-open-folder").onclick = async () => { try { await KSDASStore.api("POST", "api/open-folder", {}); state.notice = "Folder basis data dibuka di komputer ini."; } catch (e) { state.notice = "Gagal membuka folder: " + e.message; } render(); };
       if ($("st-sim-io")) $("st-sim-io").onclick = async () => {
@@ -3340,24 +3343,54 @@ ${example.map(csvCell).join(",")}
       render();
     });
   }
+  async function loadFromStore() {
+    const saved = await KSDASStore.loadState();
+    let localAt = "";
+    try { localAt = (JSON.parse(localStorage.getItem(KEY) || "{}").savedAt) || ""; } catch { }
+    if (saved && saved.documents && (KSDASStore.isRemote() || !localAt || (saved.savedAt || "") > localAt)) {
+      state.documents = saved.documents.map(normalizeDoc);
+      state.partners = saved.partners && saved.partners.length ? saved.partners.map(normalizePartner) : state.partners;
+      if (saved.roleId) state.roleId = saved.roleId;
+      if (saved.memory) state.memory = normalizeMemory(saved.memory);
+      try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory, savedAt: saved.savedAt })); } catch { }
+    } else {
+      await KSDASStore.saveState(state, true);
+    }
+    KSDASStore.audit("SESSION", KSDASStore.mode, "Aplikasi dibuka", "Sistem");
+  }
+  function loginView() {
+    const root = document.getElementById("app");
+    root.innerHTML = `
+    <main class="loginbox" style="max-width:26rem;margin:4rem auto;padding:0 1rem">
+      <h1>Masuk ke penyimpanan cloud</h1>
+      <p class="muted">Penyimpanan: <b>${esc(KSDASStore.cloudLabel)}</b>. Gunakan akun yang dibuat pemilik sistem. Kata sandi tidak disimpan di peramban; hanya token sesi yang disimpan selama tab terbuka.</p>
+      <form id="login-form" autocomplete="on">
+        ${KSDASStore.provider && KSDASStore.provider.name === "rest" ? "" : '<label for="lg-user">Surel</label><input id="lg-user" type="email" autocomplete="username" required style="display:block;width:100%;margin-bottom:.75rem">'}
+        <label for="lg-pass">Kata sandi</label><input id="lg-pass" type="password" autocomplete="current-password" required style="display:block;width:100%;margin-bottom:.75rem">
+        <div class="row"><button type="submit" class="btn-primary">Masuk</button> <button type="button" id="lg-local" class="btn-subtle">Pakai mode peramban saja</button></div>
+        <p id="lg-err" role="alert" class="small" style="color:#b00020"></p>
+      </form>
+    </main>`;
+    document.getElementById("login-form").onsubmit = async (ev) => {
+      ev.preventDefault();
+      const err = document.getElementById("lg-err"), btn = ev.target.querySelector("button[type=submit]"); err.textContent = ""; btn.disabled = true;
+      try {
+        const u = document.getElementById("lg-user");
+        await KSDASStore.login(u ? u.value.trim() : "", document.getElementById("lg-pass").value);
+        err.textContent = "Memuat data...";
+        await loadFromStore();
+        state.booting = false; render();
+      } catch (e) { btn.disabled = false; err.textContent = "Gagal masuk: " + String(e && e.message || e); document.getElementById("lg-pass").value = ""; }
+    };
+    document.getElementById("lg-local").onclick = () => { try { sessionStorage.setItem("ksdas-force-local", "1"); } catch { } location.reload(); };
+  }
   state.booting = true;
   render();
   (async () => {
     try {
       await Promise.race([KSDASStore.init(), new Promise((_, rej) => setTimeout(() => rej(new Error("Waktu inisialisasi penyimpanan habis.")), 6000))]);
-      const saved = await KSDASStore.loadState();
-      let localAt = "";
-      try { localAt = (JSON.parse(localStorage.getItem(KEY) || "{}").savedAt) || ""; } catch { }
-      if (saved && saved.documents && (KSDASStore.isServer() || !localAt || (saved.savedAt || "") > localAt)) {
-        state.documents = saved.documents.map(normalizeDoc);
-        state.partners = saved.partners && saved.partners.length ? saved.partners.map(normalizePartner) : state.partners;
-        if (saved.roleId) state.roleId = saved.roleId;
-        if (saved.memory) state.memory = normalizeMemory(saved.memory);
-        try { localStorage.setItem(KEY, JSON.stringify({ roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory, savedAt: saved.savedAt })); } catch { }
-      } else {
-        await KSDASStore.saveState(state, true);
-      }
-      KSDASStore.audit("SESSION", KSDASStore.mode, "Aplikasi dibuka", "Sistem");
+      if (KSDASStore.authRequired) { state.booting = false; loginView(); return; }
+      await loadFromStore();
     } catch (e) {
       state.notice = "Penyimpanan tidak dapat diinisialisasi: " + String(e && e.message || e);
     }

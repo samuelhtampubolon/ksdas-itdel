@@ -7,6 +7,10 @@
  *  - "local-server" : KSDAS_ITDel.exe menjalankan server lokal (127.0.0.1) yang menulis ke folder
  *                     ksdas_local_database di disk komputer. Mode terdeteksi otomatis.
  *
+ *  - "cloud"        : penyimpanan jarak jauh opsional lewat js/config.js (js/providers/cloud.js): Cloudflare
+ *                     Pages + D1 + R2 + KV, Supabase Free, Firebase Spark, atau server Node (Glitch, Hugging
+ *                     Face Spaces). Perlu masuk (login). Tanpa konfigurasi, perilaku tidak berubah.
+ *
  * Catatan: ini adalah penyimpanan PROTOTIPE. Basis data produksi, penyimpanan berkas, dan cadangan
  * resmi ditentukan SDI/TSI/DukTek (lihat docs/RUNBOOK_INTEGRASI_SDI_TSI_V03.md).
  */
@@ -16,7 +20,7 @@
   var DB_NAME = "ksdas_db", DB_VERSION = 1;
   var STORES = ["state", "files", "audit", "backups", "sim"];
   var MAX_FILE = 25 * 1024 * 1024;
-  var db = null, mode = "browser", serverInfo = null, token = "";
+  var db = null, mode = "browser", serverInfo = null, token = "", provider = null;
   var memBlocks = [];
   var saveTimer = null, pendingState = null, lastSaveInfo = { at: null, ms: null, bytes: 0, ok: null, error: "" };
 
@@ -56,7 +60,9 @@
     return Promise.resolve("fnv1a-" + h.toString(16));
   }
   function strBytes(s) { return new Blob([s]).size; }
+  function remote() { return mode === "local-server" || mode === "cloud"; }
   function api(method, path, body, raw) {
+    if (mode === "cloud") return provider.request(method, path, body, raw);
     var headers = { "X-KSDAS-Token": token };
     var opts = { method: method, headers: headers, cache: "no-store" };
     if (body !== undefined && !raw) { headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
@@ -79,18 +85,37 @@
     get lastSave() { return lastSaveInfo; },
     isServer: function () { return mode === "local-server"; },
 
+    get provider() { return provider; },
+    /** true bila penyimpanan cloud dikonfigurasi tetapi pengguna belum masuk */
+    get authRequired() { return mode === "cloud" && provider && provider.needsLogin && !provider.signedIn(); },
+    get cloudLabel() { return provider ? provider.label : ""; },
+    isRemote: function () { return remote(); },
+    login: function (user, password) {
+      if (!provider) return Promise.reject(new Error("Penyimpanan cloud tidak dikonfigurasi."));
+      return provider.login({ user: user, password: password });
+    },
+    logout: function () { if (provider) provider.logout(); },
+
     init: function () {
       var meta = root.document && root.document.querySelector('meta[name="ksdas-token"]');
       token = meta ? meta.content : "";
+      var cfg = root.KSDAS_CONFIG || {};
       var tryServer = /^https?:$/.test(root.location.protocol) && token && !/\{\{/.test(token)
         ? withTimeout(api("GET", "api/ping"), 1500).then(function (j) { if (j && j.app === "KSDAS") { mode = "local-server"; serverInfo = j; } }).catch(function () { })
         : Promise.resolve();
-      return tryServer.then(openDb).then(function (d) { db = d; return Store; });
+      return tryServer.then(function () {
+        var forceLocal = false; try { forceLocal = root.sessionStorage.getItem("ksdas-force-local") === "1"; } catch (e) { /* abaikan */ }
+        if (mode === "local-server" || forceLocal || !cfg.provider || cfg.provider === "browser" || !root.KSDASCloud) return;
+        provider = root.KSDASCloud.create(cfg);
+        if (!provider) return;
+        mode = "cloud"; serverInfo = { mode: "cloud", provider: provider.name, label: provider.label };
+        if (provider.probe) return withTimeout(provider.probe(), 4000).then(function (j) { if (!j) serverInfo.unreachable = true; }).catch(function () { serverInfo.unreachable = true; });
+      }).then(openDb).then(function (d) { db = d; return Store; });
     },
 
     /** Memuat state tersimpan: {documents, partners, roleId, savedAt} atau null */
     loadState: function () {
-      if (mode === "local-server") return api("GET", "api/state").then(function (j) { return j && j.documents ? j : null; }).catch(function () { return null; });
+      if (remote()) return api("GET", "api/state").then(function (j) { return j && j.documents ? j : null; }).catch(function () { return null; });
       if (!db) return Promise.resolve(null);
       return req2p(tx("state").get("main")).catch(function () { return null; }).then(function (v) { return v || null; });
     },
@@ -104,7 +129,7 @@
         if (!snap) return Promise.resolve();
         var t0 = performance.now();
         var bytes = strBytes(JSON.stringify(snap));
-        var p = mode === "local-server" ? api("POST", "api/state", snap) : (db ? (function () { var t = db.transaction("state", "readwrite"); t.objectStore("state").put(snap, "main"); return txDone(t); })() : Promise.resolve());
+        var p = remote() ? api("POST", "api/state", snap) : (db ? (function () { var t = db.transaction("state", "readwrite"); t.objectStore("state").put(snap, "main"); return txDone(t); })() : Promise.resolve());
         return p.then(function () { lastSaveInfo = { at: snap.savedAt, ms: Math.round((performance.now() - t0) * 10) / 10, bytes: bytes, ok: true, error: "" }; })
           .catch(function (e) { lastSaveInfo = { at: snap.savedAt, ms: null, bytes: bytes, ok: false, error: String(e && e.message || e) }; });
       };
@@ -117,7 +142,7 @@
       return file.arrayBuffer().then(function (buf) {
         return sha256(buf).then(function (hash) {
           var rec = { docId: docId, name: file.name, type: file.type || "application/octet-stream", size: file.size, sha256: hash, at: new Date().toISOString() };
-          if (mode === "local-server") {
+          if (remote()) {
             return api("PUT", "api/files/" + encodeURIComponent(docId) + "?name=" + encodeURIComponent(file.name), buf, true).then(function (j) { rec.ref = j.ref; rec.sha256 = j.sha256 || hash; return rec; });
           }
           if (!db) return Object.assign(rec, { ref: "(tidak tersimpan: IndexedDB tidak tersedia)" });
@@ -128,36 +153,37 @@
       });
     },
     getFile: function (docId) {
-      if (mode === "local-server") return fetch("api/files/" + encodeURIComponent(docId), { headers: { "X-KSDAS-Token": token } }).then(function (r) { return r.ok ? r.blob() : null; });
+      if (mode === "cloud") return provider.getBlob(docId);
+      if (remote()) return fetch("api/files/" + encodeURIComponent(docId), { headers: { "X-KSDAS-Token": token } }).then(function (r) { return r.ok ? r.blob() : null; });
       if (!db) return Promise.resolve(null);
       return req2p(tx("files").get(docId)).then(function (v) { return v ? v.blob : null; });
     },
     deleteFile: function (docId) {
-      if (mode === "local-server") return api("DELETE", "api/files/" + encodeURIComponent(docId)).catch(function () { });
+      if (remote()) return api("DELETE", "api/files/" + encodeURIComponent(docId)).catch(function () { });
       if (!db) return Promise.resolve();
       var t = db.transaction("files", "readwrite"); t.objectStore("files").delete(docId); return txDone(t);
     },
     listFiles: function () {
-      if (mode === "local-server") return api("GET", "api/stats").then(function (s) { return s.files || []; });
+      if (remote()) return api("GET", "api/stats").then(function (s) { return s.files || []; });
       if (!db) return Promise.resolve([]);
       return req2p(tx("files").getAll()).then(function (all) { return all.map(function (r) { return { docId: r.docId, name: r.name, size: r.size, sha256: r.sha256, at: r.at }; }); });
     },
 
     audit: function (action, target, detail, actor) {
       var ev = { at: new Date().toISOString(), actor: actor || "Pengguna", action: action, target: target || "", detail: detail || "" };
-      if (mode === "local-server") return api("POST", "api/audit", ev).catch(function () { });
+      if (remote()) return api("POST", "api/audit", ev).catch(function () { });
       if (!db) return Promise.resolve();
       var t = db.transaction("audit", "readwrite"); t.objectStore("audit").add(ev); return txDone(t).catch(function () { });
     },
     listAudit: function (limit) {
       limit = limit || 50;
-      if (mode === "local-server") return api("GET", "api/audit?limit=" + limit).then(function (j) { return j.items || []; }).catch(function () { return []; });
+      if (remote()) return api("GET", "api/audit?limit=" + limit).then(function (j) { return j.items || []; }).catch(function () { return []; });
       if (!db) return Promise.resolve([]);
       return req2p(tx("audit").getAll()).then(function (all) { return all.slice(-limit).reverse(); });
     },
 
     backup: function (state) {
-      if (mode === "local-server") return api("POST", "api/backup", {});
+      if (remote()) return api("POST", "api/backup", {});
       if (!db) return Promise.reject(new Error("IndexedDB tidak tersedia."));
       var name = "backup_" + new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
       var snap = { roleId: state.roleId, documents: state.documents, partners: state.partners, memory: state.memory || {}, savedAt: new Date().toISOString() };
@@ -169,14 +195,14 @@
       });
     },
     listBackups: function () {
-      if (mode === "local-server") return api("GET", "api/backups").then(function (j) { return j.items || []; });
+      if (remote()) return api("GET", "api/backups").then(function (j) { return j.items || []; });
       if (!db) return Promise.resolve([]);
       return req2p(tx("backups").getAll()).then(function (all) {
         return all.map(function (b) { return { name: b.name, at: b.at, bytes: b.bytes, sha256: b.sha256, documents: b.documents }; }).reverse();
       });
     },
     restore: function (name, dryRun) {
-      if (mode === "local-server") return api("POST", "api/restore", { name: name, dryRun: !!dryRun });
+      if (remote()) return api("POST", "api/restore", { name: name, dryRun: !!dryRun });
       if (!db) return Promise.reject(new Error("IndexedDB tidak tersedia."));
       return req2p(tx("backups").get(name)).then(function (b) {
         if (!b) throw new Error("Cadangan tidak ditemukan.");
@@ -191,6 +217,7 @@
     stats: function (state) {
       var out = {
         mode: mode,
+        provider: provider ? provider.name : "",
         tables: [
           { name: "naskah_kerjasama", rows: state.documents.length, bytes: strBytes(JSON.stringify(state.documents)) },
           { name: "mitra_institusi", rows: state.partners.length, bytes: strBytes(JSON.stringify(state.partners)) }
@@ -206,13 +233,13 @@
       if (navigator.deviceMemory) out.memory.deviceMemoryGB = navigator.deviceMemory;
       out.memory.simulatedMB = memBlocks.length;
       out.stateBytes = strBytes(JSON.stringify({ documents: state.documents, partners: state.partners }));
-      if (db) {
+      if (db && !remote()) {
         jobs.push(req2p(tx("files").count()).then(function (n) { out.fileCount = n; }).catch(function () { }));
         jobs.push(req2p(tx("audit").count()).then(function (n) { out.auditCount = n; }).catch(function () { }));
         jobs.push(req2p(tx("backups").count()).then(function (n) { out.backupCount = n; }).catch(function () { }));
         jobs.push(req2p(tx("files").getAll()).then(function (all) { out.fileBytes = all.reduce(function (a, r) { return a + (r.size || 0); }, 0); }).catch(function () { }));
       }
-      if (mode === "local-server") jobs.push(api("GET", "api/stats").then(function (s) { out.server = s; }).catch(function (e) { out.serverError = String(e.message || e); }));
+      if (remote()) jobs.push(api("GET", "api/stats").then(function (s) { out.server = s; }).catch(function (e) { out.serverError = String(e.message || e); }));
       return Promise.all(jobs).then(function () { return out; });
     },
     requestPersist: function () {
@@ -227,7 +254,7 @@
       var payload = "x".repeat(kb * 1024);
       var res = { count: count, kb: kb, mode: mode };
       var t0 = performance.now();
-      if (mode === "local-server") {
+      if (remote()) {
         var rows = [];
         for (var i = 0; i < count; i++) rows.push({ i: i, payload: payload });
         return api("POST", "api/sim", { rows: rows }).then(function (j) {
@@ -250,7 +277,7 @@
       });
     },
     clearSim: function () {
-      if (mode === "local-server") return api("DELETE", "api/sim").catch(function () { });
+      if (remote()) return api("DELETE", "api/sim").catch(function () { });
       if (!db) return Promise.resolve();
       var t = db.transaction("sim", "readwrite"); t.objectStore("sim").clear(); return txDone(t);
     },
