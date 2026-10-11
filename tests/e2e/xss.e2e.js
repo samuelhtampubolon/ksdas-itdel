@@ -48,7 +48,7 @@ const P = '<img src=x onerror="window.__pwn=1">';
   ok(dialogs.length === 0, "tidak ada dialog tak terduga");
 
   // Injeksi rumus pada ekspor CSV
-  const evil = { ...bad, documents: [{ ...bad.documents[0], id: "DOC-CSV1", title: "=HYPERLINK(\"http://x\",\"klik\")", documentNumber: "+1+1", partnerId: "", notes: "@SUM(1)" }] };
+  const evil = { ...bad, documents: [{ ...bad.documents[0], id: "DOC-CSV1", title: "=HYPERLINK(\"https://contoh.invalid\",\"klik\")", documentNumber: "+1+1", partnerId: "", notes: "@SUM(1)" }] };
   fs.writeFileSync(f, JSON.stringify(evil));
   await page.click('aside button[data-view="penyimpanan"]'); await page.waitForSelector("#st-import", { state: "attached" });
   await page.setInputFiles("#st-import", f);
