@@ -8,7 +8,7 @@ const { execSync } = require("child_process");
 
 const root = path.join(__dirname, "..");
 const tracked = execSync("git ls-files", { cwd: root }).toString().split("\n").filter((f) => f && fs.existsSync(path.join(root, f)));
-const VENDOR = /^js\/(jszip|pdf|pdf\.worker|tesseract)\.min\.js$|^js\/ocr\//;
+const VENDOR = /^js\/(jszip|pdf|pdf\.worker)\.min\.js$|^js\/ocr\/(tw|models)\//;
 const BINARY = /\.(exe|zip|docx|xlsx|pdf|png|gz|sha256)$/i;
 const textFiles = tracked.filter((f) => !VENDOR.test(f) && !BINARY.test(f) && f !== "tests/security.test.js");
 const read = (f) => fs.readFileSync(path.join(root, f), "utf8");

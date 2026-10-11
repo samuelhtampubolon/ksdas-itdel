@@ -15,6 +15,13 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  var LID = (function () {
+    try {
+      if (typeof KSDASLangid !== "undefined") return KSDASLangid;
+      if (typeof module === "object" && module.exports && typeof require === "function") return require("./ocr/langid.js");
+    } catch (e) { /* identifikasi bahasa opsional */ }
+    return null;
+  })();
   var MAX_FILE_BYTES = 25 * 1024 * 1024;
   var MAX_FILES_PER_BATCH = 100;
   var MAX_PDF_PAGES = 40;
@@ -81,7 +88,16 @@
   }
 
   /* ---------------------------------------------- angka & tanggal Indonesia */
-  var UNIT = { nol: 0, satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9 };
+  var UNIT = {
+    nol: 0, satu: 1, dua: 2, tiga: 3, empat: 4, lima: 5, enam: 6, tujuh: 7, delapan: 8, sembilan: 9,
+    // Melayu: tiga/empat/lima sama; "sepuluh" ditangani di bawah. Inggris, Jerman, Prancis, Spanyol, Portugis, Belanda (satu sampai sepuluh)
+    one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    ein: 1, eine: 1, zwei: 2, drei: 3, vier: 4, funf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10,
+    un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, sept: 7, huit: 8, neuf: 9, dix: 10,
+    uno: 1, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+    um: 1, dois: 2, quatro: 4, sete: 7, oito: 8, nove: 9, dez: 10,
+    een: 1, twee: 2, drie: 3, vijf: 5, zes: 6, zeven: 7, negen: 9, tien: 10
+  };
   function wordsToInt(text) {
     var toks = norm(text).split(" ").filter(Boolean);
     if (!toks.length) return null;
@@ -104,22 +120,41 @@
   var MONTHS = {
     januari: 1, pebruari: 2, februari: 2, maret: 3, april: 4, mei: 5, juni: 6, juli: 7, agustus: 8,
     september: 9, oktober: 10, nopember: 11, november: 11, desember: 12,
-    january: 1, february: 2, march: 3, may: 5, june: 6, july: 7, august: 8, october: 10, december: 12
+    january: 1, february: 2, march: 3, may: 5, june: 6, july: 7, august: 8, october: 10, december: 12,
+    mac: 3, jun: 6, julai: 7, ogos: 8, disember: 12,
+    januar: 1, "m\u00e4rz": 3, marz: 3, mai: 5, dezember: 12,
+    janvier: 1, "f\u00e9vrier": 2, fevrier: 2, mars: 3, avril: 4, juin: 6, juillet: 7, "ao\u00fbt": 8, aout: 8, septembre: 9, octobre: 10, novembre: 11, "d\u00e9cembre": 12, decembre: 12,
+    enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+    janeiro: 1, fevereiro: 2, "mar\u00e7o": 3, marco: 3, maio: 5, junho: 6, julho: 7, setembro: 9, outubro: 10, dezembro: 12,
+    maart: 3, augustus: 8
   };
-  var MONTH_RE = "(Januari|Pebruari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|Nopember|November|Desember|January|February|March|May|June|July|August|October|December)";
+  var MONTH_RE = "(" + Object.keys(MONTHS).sort(function (x, y) { return y.length - x.length; }).join("|") + ")";
+  var THAI_MONTHS = ["\u0e21\u0e01\u0e23\u0e32\u0e04\u0e21", "\u0e01\u0e38\u0e21\u0e20\u0e32\u0e1e\u0e31\u0e19\u0e18\u0e4c", "\u0e21\u0e35\u0e19\u0e32\u0e04\u0e21", "\u0e40\u0e21\u0e29\u0e32\u0e22\u0e19", "\u0e1e\u0e24\u0e29\u0e20\u0e32\u0e04\u0e21", "\u0e21\u0e34\u0e16\u0e38\u0e19\u0e32\u0e22\u0e19", "\u0e01\u0e23\u0e01\u0e0e\u0e32\u0e04\u0e21", "\u0e2a\u0e34\u0e07\u0e2b\u0e32\u0e04\u0e21", "\u0e01\u0e31\u0e19\u0e22\u0e32\u0e22\u0e19", "\u0e15\u0e38\u0e25\u0e32\u0e04\u0e21", "\u0e1e\u0e24\u0e28\u0e08\u0e34\u0e01\u0e32\u0e22\u0e19", "\u0e18\u0e31\u0e19\u0e27\u0e32\u0e04\u0e21"];
+
+  /** Seragamkan angka non-ASCII dan penulisan tanggal CJK/Korea/Jepang (Reiwa)/Thai (Buddha) menjadi YYYY-MM-DD. */
+  function normalizeText(t) {
+    t = t.replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+      .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); })
+      .replace(/[\u0966-\u096F]/g, function (c) { return String(c.charCodeAt(0) - 0x0966); });
+    t = t.replace(/(\d{4})\s*[\u5e74\ub144]\s*(\d{1,2})\s*[\u6708\uc6d4]\s*(\d{1,2})\s*[\u65e5\uc77c\u53f7\u865f]?/g, function (m, y, mo, d) { return validYMD(+y, +mo, +d) ? iso(+y, +mo, +d) : m; });
+    t = t.replace(/\u4ee4\u548c\s*(\d{1,2}|\u5143)\s*\u5e74\s*(\d{1,2})\s*\u6708\s*(\d{1,2})\s*\u65e5/g, function (m, e, mo, d) { var y = 2018 + (e === "\u5143" ? 1 : +e); return validYMD(y, +mo, +d) ? iso(y, +mo, +d) : m; });
+    var thRe = new RegExp("(\\d{1,2})\\s*(" + THAI_MONTHS.join("|") + ")\\s*(\\d{4})", "g");
+    t = t.replace(thRe, function (m, d, mo, y) { var yy = +y > 2400 ? +y - 543 : +y, mi = THAI_MONTHS.indexOf(mo) + 1; return validYMD(yy, mi, +d) ? iso(yy, mi, +d) : m; });
+    return t;
+  }
 
   /** Cari semua tanggal pada satu baris. Mengembalikan [{iso,index,end,raw,numeric}] */
   function findDates(line) {
     var out = [];
-    var re = new RegExp("\\b" + MONTH_RE + "\\b", "gi");
+    var re = new RegExp("(?<![A-Za-z\\u00C0-\\u024F])" + MONTH_RE + "(?![A-Za-z\\u00C0-\\u024F])", "gi");
     var m;
     while ((m = re.exec(line))) {
       var month = MONTHS[m[1].toLowerCase()];
       var left = line.slice(Math.max(0, m.index - 70), m.index);
       var right = line.slice(m.index + m[0].length, m.index + m[0].length + 60);
       var day = null, dayStart = m.index;
-      var l = left.replace(/\s*bulan\s*$/i, " ").replace(/\s+$/, "");
-      var lm = l.match(/(\d{1,2})(?:\s*\([^)]*\))?$/);
+      var l = left.replace(/\s*(?:bulan|de|del|of|the|op|den|der)\s*$/i, " ").replace(/\s+$/, "");
+      var lm = l.match(/(\d{1,2})(?:\.|\u00ba|\u00b0|er|st|nd|rd|th)?(?:\s*\([^)]*\))?$/);
       if (lm) { day = parseInt(lm[1], 10); dayStart = m.index - (left.length - left.lastIndexOf(lm[0])); }
       else {
         var wm = l.replace(/\([^)]*\)\s*$/, "").trim().match(/((?:[a-zA-Z]+\s+){0,2}[a-zA-Z]+)$/);
@@ -132,10 +167,12 @@
         }
       }
       var year = null, endIdx = m.index + m[0].length;
-      var rm = right.match(/^\s*(?:tahun\s+)?(\d{4})\b/i);
-      if (rm) { year = parseInt(rm[1], 10); endIdx += rm[0].length; }
+      var rm = right.match(/^\s*(?:tahun\s+|de\s+|del\s+|of\s+|,\s*)?(\d{4})\b/i);
+      var usFmt = day === null ? right.match(/^\s*(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b/i) : null;  // "March 5, 2026"
+      if (usFmt) { day = parseInt(usFmt[1], 10); year = parseInt(usFmt[2], 10); endIdx += usFmt[0].length; }
+      else if (rm) { year = parseInt(rm[1], 10); endIdx += rm[0].length; }
       else {
-        var rw = right.replace(/^\s*(?:tahun\s+)?/i, "").match(/^((?:[a-zA-Z]+\s*){1,6})/);
+        var rw = day === null ? null : right.replace(/^\s*(?:tahun\s+)?/i, "").match(/^((?:[a-zA-Z]+\s*){1,6})/);
         if (rw) {
           var rt = rw[1].trim().split(/\s+/);
           for (var n = Math.min(rt.length, 6); n >= 2 && year === null; n--) {
@@ -183,7 +220,7 @@
     { id: "FB", re: "Fakultas\\s+Bioteknologi" },
     { id: "FV", re: "Fakultas\\s+Vokasi" }
   ];
-  var JABATAN_KW = "(?:Wakil\\s+Rektor|Rektor|Wakil\\s+Dekan|Dekan|Wakil\\s+Bupati|Bupati|Wakil\\s+Wali\\s*kota|Wali\\s*kota|Walikota|Gubernur|Wakil\\s+Gubernur|Direktur|Wakil\\s+Direktur|Kepala|Ketua|Wakil\\s+Ketua|Sekretaris|Bendahara|Presiden|Wakil\\s+Presiden|Manajer|Manager|General\\s+Manager|Pimpinan|Camat|Lurah|Pjs\\.?|Plt\\.?|Pelaksana|Komisaris|Kuasa|Rector|Dean|Director|President|Chairman|Head|CEO|Vice)";
+  var JABATAN_KW = "(?:Vice\\s+Chancellor|Chancellor|Managing\\s+Director|Mayor|Governor|Minister|Registrar|Naib\\s+Canselor|Pengarah|Timbalan|Presiden|Direktor|Pr\\u00e4sident|Pr\\u00e9sident|Directeur|Doyen|Recteur|Decano|Presidente|Prof(?:essor)?|Wakil\\s+Rektor|Rektor|Wakil\\s+Dekan|Dekan|Wakil\\s+Bupati|Bupati|Wakil\\s+Wali\\s*kota|Wali\\s*kota|Walikota|Gubernur|Wakil\\s+Gubernur|Direktur|Wakil\\s+Direktur|Kepala|Ketua|Wakil\\s+Ketua|Sekretaris|Bendahara|Presiden|Wakil\\s+Presiden|Manajer|Manager|General\\s+Manager|Pimpinan|Camat|Lurah|Pjs\\.?|Plt\\.?|Pelaksana|Komisaris|Kuasa|Rector|Dean|Director|President|Chairman|Head|CEO|Vice)";
   var COUNTRIES = ["Malaysia", "Singapura", "Singapore", "Jepang", "Japan", "Korea Selatan", "Korea", "Thailand", "Filipina", "Vietnam", "Australia", "Jerman", "Germany", "Belanda", "Netherlands", "Taiwan", "Tiongkok", "China", "India", "Amerika Serikat", "United States", "Inggris", "United Kingdom", "Prancis", "France", "Brunei Darussalam", "Brunei", "Arab Saudi", "Turki"];
 
   function guessPartnerType(name) {
@@ -392,7 +429,7 @@
               return page.render({ canvasContext: canvas.getContext("2d"), viewport: viewport }).promise.then(function () {
                 return env.ocr(canvas, "Halaman " + num + " (pindaian)", onProgress);
               }).then(function (res) {
-                pages.push({ n: num, text: res.text, method: "OCR", ocrConf: res.confidence });
+                pages.push({ n: num, text: res.text, method: "OCR", ocrConf: res.confidence, lang: res.language, pack: res.pack });
               });
             });
           });
@@ -431,13 +468,15 @@
         return readPdf(buffer, env, onProgress).then(function (pages) {
           if (!pages.some(function (p) { return p.text.replace(/\s/g, "").length > 10; }))
             warnings.push("PDF tidak berisi teks yang dapat dibaca" + (env.ocr ? " meskipun sudah dipindai OCR." : ". OCR tidak tersedia."));
-          return { kind: kind, pages: pages, warnings: warnings };
+          var ocrPages = pages.filter(function (p) { return p.method === "OCR"; });
+          var ocrInfo = ocrPages.length ? { pack: ocrPages[0].pack, confidence: ocrPages.reduce(function (a, p) { return a + (p.ocrConf || 0); }, 0) / ocrPages.length } : null;
+          return { kind: kind, pages: pages, ocr: ocrInfo, warnings: warnings };
         });
       }
       if (kind === "image") {
         if (!env.ocr) return Promise.reject(new Error("OCR tidak tersedia pada lingkungan ini."));
         return env.ocr(file, file.name, onProgress).then(function (res) {
-          return { kind: kind, pages: [{ n: 1, text: res.text, method: "OCR", ocrConf: res.confidence }], warnings: warnings };
+          return { kind: kind, pages: [{ n: 1, text: res.text, method: "OCR", ocrConf: res.confidence, lang: res.language, pack: res.pack }], ocr: { pack: res.pack, confidence: res.confidence }, warnings: warnings };
         });
       }
       if (kind === "doc" || kind === "xls") {
@@ -647,7 +686,9 @@
         if (!t) return;
         if (pg.method === "OCR") t = repairOcrLine(t);
         if (INJECTION_RE.test(t)) { suspicious++; return; }
-        lines.push({ t: t, page: pg.n, sheet: pg.sheet, method: pg.method, ocrConf: pg.ocrConf, legacy: pg.legacy, i: lines.length });
+        var orig = t;
+        t = normalizeText(t);
+        lines.push({ t: t, o: t !== orig ? orig : undefined, page: pg.n, sheet: pg.sheet, method: pg.method, ocrConf: pg.ocrConf, legacy: pg.legacy, i: lines.length });
       });
     });
     return { lines: lines, suspicious: suspicious };
@@ -680,6 +721,7 @@
       var st = memory.fieldStats && memory.fieldStats[key];
       var learnedNote = "";
       if (st && st.n >= 3 && st.corrected / st.n >= 0.5 && level === "TINGGI") { level = "SEDANG"; learnedNote = "Field ini sering dikoreksi staf pada dokumen sebelumnya (" + st.corrected + " dari " + st.n + "). Periksa teliti."; }
+      if (line && line.o && srcText === line.t) srcText = line.o;
       var f = {
         value: typeof value === "string" ? clean(value) : value,
         level: level, score: LEVEL[level],
@@ -738,11 +780,11 @@
 
     /* 1. Jenis naskah */
     var TYPE_PATTERNS = [
-      ["MOU_LOI", /NOTA\s+KESEPAHAMAN|MEMORANDUM\s+OF\s+UNDERSTANDING|LETTER\s+OF\s+INTENT|SURAT\s+MINAT|\bMOU\b|\bLOI\b/i],
-      ["PKS_MOA", /PERJANJIAN\s+KERJA\s*SAMA|MEMORANDUM\s+OF\s+AGREEMENT|KESEPAKATAN\s+BERSAMA|\bMOA\b|\bPKS\b/i],
-      ["IA", /IMPLEMENTATION\s+(?:ARRANGEMENT|AGREEMENT)|PERJANJIAN\s+PELAKSANAAN|NASKAH\s+PELAKSANAAN|RENCANA\s+KERJA\s+PELAKSANAAN|\bIA\b/i],
-      ["PROPOSAL", /^PROPOSAL\b|PROPOSAL\s+KEGIATAN/i],
-      ["LAPORAN", /LAPORAN\s+(?:AKHIR|PELAKSANAAN|KEGIATAN)|LAPORAN\s+PERTANGGUNGJAWABAN|\bLPJ\b|^LAPORAN\b/i]
+      ["MOU_LOI", /NOTA\s+KESEPAHAMAN|MEMORANDUM\s+OF\s+UNDERSTANDING|LETTER\s+OF\s+INTENT|SURAT\s+MINAT|MEMORANDUM\s+PERSEFAHAMAN|NOTA\s+PERSEFAHAMAN|ABSICHTSERKL\u00c4RUNG|PROTOCOLE\s+D['\u2019]ACCORD|M\u00c9MORANDUM\s+D['\u2019]ENTENTE|LETTRE\s+D['\u2019]INTENTION|MEMORANDO\s+DE\s+ENTENDIMIENTO|MEMORANDO\s+DE\s+ENTENDIMENTO|CARTA\s+DE\s+INTENCI[O\u00d3]N|INTENTIEVERKLARING|\u899a\u66f8|\u57fa\u672c\u5408\u610f\u66f8|\u8c05\u89e3\u5907\u5fd8\u5f55|\u8afe\u89e3\u5099\u5fd8\u9304|\u610f\u5411\u4e66|\uc591\ud574\uac01\uc11c|\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e04\u0e27\u0e32\u0e21\u0e40\u0e02\u0e49\u0e32\u0e43\u0e08|\u041c\u0415\u041c\u041e\u0420\u0410\u041d\u0414\u0423\u041c\s+\u041e\s+\u0412\u0417\u0410\u0418\u041c\u041e\u041f\u041e\u041d\u0418\u041c\u0410\u041d\u0418\u0418|\u0645\u0630\u0643\u0631\u0629\s+\u062a\u0641\u0627\u0647\u0645|\bMOU\b|\bLOI\b/i],
+      ["PKS_MOA", /PERJANJIAN\s+KERJA\s*SAMA|MEMORANDUM\s+OF\s+AGREEMENT|KESEPAKATAN\s+BERSAMA|COOPERATION\s+AGREEMENT|COLLABORATION\s+AGREEMENT|KOOPERATIONSVERTRAG|KOOPERATIONSVEREINBARUNG|ACCORD\s+DE\s+COOP\u00c9RATION|CONVENTION\s+DE\s+COOP\u00c9RATION|CONVENIO\s+DE\s+COOPERACI[O\u00d3]N|ACUERDO\s+DE\s+COOPERACI[O\u00d3]N|ACORDO\s+DE\s+COOPERA\u00c7\u00c3O|SAMENWERKINGSOVEREENKOMST|\u5354\u529b\u5354\u5b9a|\u5408\u4f5c\u534f\u8bae|\u5408\u4f5c\u5354\u8b70|\ud611\ub825\s*\ud611\uc815|\ud611\uc57d\uc11c|\u0e02\u0e49\u0e2d\u0e15\u0e01\u0e25\u0e07\u0e04\u0e27\u0e32\u0e21\u0e23\u0e48\u0e27\u0e21\u0e21\u0e37\u0e2d|\u0421\u041e\u0413\u041b\u0410\u0428\u0415\u041d\u0418\u0415\s+\u041e\s+\u0421\u041e\u0422\u0420\u0423\u0414\u041d\u0418\u0427\u0415\u0421\u0422\u0412\u0415|\u0627\u062a\u0641\u0627\u0642\u064a\u0629\s+\u062a\u0639\u0627\u0648\u0646|PERJANJIAN\s+KERJASAMA|\bMOA\b|\bPKS\b/i],
+      ["IA", /IMPLEMENTATION\s+(?:ARRANGEMENT|AGREEMENT)|PERJANJIAN\s+PELAKSANAAN|NASKAH\s+PELAKSANAAN|RENCANA\s+KERJA\s+PELAKSANAAN|DURCHF\u00dcHRUNGSVEREINBARUNG|ARRANGEMENT\s+D['\u2019]APPLICATION|ACCORD\s+D['\u2019]APPLICATION|\u5b9f\u65bd\u53d6\u6c7a\u3081|\u5b9e\u65bd\u534f\u8bae|\u5b9e\u65bd\u7ec6\u5219|\bIA\b/i],
+      ["PROPOSAL", /^PROPOSAL\b|PROPOSAL\s+KEGIATAN|^USULAN\b|^PROPUESTA\b|^PROPOSITION\b|^ANGEBOT\b|^VOORSTEL\b|^\u63d0\u6848\u66f8|^\u7533\u8bf7\u4e66|^\u8ba1\u5212\u4e66|^\uc81c\uc548\uc11c/i],
+      ["LAPORAN", /LAPORAN\s+(?:AKHIR|PELAKSANAAN|KEGIATAN)|LAPORAN\s+PERTANGGUNGJAWABAN|\bLPJ\b|^LAPORAN\b|^(?:FINAL|ACTIVITY|PROGRESS)\s+REPORT\b|^LAPORAN\s+AKHIR|^ABSCHLUSSBERICHT\b|^RAPPORT\s+FINAL\b|^INFORME\s+FINAL\b|^RELAT\u00d3RIO\s+FINAL\b|^\u5831\u544a\u66f8|^\u62a5\u544a|^\ubcf4\uace0\uc11c|^\u041e\u0422\u0427\u0415\u0422/i]
     ];
     var typeHit = null;
     for (var hi = 0; hi < head.length && !typeHit; hi++) {
@@ -756,7 +798,7 @@
     var typeFromNumber = null;
     /* 2. Nomor naskah */
     var numCands = [];
-    var NUMLBL = /(?:^|[\s(])(?:Nomor|No\.?|Number|Ref\.?)\s*(?:[A-Za-z ]{0,28}?)\s*[:：]\s*(.+)$/i;
+    var NUMLBL = /(?:^|[\s(\uff08])(?:Nomor|No\.?|Number|Ref\.?|Nombor|Nummer|Num\u00e9ro|N\u00famero|N[\u00b0\u00ba]|\u6587\u66f8\u756a\u53f7|\u6587\u53f7|\u7f16\u53f7|\u7de8\u865f|\u756a\u53f7|\ubb38\uc11c\ubc88\ud638)\s*(?:[A-Za-z ]{0,28}?)\s*[:：]\s*(.+)$/i;
     lines.forEach(function (ln, idx) {
       var m = ln.t.match(NUMLBL);
       var raw = m && m[1];
@@ -816,15 +858,16 @@
 
     /* 3. Sampul: pihak-pihak, judul */
     var cover = { itdelSide: [], partnerSide: [] };
+    var TITLE_MARK = "(?:T\\s?E\\s?N\\s?T\\s?A\\s?N\\s?G|MENGENAI|CONCERNING|REGARDING|SUBJECT|BETREFF(?:END)?|OBJET|CONCERNANT|ASUNTO|ASSUNTO)(?![A-Za-z])|\u5173\u4e8e|\u95dc\u65bc|\u306b\u3064\u3044\u3066";
     var tentangIdx = -1;
     for (var ti = 0; ti < Math.min(lines.length, 40); ti++) {
-      if (/^T\s?E\s?N\s?T\s?A\s?N\s?G\b/i.test(lines[ti].t) || /^(?:Perihal|Hal)\s*[:：]/i.test(lines[ti].t)) { tentangIdx = ti; break; }
+      if (new RegExp("^(?:" + TITLE_MARK + ")", "i").test(lines[ti].t) || /^(?:Perihal|Hal|Subject|Betreff|Objet|Asunto|Judul|Tajuk|Title|\u4ef6\u540d|\u6807\u9898)\s*[:：]/i.test(lines[ti].t)) { tentangIdx = ti; break; }
     }
-    var STOP_TITLE = /^(?:NOMOR|NO\.?|NUMBER|PADA\s+HARI|HARI\s+INI|ANTARA|BETWEEN|DENGAN|AND|PASAL|ARTICLE|BAB|TANGGAL|LAMPIRAN|THIS\s+)\b/i;
+    var STOP_TITLE = /^(?:NOMOR|NOMBOR|NO\.?|NUMBER|PADA\s+HARI|HARI\s+INI|ANTARA|BETWEEN|ZWISCHEN|ENTRE|DENGAN|AND|UND|ET|PASAL|ARTICLE|ARTIKEL|BAB|TANGGAL|LAMPIRAN|THIS\s+|NUMMER|NUM[\u00c9E]RO)\b/i;
     var antaraIdx = -1, denganIdx = -1;
     for (var ci = 0; ci < Math.min(lines.length, 40); ci++) {
-      if (antaraIdx < 0 && /^(?:ANTARA|BETWEEN)$/i.test(lines[ci].t)) antaraIdx = ci;
-      if (denganIdx < 0 && /^(?:DENGAN|DAN|AND)$/i.test(lines[ci].t) && antaraIdx >= 0) denganIdx = ci;
+      if (antaraIdx < 0 && /^(?:ANTARA|BETWEEN|ZWISCHEN|ENTRE)$/i.test(lines[ci].t)) antaraIdx = ci;
+      if (denganIdx < 0 && /^(?:DENGAN|DAN|AND|UND|ET|Y)$/i.test(lines[ci].t) && antaraIdx >= 0) denganIdx = ci;
     }
     var coverEnd = tentangIdx >= 0 ? tentangIdx : Math.min(lines.length, 40);
     if (antaraIdx >= 0 && denganIdx > antaraIdx) {
@@ -839,7 +882,7 @@
       if (inlineAntara >= 0 && inlineDengan > inlineAntara) {
         cover.itdelSide = [{ t: lines[inlineAntara].t.replace(/^(?:ANTARA|BETWEEN)\s+/, ""), page: lines[inlineAntara].page, method: lines[inlineAntara].method, ocrConf: lines[inlineAntara].ocrConf }];
         cover.partnerSide = [{ t: lines[inlineDengan].t.replace(/^(?:DENGAN|DAN|AND)\s+/, ""), page: lines[inlineDengan].page, method: lines[inlineDengan].method, ocrConf: lines[inlineDengan].ocrConf }];
-        for (var q2 = inlineDengan + 1; q2 < coverEnd && !STOP_TITLE.test(lines[q2].t) && !/^T\s?E\s?N\s?T\s?A\s?N\s?G/i.test(lines[q2].t) && cover.partnerSide.length < 3; q2++) cover.partnerSide.push(lines[q2]);
+        for (var q2 = inlineDengan + 1; q2 < coverEnd && !STOP_TITLE.test(lines[q2].t) && !new RegExp("^(?:" + TITLE_MARK + ")", "i").test(lines[q2].t) && cover.partnerSide.length < 3; q2++) cover.partnerSide.push(lines[q2]);
       }
       for (var si = 0; si < Math.min(lines.length, 30) && !cover.partnerSide.length; si++) {
         var sm = lines[si].t.match(/\bantara\s+(.+?)\s+(?:dengan|dan)\s+(.+?)(?:\s+tentang\b.*)?$/i);
@@ -849,7 +892,7 @@
     // Judul
     if (tentangIdx >= 0) {
       var tl = lines[tentangIdx], tparts = [];
-      var inline = tl.t.replace(/^(?:T\s?E\s?N\s?T\s?A\s?N\s?G|Perihal|Hal)\s*[:：]?\s*/i, "");
+      var inline = tl.t.replace(new RegExp("^(?:" + TITLE_MARK + "|Perihal|Hal|Subject|Betreff|Objet|Asunto|Judul|Tajuk|Title|\u4ef6\u540d|\u6807\u9898)\\s*[:：]?\\s*", "i"), "");
       if (inline) tparts.push(inline);
       for (var tj = tentangIdx + 1; tj < lines.length && tparts.length < 5; tj++) {
         if (STOP_TITLE.test(lines[tj].t) || lines[tj].t.length > 160 || /[.:]$/.test(lines[tj].t) && lines[tj].t.length > 90) break;
@@ -872,7 +915,7 @@
     /* 4. Pihak penandatangan */
     var full = lines.map(function (l) { return l.t; }).join("\n");
     var parties = [];
-    var markerRe = /(?:selanjutnya\s+(?:disebut|dalam\s+(?:perjanjian|nota\s+kesepahaman)\s+ini\s+disebut)\s+(?:sebagai\s+)?|\(\s*)["']?\s*(PIHAK\s+(?:PERTAMA|KESATU|KEDUA|KETIGA|I|II))\b/gi;
+    var markerRe = /(?:selanjutnya\s+(?:disebut|dalam\s+(?:perjanjian|nota\s+kesepahaman)\s+ini\s+disebut)\s+(?:sebagai\s+)?|hereinafter\s+(?:referred\s+to\s+as|called)\s+(?:the\s+)?|dengan\s+ini\s+disebut\s+|\(\s*)["']?\s*(PIHAK\s+(?:PERTAMA|KESATU|KEDUA|KETIGA|I|II)|(?:THE\s+)?(?:FIRST|SECOND|THIRD)\s+PARTY|PARTY\s+(?:A|B|ONE|TWO)|PARTE\s+(?:PRIMERA|SEGUNDA)|PARTIE\s+[12])\b/gi;
     var mk, lastEnd = 0, openIdx = full.search(/yang\s+bertanda\s+tangan|Pada\s+hari\s+ini|pada\s+hari/i);
     if (openIdx < 0) openIdx = 0;
     lastEnd = openIdx;
@@ -934,7 +977,7 @@
       });
     }
     function orgOf(block) {
-      var m = block.match(/(?:bertindak\s+(?:untuk\s+dan\s+)?(?:atas\s+nama|selaku\s+kuasa\s+dari|mewakili)|mewakili|untuk\s+dan\s+atas\s+nama)\s+(.+?)(?=,\s*(?:berkedudukan|beralamat|yang|selanjutnya|dalam|berlokasi)|\s+selanjutnya\b|\s+berkedudukan\b|\s+beralamat\b|\s*\(|$)/is);
+      var m = block.match(/(?:bertindak\s+(?:untuk\s+dan\s+)?(?:atas\s+nama|selaku\s+kuasa\s+dari|mewakili)|mewakili|untuk\s+dan\s+atas\s+nama|acting\s+(?:for\s+and\s+)?on\s+behalf\s+of|on\s+behalf\s+of|represented\s+by|representing|bertindak\s+bagi\s+pihak)\s+(.+?)(?=,\s*(?:berkedudukan|beralamat|yang|selanjutnya|dalam|berlokasi|having|with|located|whose|hereinafter|domiciled)|\s+selanjutnya\b|\s+hereinafter\b|\s+berkedudukan\b|\s+beralamat\b|\s*\(|$)/is);
       return m ? clean(m[1]).replace(/[.,;]+$/, "") : "";
     }
     var itdelRe = /Institut\s+Teknologi\s+Del|\bIT\s*Del\b|ITDel|\bDel\s+Institute/i;
@@ -943,7 +986,7 @@
       var ctxText = (p.title || "") + " " + (p.block || "") + " " + (parties[idx] ? parties[idx].block : "");
       var org = orgOf(ctxText.replace(/\n/g, " "));
       p.org = org;
-      var del = itdelRe.test(p.title || "") || itdelRe.test(org) || /Pihak\s+Pertama|PIHAK\s+PERTAMA|KESATU/.test(ctxText) && itdelRe.test(ctxText);
+      var del = itdelRe.test(p.title || "") || itdelRe.test(org) || /Pihak\s+Pertama|PIHAK\s+PERTAMA|KESATU|FIRST\s+PARTY|PARTY\s+A\b/i.test(ctxText) && itdelRe.test(ctxText);
       if (del && !itdelPerson) itdelPerson = p; else if (!del && !partnerPerson) partnerPerson = p;
     });
     if (!itdelPerson && !partnerPerson && persons.length === 2) { itdelPerson = persons[0]; partnerPerson = persons[1]; }
@@ -1014,7 +1057,7 @@
       flags.push({ code: "new_partner", message: "Mitra \"" + display + "\" belum ada di master. Dibuat sebagai mitra baru berstatus draf. Periksa jenis mitra, negara, dan kota." });
     }
     if (labelled.partnerName) resolvePartner(labelled.partnerName.v, labelled.partnerName.line, "TINGGI", "LABEL", "");
-    var partnerAddrCtx = (partnerPerson && (partnerPerson.block || "")) + " " + (parties.filter(function (p) { return /KEDUA|II/.test(p.side); })[0] || { block: "" }).block;
+    var partnerAddrCtx = (partnerPerson && (partnerPerson.block || "")) + " " + (parties.filter(function (p) { return /KEDUA|II|SECOND|PARTY\s+(?:B|TWO)|SEGUNDA|PARTIE\s+2/i.test(p.side); })[0] || { block: "" }).block;
     if (!fields.partnerId && partnerNameRaw && (!itdelRe.test(partnerNameRaw) || cover.partnerSide.length)) {
       resolvePartner(partnerNameRaw, partnerNameLine, partnerNameLevel, partnerNameMethod, partnerAddrCtx);
     }
@@ -1052,9 +1095,9 @@
     var signed = null, start = null, end = null;
     dated.forEach(function (x) {
       var b = x.before, a = x.after;
-      var isEndCtx = /(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|berakhir(?:\s+pada)?|batas\s+akhir|jatuh\s+tempo|until|through|expires?\s+on|ends?\s+on|to)\s*(?:dengan\s+)?(?:tanggal\s*)?$/i.test(b);
-      var isStartCtx = /(?:berlaku\s+(?:sejak|mulai|efektif)|terhitung\s+(?:sejak|mulai)|dimulai(?:\s+pada)?|mulai\s+(?:dari|tanggal|berlaku)|efektif\s+(?:sejak|mulai)|effective\s+(?:from|as\s+of|on)|commenc\w+\s+on|periode(?:\s+kerja\s+sama)?\s*[:：]?)\s*(?:tanggal\s*)?$/i.test(b);
-      var isSignCtx = /(?:pada\s+hari\s+ini|hari\s+\w+\s+tanggal|ditandatangani\s+(?:pada|di)|ditetapkan\s+(?:pada|di)|(?:is\s+)?made\s+(?:and\s+entered\s+into\s+)?on|entered\s+into\s+on|signed\s+on|dated)/i.test(b + " ") || /^(?:hari\s+ini)/i.test(a);
+      var isEndCtx = /(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|berakhir(?:\s+pada)?|batas\s+akhir|jatuh\s+tempo|until|through|expires?\s+on|ends?\s+on|to|sehingga|bis(?:\s+zum)?|jusqu['\u2019]au|hasta(?:\s+el)?|at\u00e9|tot|\u81f3|\u5230|\uff5e|~|\u307e\u3067|\uae4c\uc9c0)\s*(?:dengan\s+)?(?:tanggal\s*|el\s+|le\s+|den\s+)?$/i.test(b) || /^\s*(?:\u6b62|\u307e\u3067|\uae4c\uc9c0|\u622a\u6b62)/.test(a);
+      var isStartCtx = /(?:berlaku\s+(?:sejak|mulai|efektif)|terhitung\s+(?:sejak|mulai)|dimulai(?:\s+pada)?|mulai\s+(?:dari|tanggal|berlaku)|efektif\s+(?:sejak|mulai)|effective\s+(?:from|as\s+of|on)|commenc\w+\s+on|g\u00fcltig\s+ab|ab\s+dem|\u00e0\s+compter\s+du|a\s+partir\s+del|desde\s+el|berkuat\s+kuasa\s+(?:mulai|dari)|starting\s+(?:on|from)|\u81ea|\u4ece|\u5f9e|periode(?:\s+kerja\s+sama)?\s*[:：]?)\s*(?:tanggal\s*)?$/i.test(b) || /^\s*(?:\u8d77|\u304b\u3089|\ubd80\ud130|\u5f00\u59cb|\u958b\u59cb)/.test(a);
+      var isSignCtx = /(?:pada\s+hari\s+ini|hari\s+\w+\s+tanggal|ditandatangani\s+(?:pada|di)|ditetapkan\s+(?:pada|di)|(?:is\s+)?made\s+(?:and\s+entered\s+into\s+)?on|entered\s+into\s+on|signed\s+(?:on|at)|dated|unterzeichnet\s+am|fait\s+(?:\u00e0\s+[\w\u00c0-\u00ff'\u2019 -]{1,25},?\s+)?le|sign\u00e9\s+le|firmado\s+(?:en\s+[\w ]{1,20}\s+)?el|dibuat\s+pada|\u7b7e\u7f72\u4e8e|\u7b7e\u8ba2\u4e8e|\u7b7e\u7f72\u65e5\u671f|\u7b7e\u8ba2\u65e5\u671f|\u7c3d\u7f72\u65e5\u671f|\u7c3d\u8a02\u65e5\u671f|\u7de0\u7d50\u65e5|\uccb4\uacb0\uc77c)/i.test(b + " ") || /^(?:hari\s+ini)/i.test(a);
       var nextSame = dated.filter(function (y) { return y.idx === x.idx && y.d.index > x.d.index; })[0];
       var rangeNext = !!nextSame && /^\s*[,)]?\s*(?:sampai\s+dengan|sampai|hingga|s\.?\s?d\.?|-|\u2013|to|until|through)\s*(?:tanggal\s*)?$/i.test(x.line.t.slice(x.d.end, nextSame.d.index));
       if (isEndCtx && !end) end = x;
@@ -1077,16 +1120,18 @@
     datePut("startDate", start, "TINGGI", "KONTEKS_BERLAKU");
     datePut("endDate", end, "TINGGI", "KONTEKS_BERAKHIR");
     if (!fields.startDate && fields.signedDate) {
-      var sgLine = lines.filter(function (l) { return /(?:berlaku|efektif|valid|effective)[^.]{0,60}(?:sejak|terhitung|mulai|from)[^.]{0,40}(?:ditandatangani|penandatanganan|signing|signature)/i.test(l.t); })[0];
+      var sgLine = lines.filter(function (l) { return /(?:berlaku|efektif|valid|effective|sah|berkuat\s+kuasa|g\u00fcltig|gilt|valable|vigencia|vigente|v\u00e1lido)[^.]{0,60}(?:sejak|terhitung|mulai|from|ab|\u00e0\s+compter|a\s+partir)[^.]{0,40}(?:ditandatangani|penandatanganan|signing|signature|unterzeichnung|signature|firma|assinatura)/i.test(l.t); })[0];
       if (sgLine) put("startDate", fields.signedDate.value, "SEDANG", sgLine, sgLine.t, "BERLAKU_SEJAK_TTD", { note: "Berlaku sejak penandatanganan, sehingga sama dengan tanggal tanda tangan." });
     }
     if (!fields.endDate && fields.startDate) {
       var durLine = null, dur = null;
       lines.some(function (l) {
-        var m = l.t.match(/(?:jangka\s+waktu|berlaku\s+(?:selama|untuk)|selama|masa\s+berlaku|valid\s+for|period\s+of|term\s+of)[^.0-9a-z]*(?:selama\s+)?(\d+|[a-z]+(?:\s+[a-z]+){0,2})\s*(?:\([^)]*\)\s*)?(tahun|bulan|years?|months?)\b/i);
-        if (m) m[2] = /^year/i.test(m[2]) ? "tahun" : /^month/i.test(m[2]) ? "bulan" : m[2];
+        var m = l.t.match(/(?:jangka\s+waktu|berlaku\s+(?:selama|untuk)|selama|masa\s+berlaku|tempoh|valid\s+for|period\s+of|term\s+of|gilt\s+f\u00fcr|f\u00fcr|pour\s+une\s+dur\u00e9e\s+de|por\s+un\s+per\u00edodo\s+de|por\s+um\s+per\u00edodo\s+de|durante|vigencia\s+de|validez\s+de|g\u00fcltig\s+f\u00fcr|valable\s+(?:pendant|pour)(?:\s+une\s+dur\u00e9e\s+de)?)[^.0-9a-z\u00e0-\u00ff]*(?:selama\s+)?(\d+|[a-z\u00e0-\u00ff]+(?:\s+[a-z\u00e0-\u00ff]+){0,2})\s*(?:\([^)]*\)\s*)?(tahun|bulan|years?|months?|jahre?n?|monate?n?|ans?|mois|a\u00f1os?|meses|anos|jaar|maanden)(?![a-z])/i);
+        if (!m) { var cj = l.t.match(/(\d+|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341])\s*(?:\u5e74\u95f4|\u5e74\u9593|\u5e74|\ub144)/); if (cj) m = [cj[0], cj[1], "tahun"]; else { cj = l.t.match(/(\d+|[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341])\s*(?:\u4e2a\u6708|\u500b\u6708|\u30f6\u6708|\u304b\u6708|\uac1c\uc6d4)/); if (cj) m = [cj[0], cj[1], "bulan"]; } if (m && /^[\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341]$/.test(m[1])) m[1] = String("\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341".indexOf(m[1]) + 1); }
+        if (m) m[2] = /^(?:year|jahr|ans?$|a\u00f1o|anos|jaar)/i.test(m[2]) ? "tahun" : /^(?:month|monat|mois|mes|maand)/i.test(m[2]) ? "bulan" : m[2];
         if (m) {
           var n = /^\d+$/.test(m[1]) ? parseInt(m[1], 10) : wordsToInt(m[1]);
+          if (!n && !/^\d+$/.test(m[1])) { var toks = m[1].split(/\s+/); for (var qi = toks.length - 1; qi >= 0 && !n; qi--) n = wordsToInt(toks.slice(qi).join(" ")); }
           if (n && n > 0 && n <= 50) { dur = { n: n, unit: m[2].toLowerCase() }; durLine = l; return true; }
         }
         return false;
@@ -1212,19 +1257,22 @@
 
     /* 8. Anggaran, sumber dana, lokasi, kegiatan, PIC */
     var budgets = [];
+    function fmtMoney(b) { return b.cur === "Rp" ? "Rp " + b.digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : b.cur + " " + b.raw; }
     lines.forEach(function (l, idx) {
-      var re = /Rp\.?\s*([0-9][0-9.,]*)/gi, m;
+      var re = /(Rp\.?|IDR|RM|MYR|USD|US\$|SGD|S\$|EUR|\u20ac|GBP|\u00a3|JPY|\u00a5|\uffe5|CNY|RMB|KRW|\u20a9|THB|\u0e3f|AUD|A\$)\s*([0-9][0-9.,]*)/gi, m;
       while ((m = re.exec(l.t))) {
-        var digits = m[1].replace(/[.,]\d{2}$/, "").replace(/[.,]/g, "");
-        if (!digits || digits === "0") continue;
+        var cur = /^rp/i.test(m[1]) || /^idr$/i.test(m[1]) ? "Rp" : m[1].toUpperCase().replace("US$", "USD").replace("S$", "SGD").replace("A$", "AUD").replace("\u20ac", "EUR").replace("\u00a3", "GBP").replace(/[\u00a5\uffe5]/, "JPY").replace("\u20a9", "KRW").replace("\u0e3f", "THB");
+        var rawAmt = m[2].replace(/[.,]+$/, "");
+        var digits = rawAmt.replace(/[.,]\d{2}$/, "").replace(/[.,]/g, "");
+        if (!digits || /^0+$/.test(digits)) continue;
         var ctxw = (idx > 0 ? lines[idx - 1].t.slice(-50) + " " : "") + l.t.slice(Math.max(0, m.index - 100), m.index);
-        budgets.push({ digits: digits, line: l, ctx: /(biaya|anggaran|dana|nilai|sebesar|kompensasi|total|senilai|honor|pendanaan|kontribusi)/i.test(ctxw) });
+        budgets.push({ digits: digits, raw: rawAmt, cur: cur, line: l, ctx: /(biaya|anggaran|dana|nilai|sebesar|kompensasi|total|senilai|honor|pendanaan|kontribusi|kos|bajet|peruntukan|sebanyak|cost|budget|fee|amount|price|value|contribution|funding|funded|kosten|co\u00fbts?|importe|coste|\u8cbb\u7528|\u91d1\u984d|\u9884\u7b97|\u8d39\u7528|\uc608\uc0b0|\ube44\uc6a9)/i.test(ctxw) });
       }
     });
     var bctx = budgets.filter(function (b) { return b.ctx; });
     if (bctx.length) {
       var bsel = bctx[0];
-      put("budget", "Rp " + bsel.digits.replace(/\B(?=(\d{3})+(?!\d))/g, "."), "TINGGI", bsel.line, bsel.line.t, "NOMINAL_RUPIAH");
+      put("budget", fmtMoney(bsel), "TINGGI", bsel.line, bsel.line.t, bsel.cur === "Rp" ? "NOMINAL_RUPIAH" : "NOMINAL_" + bsel.cur);
       var distinct = {};
       bctx.forEach(function (b) { distinct[b.digits] = 1; });
       if (Object.keys(distinct).length > 1) flags.push({ code: "multi_budget", message: "Ada lebih dari satu nominal pada dokumen. Dipilih yang pertama. Periksa." });
@@ -1321,7 +1369,7 @@
     dated.forEach(function (x) {
       ["signedDate", "startDate", "endDate"].forEach(function (k) { addAlt(k, { value: x.d.iso, display: fmtIso(x.d.iso), page: x.line.page, source: snippet(x.line.t, 160), why: "tanggal lain pada dokumen" }); });
     });
-    budgets.forEach(function (b) { addAlt("budget", { value: "Rp " + b.digits.replace(/\B(?=(\d{3})+(?!\d))/g, "."), display: "Rp " + b.digits.replace(/\B(?=(\d{3})+(?!\d))/g, "."), page: b.line.page, source: snippet(b.line.t, 160), why: "nominal lain pada dokumen" }); });
+    budgets.forEach(function (b) { addAlt("budget", { value: fmtMoney(b), display: fmtMoney(b), page: b.line.page, source: snippet(b.line.t, 160), why: "nominal lain pada dokumen" }); });
     partnerAlts.forEach(function (a) { addAlt("partnerId", a); });
     Object.keys(progMentions).forEach(function (id) { addAlt("programId", { value: id, display: id, page: progMentions[id].line.page, source: snippet(progMentions[id].line.t, 160), why: "program studi lain yang disebut" }); });
     Object.keys(facMentions).forEach(function (id) { addAlt("facultyId", { value: id, display: id, page: facMentions[id].line.page, source: snippet(facMentions[id].line.t, 160), why: "fakultas lain yang disebut" }); });
@@ -1381,6 +1429,16 @@
       nextActions.push({ kind: "relasi", key: "parent", text: "Tautkan ke " + TYPE_NAME[PARENT_TYPE[docType]] + " induk atau unggah dokumen induknya" });
     if (docType === "MOU_LOI" || docType === "PKS_MOA") nextActions.push({ kind: "info", key: "child", text: "Setelah divalidasi, pantau pembuatan " + TYPE_NAME[Object.keys(PARENT_TYPE).filter(function (k) { return PARENT_TYPE[k] === docType; })[0]] + " turunannya" });
 
+    // Bahasa dokumen (aksara + trigram). Hasil OCR yang sudah mengidentifikasi bahasa dipakai bila lebih yakin.
+    var langInfo = null;
+    if (LID) {
+      langInfo = LID.detect(lines.map(function (l) { return l.o || l.t; }).join("\n").slice(0, 8000));
+      var ocrPg = pages.filter(function (p) { return p.lang && p.lang.lang && p.lang.lang !== "und"; })[0];
+      if (ocrPg && (!langInfo || langInfo.lang === "und" || ocrPg.lang.confidence > langInfo.confidence)) langInfo = ocrPg.lang;
+      if (langInfo && ["id", "ms", "en", "und"].indexOf(langInfo.lang) < 0 && lines.length)
+        flags.push({ code: "non_id_language", message: "Dokumen tampaknya berbahasa " + LID.name(langInfo.lang) + ". Ekstraksi paling andal untuk nomor, tanggal, anggaran, dan jenis naskah; nama pihak, jabatan, dan judul perlu diperiksa teliti." });
+    }
+
     var patch = {}, provenance = {}, findings = [];
     Object.keys(fields).forEach(function (k) {
       patch[k] = fields[k].value;
@@ -1391,7 +1449,7 @@
       fields: fields, patch: patch, provenance: provenance, findings: findings, flags: flags,
       missing: missing.map(function (k) { return { key: k, label: FIELD_LABEL[k] || k, required: required.indexOf(k) >= 0 }; }),
       partnerDraft: partnerDraft, partnerMatch: partnerMatch, parentSuggestion: parentSuggestion,
-      summary: summary, nextActions: nextActions, suggestions: suggestions, parentCandidates: parentCandidates, refs: refList,
+      language: langInfo, summary: summary, nextActions: nextActions, suggestions: suggestions, parentCandidates: parentCandidates, refs: refList,
       overall: overall, pageCount: pages.length, lineCount: lines.length, ocrMean: meanOcr, fieldLabels: FIELD_LABEL
     };
   }
@@ -1410,7 +1468,7 @@
     HEADER_ALIASES: HEADER_ALIASES,
     detectKind: detectKind, readFile: readFile, analyze: analyze, detectRegistry: detectRegistry, analyzeRegistryRow: analyzeRegistryRow,
     parseCsv: parseCsv, findDates: findDates, wordsToInt: wordsToInt, smartCase: smartCase, guessPartnerType: guessPartnerType, norm: norm,
-    rankParents: rankParents, partnerSim: partnerSim, repairOcrLine: repairOcrLine, topicSuggest: topicSuggest, summarize: summarize,
+    normalizeText: normalizeText, rankParents: rankParents, partnerSim: partnerSim, repairOcrLine: repairOcrLine, topicSuggest: topicSuggest, summarize: summarize,
     _readDocx: readDocx, _readXlsx: readXlsx
   };
 });

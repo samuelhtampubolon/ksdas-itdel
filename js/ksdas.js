@@ -1604,7 +1604,8 @@ ${example.map(csvCell).join(",")}
     };
   }
   /* ---------------- Jembatan ke mesin ekstraksi dan OCR ---------------- */
-  var ocrWorker = null, ocrProgressCb = null;
+  var ocrSession = {};
+  function resetOcrSession() { ocrSession = {}; }
   function extractEnv() {
     return { JSZip: window.JSZip, pdfjsLib: window.pdfjsLib, document, basePath: "", ocr: ocrRecognize };
   }
@@ -1617,24 +1618,12 @@ ${example.map(csvCell).join(",")}
       leaders: [L.rektorat.rektor, L.rektorat.wr1, L.rektorat.wr2, L.rektorat.wr3, ...L.fakultas.map((f) => ({ name: f.dekan, title: "Dekan " + f.name }))]
     };
   }
+  var OCR_LANGS = [["auto", "Otomatis (disarankan)"], ["ind", "Indonesia / Inggris / Melayu"], ["deu", "Jerman"], ["fra", "Prancis"], ["spa", "Spanyol"], ["por", "Portugis"], ["ita", "Italia"], ["nld", "Belanda"], ["tur", "Turki"], ["vie", "Vietnam"], ["jpn", "Jepang"], ["kor", "Korea"], ["chi_sim", "Tionghoa (sederhana)"], ["tha", "Thai"], ["rus", "Rusia"], ["ara", "Arab"], ["hin", "Hindi"]];
   async function ocrRecognize(src, label, onProgress) {
-    if (!window.Tesseract) throw new Error("Mesin OCR tidak tersedia pada halaman ini.");
-    ocrProgressCb = onProgress;
-    const abs = (rel) => new URL(rel, document.baseURI).href;
-    if (!ocrWorker) {
-      ocrWorker = await window.Tesseract.createWorker(["ind", "eng"], 1, {
-        workerPath: abs("js/ocr/worker.min.js"),
-        corePath: abs("js/ocr/"),
-        langPath: abs("js/ocr/lang"),
-        gzip: true,
-        logger: (m) => {
-          if (ocrProgressCb && m.status === "recognizing text") ocrProgressCb("OCR " + Math.round((m.progress || 0) * 100) + "%", 30 + Math.round((m.progress || 0) * 50));
-          else if (ocrProgressCb && m.status) ocrProgressCb("OCR: " + m.status, 20);
-        }
-      });
-    }
-    const res = await ocrWorker.recognize(src);
-    return { text: res.data.text || "", confidence: res.data.confidence };
+    if (!window.KSDASOcr) throw new Error("Mesin OCR tidak tersedia pada halaman ini.");
+    const pick = state.ocrLang && state.ocrLang !== "auto" ? state.ocrLang : undefined;
+    const res = await window.KSDASOcr.recognize(src, { session: ocrSession, pack: pick, onProgress });
+    return { text: res.text || "", confidence: res.confidence, language: res.language, pack: res.pack };
   }
   function normalizeMemory(m) {
     const mem = m && typeof m === "object" ? m : {};
@@ -2081,6 +2070,9 @@ ${example.map(csvCell).join(",")}
         <button id="blank" type="button" class="btn-subtle">Formulir kosong</button>
         <button id="btn-toggle-ai-paste" type="button" class="btn-subtle">Tempel teks naskah</button>
       </div>
+      <label class="ocrlang small">Bahasa dokumen scan (OCR):
+        <select id="ocr-lang">${OCR_LANGS.map(([v, t]) => `<option value="${v}" ${(state.ocrLang || "auto") === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>
+      </label>
       <p class="muted small">Seluruh pemrosesan berjalan di komputer ini. Isi dokumen tidak dikirim ke layanan luar. Isi dokumen dianggap data, bukan perintah.</p>
       ${state.ocrProgress ? `
       <div class="ocr-progress-box" role="status" aria-live="polite">
@@ -2141,6 +2133,7 @@ ${example.map(csvCell).join(",")}
       ${doc.fileName ? `<p class="muted">Berkas sumber: <b>${esc(doc.fileName)}</b> (${esc(fmtBytes(doc.fileSize))})${doc.fileHash ? ` &middot; SHA-256 <code title="${esc(doc.fileHash)}">${esc(doc.fileHash.slice(0, 12))}…</code>` : ""}
         ${doc.fileRef ? ` &middot; <button type="button" class="link" id="btn-dl-original">Unduh berkas asli</button>` : ""}</p>` : ""}
       ${ex && ex.flags && ex.flags.length ? `<div class="flags" role="note"><b>Perlu perhatian:</b><ul>${ex.flags.map((f) => `<li>${esc(f.message)}</li>`).join("")}</ul></div>` : ""}
+      ${ex && ex.language && ex.language.lang && ex.language.lang !== "und" ? `<p class="muted small">Bahasa terdeteksi: <b>${esc(KSDASLangid.name(ex.language.lang))}</b> (${Math.round((ex.language.confidence || 0) * 100)}%, aksara ${esc(ex.language.script || "")})${ex.ocr ? ` &middot; OCR paket <b>${esc(ex.ocr.pack)}</b>, keyakinan ${Math.round(ex.ocr.confidence)}%` : ""}${ex.language.mixed ? " &middot; teks campuran" : ""}.</p>` : ""}
       ${ex && ex.summary ? `<div class="summarybox"><b>Ringkasan otomatis:</b> ${esc(ex.summary)}</div>` : ""}
       ${ex && ex.nextActions && ex.nextActions.length ? `<details class="actions" open><summary><b>Langkah berikutnya untuk staf (${ex.nextActions.length})</b></summary><ol>${ex.nextActions.map((a) => `<li class="act-${esc(a.kind)}">${esc(a.text)}</li>`).join("")}</ol></details>` : ""}
       ${ex ? `<p class="muted small">Diekstraksi ${esc(ex.at ? ex.at.slice(0, 16).replace("T", " ") : "")} &middot; ${Object.keys(ex.fields || {}).length} field terisi otomatis &middot; ${missingFields(doc).length} field wajib masih kosong.</p>` : ""}
@@ -2839,6 +2832,7 @@ ${example.map(csvCell).join(",")}
         const prog = (msg, pct) => setProgress(`[${i + 1}/${list.length}] ${file.name}: ${msg}`, Math.min(97, base + Math.round((pct / 100) * span)));
         try {
           prog("memvalidasi berkas", 5);
+          resetOcrSession();
           const read = await KSDASExtract.readFile(file, env, prog);
           const buf = await file.arrayBuffer();
           const hash = await KSDASStore.hashBuffer(buf);
@@ -2858,6 +2852,7 @@ ${example.map(csvCell).join(",")}
             continue;
           }
           result.warnings = read.warnings || [];
+          result.ocr = read.ocr || null;
           parsedList.push({ file, read, result, hash });
         } catch (err) {
           batch.skipped.push({ name: file.name, reason: String(err && err.message || err) });
@@ -2878,6 +2873,7 @@ ${example.map(csvCell).join(",")}
         // Analisis ulang dengan basis data terkini agar mitra dan induk yang baru dibuat dalam kelompok ini dikenali
         const fresh = KSDASExtract.analyze({ pages: item.read.pages, fileName: item.file.name }, extractCtx());
         fresh.warnings = item.result.warnings;
+        fresh.ocr = item.result.ocr;
         const doc = await createDocFromExtraction(fresh, item.file, item.hash);
         created.push(doc);
         batch.ok += 1;
@@ -2922,6 +2918,8 @@ ${example.map(csvCell).join(",")}
         fields: Object.fromEntries(Object.entries(result.fields).map(([k, f]) => [k, { value: f.value, level: f.level, page: f.page, sheet: f.sheet, source: f.source, method: f.method, note: f.note, raw: f.raw, alts: f.alts }])),
         suggestions: result.suggestions || {},
         summary: result.summary || "",
+        language: result.language || null,
+        ocr: result.ocr || null,
         nextActions: result.nextActions || [],
         flags: [...result.flags, ...(result.warnings || []).map((m) => ({ code: "reader_warning", message: m }))],
         parent: parent || null,
@@ -2989,6 +2987,8 @@ ${example.map(csvCell).join(",")}
       return out;
     }
 
+    const ocrLangSel = document.getElementById("ocr-lang");
+    if (ocrLangSel) ocrLangSel.onchange = () => { state.ocrLang = ocrLangSel.value; };
     const files = document.getElementById("files");
     if (files) files.onchange = () => {
       if (files.files && files.files.length) handleUniversalFileUpload(Array.from(files.files));
