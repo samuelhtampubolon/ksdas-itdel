@@ -1,9 +1,6 @@
 # KSDAS IT Del — Sistem Informasi Kerja Sama
 
-[![Release](https://img.shields.io/github/v/release/samuelhtampubolon/ksdas-itdel?color=blue&label=Rilis%20Resmi)](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest)
-[![Download EXE](https://img.shields.io/badge/Download-KSDAS__ITDel.exe-success?style=for-the-badge&logo=windows)](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest/download/KSDAS_ITDel.exe)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Live Web Demo](https://img.shields.io/badge/Web%20Portal-Live%20Demo-informational?logo=github)](https://samuelhtampubolon.github.io/ksdas-itdel/)
+**Tautan resmi:** [Rilis](https://github.com/samuelhtampubolon/ksdas-itdel/releases/latest) &middot; [Demo web](https://samuelhtampubolon.github.io/ksdas-itdel/) &middot; Lisensi: [MIT](LICENSE)
 
 Sistem Informasi Manajemen Kerja Sama untuk Unit Kerja Sama (UKS) Institut Teknologi Del, Laguboti, Sumatera Utara.
 
@@ -170,3 +167,9 @@ Sistem ini hanya menyertakan tepat 10 naskah contoh terstandar (judul diawali ka
 
 Proyek ini dilisensikan di bawah lisensi terbuka [MIT License](LICENSE).  
 Hak Cipta (c) 2026 Samuel Hasudungan Tampubolon, Institut Teknologi Del.
+
+
+## OCR multibahasa dan penyimpanan cloud (opsional)
+
+- OCR ringan di peramban/EXE: `docs/OCR_RISET.md`.
+- Integrasi Cloudflare (Pages + D1 + R2 + KV), Supabase, Firebase Spark, Hugging Face Spaces, server Node: `docs/INTEGRASI_CLOUD.md`. Bawaan tetap tanpa cloud.

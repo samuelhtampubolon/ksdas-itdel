@@ -10,3 +10,28 @@
 8. **Kepemilikan dan lisensi**: README memuat lisensi MIT dan data penulis. Pastikan sesuai kebijakan HAKI IT Del sebelum dipublikasikan (lihat `HAK_CIPTA_LEGAL_DJKI.md`).
 9. **Verifikasi data referensi** di `js/ksdas.js` (nama pimpinan 2025-2029, dekan, program studi). Perbarui bila ada pergantian pejabat.
 10. **Aktifkan CI** (opsional): workflow `.github/workflows/ci.yml` menjalankan uji dan membangun EXE di GitHub Actions. Aktifkan Actions pada repositori bila belum.
+
+## Tambahan setelah pemeriksaan keamanan
+11. **Aktifkan perlindungan GitHub** (Settings > Code security): Secret scanning + Push protection, Dependabot alerts, dan Private vulnerability reporting (dirujuk `SECURITY.md`). Aktifkan branch protection untuk `main` (wajib PR dan CI hijau).
+12. **Putar (rotate) kredensial bila pernah dipakai di tempat lain.** Pemindaian saya tidak menemukan rahasia di repositori maupun riwayat git, tetapi saya tidak dapat melihat sistem di luar repositori ini.
+13. **Verifikasi EXE sebelum dibagikan**: cocokkan SHA-256 dengan `KSDAS_ITDel.exe.sha256`. Untuk distribusi resmi, unggah EXE sebagai asset GitHub Release (bukan hanya berkas di repo) dan minta SDI menandatanganinya.
+14. **Perbarui pustaka vendor berkala** (pdf.js 3.11.174 punya CVE-2024-4367 yang dimitigasi dengan `isEvalSupported:false`; pembaruan ke seri 4.x memerlukan pengujian ulang).
+15. **Data contoh fiktif**: nama mitra, nomor, dan URL pada data contoh bukan data sebenarnya. Pastikan tidak ada dokumen asli IT Del yang ikut ter-commit. Folder `ksdas_local_database/` sudah diabaikan git.
+16. **Jangan mengunggah dokumen rahasia** ke GitHub, Issues, atau PR. Jika terlanjur, hapus dan hubungi saya untuk membersihkan riwayat (butuh force-push yang harus Anda setujui).
+17. **Produksi (SDI/TSI/DukTek)**: TLS resmi + HSTS, SSO, RBAC di server, basis data privat, pemindaian malware, backup, dan pemantauan. Prototipe ini tidak menggantikan itu.
+
+## Tambahan: OCR multibahasa dan integrasi cloud
+
+OCR/bahasa (tidak perlu tindakan untuk memakainya):
+- Uji dengan pindaian asli dokumen Anda (benchmark kami sintetis). Laporkan bahasa yang hasilnya buruk; paket Vietnam perlu dipilih manual.
+- Unduh ulang `KSDAS_ITDel.exe` dari rilis terbaru dan uji di Windows (SmartScreen akan memperingatkan karena tidak ditandatangani).
+- Buat Pull Request baru dari `claude/zen-darwin-w6po3f` ke `main` (PR sebelumnya sudah digabung), lalu merge.
+
+Cloud (hanya bila ingin dipakai; panduan lengkap di `docs/INTEGRASI_CLOUD.md`):
+1. Pilih satu penyedia dan buat akunnya sendiri (Cloudflare, Supabase, Firebase, Hugging Face). Saya tidak dapat membuat akun, kunci, atau secret untuk Anda.
+2. Jalankan skema/aturan: `cloud/supabase/schema.sql`, `cloud/firebase/firestore.rules`, `cloud/cloudflare/schema.sql`. Uji aturan Firebase di Rules Playground.
+3. Buat pengguna staf, matikan pendaftaran mandiri, daftarkan surel staf (`ksdas_staff`).
+4. Atur Secret `KSDAS_PASSWORD` dan `KSDAS_TOKEN_SECRET` (Cloudflare, Hugging Face, server Node). Jangan pernah menaruhnya di repo.
+5. Jalankan `node tools/configure.js ...` atau `node tools/build-bundle.js ...`, lalu terbitkan.
+6. Periksa batas gratis terbaru tiap penyedia. Firebase Storage kini perlu paket Blaze; Glitch sudah menghentikan hosting; disk Hugging Face Space gratis bersifat sementara.
+7. Minta persetujuan SDI/TSI sebelum menyimpan data naskah nyata di layanan pihak ketiga.

@@ -1,0 +1,14 @@
+rules_version = '2';
+// Hanya dipakai bila Cloud Storage tersedia di proyek (proyek baru umumnya memerlukan paket Blaze).
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isStaff() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/ksdas_staff/$(request.auth.token.email));
+    }
+    match /files/{name} {
+      allow read, delete: if isStaff();
+      allow create, update: if isStaff() && request.resource.size < 26214400;
+    }
+  }
+}

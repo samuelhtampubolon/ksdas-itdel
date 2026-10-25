@@ -1,0 +1,21 @@
+# Salin ke ./wrangler.toml (akar repo) lalu isi id dari perintah wrangler (lihat docs/INTEGRASI_CLOUD.md).
+name = "ksdas-itdel"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ksdas"
+database_id = "ISI_DARI_wrangler_d1_create"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "ksdas-files"
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "ISI_DARI_wrangler_kv_namespace_create"
+
+# Rahasia (jangan taruh di sini):
+#   wrangler pages secret put KSDAS_PASSWORD
+#   wrangler pages secret put KSDAS_TOKEN_SECRET

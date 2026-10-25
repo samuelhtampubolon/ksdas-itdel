@@ -1,4 +1,7 @@
 # LAPORAN AUDIT KEAMANAN SIBER & PERLINDUNGAN DATA (CYBERSECURITY & DATA SAFETY)
+
+> **Catatan jujur (pemeriksaan ulang):** dokumen ini adalah penilaian mandiri atas prototipe, **bukan audit independen** dan bukan klaim kepatuhan formal. Pada prototipe, "peran" hanyalah pengaturan tampilan di peramban dan **bukan kontrol akses**. Kontrol akses nyata (SSO, RBAC dan data scope di server, basis data privat, pemindaian malware, pencatatan terpusat) baru ada pada rancangan produksi yang ditentukan SDI/TSI/DukTek. Status "Sebagian" berarti kontrol ada di prototipe tetapi belum cukup untuk produksi. Uji otomatis: `tests/security.test.js` dan `tests/e2e/xss.e2e.js`.
+
 ## KSDAS IT DEL &bull; Kerja Sama Data & Analytics System
 
 **Pemeriksa & Arsitek Sistem:** Samuel Hasudungan Tampubolon  
@@ -66,16 +69,16 @@ graph TD
 
 | Kategori Ancaman OWASP | Tingkat Risiko Asli | Status Mitigasi pada KSDAS | Mekanisme Proteksi yang Diterapkan |
 | :--- | :---: | :---: | :--- |
-| **A01: Broken Access Control** | Sedang | 🟢 **Mitigasi Penuh** | Role-based permission (8 peran institusi) membatasi aksi validasi, edit relasi, dan unggah hanya untuk peran terotorisasi. |
-| **A02: Cryptographic Failures** | Tinggi | 🟢 **Mitigasi Penuh** | Tidak ada kunci enkripsi tersimpan di kode sumber; dokumen produksi menggunakan enkripsi AES-256 at-rest dan TLS 1.3 in-transit. |
-| **A03: Injection (XSS & SQLi)** | Kritis | 🟢 **Mitigasi Penuh** | - **DOM XSS:** Seluruh variabel masukan pengguna disanitasi menggunakan fungsi `this.ui.escapeHtml()`.<br>- **SQL Injection:** Skema DDL produksi PostgreSQL menggunakan parameterized queries pada REST API. |
-| **A04: Insecure Design** | Sedang | 🟢 **Mitigasi Penuh** | Menerapkan prinsip *Human-in-the-Loop*; AI tidak pernah menetapkan data resmi tanpa persetujuan staf. |
-| **A05: Security Misconfiguration** | Sedang | 🟢 **Mitigasi Penuh** | Berkas `nginx.conf` dan `vercel.json` menyertakan security headers wajib (`X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`). |
-| **A06: Vulnerable Components** | Rendah | 🟢 **Mitigasi Penuh** | Zero build dependency; dependensi eksternal hanya pustaka Chart.js CDN terverifikasi. |
-| **A07: Identification & Auth Failures** | Sedang | 🟢 **Mitigasi Penuh** | Arsitektur disiapkan untuk delegasi autentikasi tunggal ke SSO IT Del (OAuth2/CAS). |
-| **A08: Software & Data Integrity** | Tinggi | 🟢 **Mitigasi Penuh** | Modul impor JSON dilengkapi deteksi anti-*prototype pollution* (`__proto__`, `constructor`, `prototype`). |
-| **A09: Security Logging Failures** | Sedang | 🟢 **Mitigasi Penuh** | Modul `audit_logs` mencatat setiap aksi sistem (pengunggahan, ekstraksi AI, persetujuan staf, koreksi data) secara mutlak (*immutable log*). |
-| **A10: Server-Side Request Forgery** | Rendah | 🟢 **Mitigasi Penuh** | Tidak ada URL eksternal yang di-fetch secara bebas oleh backend tanpa validasi whitelist domain. |
+| **A01: Broken Access Control** | Sedang | 🟡 **Sebagian (prototipe)** | Role-based permission (8 peran institusi) membatasi aksi validasi, edit relasi, dan unggah hanya untuk peran terotorisasi. |
+| **A02: Cryptographic Failures** | Tinggi | 🟡 **Sebagian (prototipe)** | Tidak ada kunci enkripsi tersimpan di kode sumber; dokumen produksi menggunakan enkripsi AES-256 at-rest dan TLS 1.3 in-transit. |
+| **A03: Injection (XSS & SQLi)** | Kritis | 🟡 **Sebagian (prototipe)** | - **DOM XSS:** Seluruh variabel masukan pengguna disanitasi menggunakan fungsi `esc()` (js/ksdas.js); CSV/Excel menetralkan awalan rumus (=, +, -, @).<br>- **SQL Injection:** Skema DDL produksi PostgreSQL menggunakan parameterized queries pada REST API. |
+| **A04: Insecure Design** | Sedang | 🟡 **Sebagian (prototipe)** | Menerapkan prinsip *Human-in-the-Loop*; AI tidak pernah menetapkan data resmi tanpa persetujuan staf. |
+| **A05: Security Misconfiguration** | Sedang | 🟡 **Sebagian (prototipe)** | Berkas `nginx.conf` menyertakan security headers wajib (`X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`). |
+| **A06: Vulnerable Components** | Rendah | 🟡 **Sebagian (prototipe)** | Tanpa dependensi build; pustaka vendor (pdf.js 3.11.174, JSZip 3.10.1, Tesseract.js 5.1.1) dibundel lokal. pdf.js dijalankan dengan isEvalSupported=false (mitigasi CVE-2024-4367); pembaruan berkala diperlukan. Dependensi: Chart.js CDN terverifikasi. |
+| **A07: Identification & Auth Failures** | Sedang | 🟡 **Sebagian (prototipe)** | Arsitektur disiapkan untuk delegasi autentikasi tunggal ke SSO IT Del (OAuth2/CAS). |
+| **A08: Software & Data Integrity** | Tinggi | 🟡 **Sebagian (prototipe)** | Modul impor JSON dilengkapi deteksi anti-*prototype pollution* (`__proto__`, `constructor`, `prototype`). |
+| **A09: Security Logging Failures** | Sedang | 🟡 **Sebagian (prototipe)** | Modul `audit_logs` mencatat setiap aksi sistem (pengunggahan, ekstraksi AI, persetujuan staf, koreksi data) secara mutlak (*immutable log*). |
+| **A10: Server-Side Request Forgery** | Rendah | 🟡 **Sebagian (prototipe)** | Tidak ada URL eksternal yang di-fetch secara bebas oleh backend tanpa validasi whitelist domain. |
 
 ---
 

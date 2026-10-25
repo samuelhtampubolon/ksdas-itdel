@@ -1,0 +1,135 @@
+{
+ "version": 1,
+ "engine": "tesseract-wasm 0.11.0",
+ "model": "tessdata best_int, kamus kata dibuang (td-slim)",
+ "packs": {
+  "ind": {
+   "file": "ind.traineddata.gz",
+   "bytes": 856987,
+   "rawBytes": 962483,
+   "sha256": "491bac78f8f7ace38937a4931c0ecb17985659126819e1c54fb3bf510eb2e140",
+   "name": "Indonesia, Inggris, Melayu, Jawa, Sunda (aksara Latin)",
+   "validated": true
+  },
+  "deu": {
+   "file": "deu.traineddata.gz",
+   "bytes": 863062,
+   "rawBytes": 977680,
+   "sha256": "85b05aa89f07d477c06c76597d85fb31d5a5609666af5b7dbde7855e7ec975e8",
+   "name": "Jerman",
+   "validated": true
+  },
+  "fra": {
+   "file": "fra.traineddata.gz",
+   "bytes": 367248,
+   "rawBytes": 423273,
+   "sha256": "c1242851d68d22887b7d126402fc21449c9557594a0fdcf574876e45721254ab",
+   "name": "Prancis",
+   "validated": true
+  },
+  "spa": {
+   "file": "spa.traineddata.gz",
+   "bytes": 1329931,
+   "rawBytes": 1498895,
+   "sha256": "52d7a532bdb7da4178ced3de99c246f8798f65ef8fa29e6f68d91708fa2ad1cc",
+   "name": "Spanyol",
+   "validated": true
+  },
+  "por": {
+   "file": "por.traineddata.gz",
+   "bytes": 753905,
+   "rawBytes": 855394,
+   "sha256": "8db1ec4dc1bd9a65a0580b13b6a652c77f667e5accfb092b8fcc391975ade627",
+   "name": "Portugis",
+   "validated": true
+  },
+  "ita": {
+   "file": "ita.traineddata.gz",
+   "bytes": 757195,
+   "rawBytes": 857450,
+   "sha256": "52ed14a391bd8e21b27f66656c0a4d001ff80db06a0ceb83061d23358537a2f4",
+   "name": "Italia",
+   "validated": true
+  },
+  "nld": {
+   "file": "nld.traineddata.gz",
+   "bytes": 384278,
+   "rawBytes": 441302,
+   "sha256": "9b5fac993d69f986d9b6bf44e192092f84506952672ecd193ffb6aaa5f64a005",
+   "name": "Belanda",
+   "validated": true
+  },
+  "tur": {
+   "file": "tur.traineddata.gz",
+   "bytes": 373323,
+   "rawBytes": 431024,
+   "sha256": "a61585d1ac033ee25248f03351bdf6a85b7f70343b3d7de71a1cb4e3071b095c",
+   "name": "Turki",
+   "validated": true
+  },
+  "vie": {
+   "file": "vie.traineddata.gz",
+   "bytes": 1401381,
+   "rawBytes": 1600667,
+   "sha256": "d1e7828df34097ba4021e5fd533045a8b1ef2b4295b2a99aed09fc3cda6eeb9b",
+   "name": "Vietnam",
+   "validated": true
+  },
+  "jpn": {
+   "file": "jpn.traineddata.gz",
+   "bytes": 1520323,
+   "rawBytes": 1871396,
+   "sha256": "0a635f30aae35e218f01285f773cb831475cc8e9922c2a46aaba50859d75f764",
+   "name": "Jepang",
+   "validated": true
+  },
+  "kor": {
+   "file": "kor.traineddata.gz",
+   "bytes": 1358382,
+   "rawBytes": 1603104,
+   "sha256": "3a646a786bb11b2af45b5deb5aaed3632dc19c2548ccedd17661669fb75fef6e",
+   "name": "Korea",
+   "validated": true
+  },
+  "chi_sim": {
+   "file": "chi_sim.traineddata.gz",
+   "bytes": 1472256,
+   "rawBytes": 1880399,
+   "sha256": "0f3ddaa0db7ffa37510077233299e2853e2fd44c8f2d9ebb03703122b0b59d79",
+   "name": "Tionghoa sederhana",
+   "validated": true
+  },
+  "tha": {
+   "file": "tha.traineddata.gz",
+   "bytes": 855724,
+   "rawBytes": 971008,
+   "sha256": "2f1d14eb3d5420510f60d9792421107a9708f8b5f047ee1cbac76c844afe4876",
+   "name": "Thai",
+   "validated": true
+  },
+  "rus": {
+   "file": "rus.traineddata.gz",
+   "bytes": 1336861,
+   "rawBytes": 1510600,
+   "sha256": "13a505e183a8d8b853e55ec5323e3d8141183e3bdb7159403e19ccd291255658",
+   "name": "Rusia",
+   "validated": true
+  },
+  "ara": {
+   "file": "ara.traineddata.gz",
+   "bytes": 1315227,
+   "rawBytes": 1495953,
+   "sha256": "aa99283c2027afd4034b04f52374b7db8b049b8ac087c4f81298233ed72d14d4",
+   "name": "Arab",
+   "validated": true
+  },
+  "hin": {
+   "file": "hin.traineddata.gz",
+   "bytes": 1334061,
+   "rawBytes": 1507263,
+   "sha256": "ab0cbfb418acd9e7a64ed9b83171e63932d7b9b6267ef91b9425e716e2ef0423",
+   "name": "Hindi",
+   "validated": true
+  }
+ }
+}

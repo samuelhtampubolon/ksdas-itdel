@@ -159,10 +159,10 @@ namespace KsdasDesktop
             }
             WriteResourceIfMissing("schema.sql", Path.Combine(Schema, "ksdas_relational_schema.sql"));
             WriteResourceIfMissing("data_dictionary.json", Path.Combine(Schema, "data_dictionary.json"));
-            foreach (string t in new string[] { "naskah_kerjasama.json", "mitra_institusi.json", "lampiran_berkas.json" })
+            foreach (string t in new string[] { "naskah_kerjasama.json", "mitra_institusi.json", "lampiran_berkas.json", "memori_ekstraksi.json" })
             {
                 string p = Path.Combine(Tables, t);
-                if (!File.Exists(p)) { File.WriteAllText(p, "[]", new UTF8Encoding(false)); Log("Tabel dibuat: tables/" + t); }
+                if (!File.Exists(p)) { File.WriteAllText(p, t.StartsWith("memori") ? "{}" : "[]", new UTF8Encoding(false)); Log("Tabel dibuat: tables/" + t); }
             }
             string audit = Path.Combine(Tables, "audit_trail_log.jsonl");
             if (!File.Exists(audit)) { File.WriteAllText(audit, "", new UTF8Encoding(false)); Log("Tabel dibuat: tables/audit_trail_log.jsonl"); }
@@ -203,8 +203,9 @@ namespace KsdasDesktop
                 if (!init) return "{\"documents\":null}";
                 string docs = File.ReadAllText(P("naskah_kerjasama.json"), Encoding.UTF8);
                 string partners = File.ReadAllText(P("mitra_institusi.json"), Encoding.UTF8);
+                string memory = File.Exists(P("memori_ekstraksi.json")) ? File.ReadAllText(P("memori_ekstraksi.json"), Encoding.UTF8) : "{}";
                 return "{\"roleId\":" + ser.Serialize(Str(meta, "roleId", "STAFF")) + ",\"savedAt\":" + ser.Serialize(Str(meta, "savedAt", "")) +
-                       ",\"documents\":" + docs + ",\"partners\":" + partners + "}";
+                       ",\"documents\":" + docs + ",\"partners\":" + partners + ",\"memory\":" + memory + "}";
             }
         }
 
@@ -218,6 +219,7 @@ namespace KsdasDesktop
             {
                 WriteAtomic(P("naskah_kerjasama.json"), ser.Serialize(d["documents"]));
                 WriteAtomic(P("mitra_institusi.json"), ser.Serialize(d["partners"]));
+                if (d.ContainsKey("memory") && d["memory"] is Dictionary<string, object>) WriteAtomic(P("memori_ekstraksi.json"), ser.Serialize(d["memory"]));
                 Dictionary<string, object> meta = ReadMeta();
                 meta["initialized"] = true;
                 meta["savedAt"] = Str(d, "savedAt", DateTime.UtcNow.ToString("o"));
@@ -481,7 +483,7 @@ namespace KsdasDesktop
                 Dictionary<string, object> s = new Dictionary<string, object>();
                 s["dbDir"] = Root;
                 List<object> tables = new List<object>();
-                foreach (string t in new string[] { "naskah_kerjasama.json", "mitra_institusi.json", "lampiran_berkas.json", "audit_trail_log.jsonl", "database_manifest.json" })
+                foreach (string t in new string[] { "naskah_kerjasama.json", "mitra_institusi.json", "lampiran_berkas.json", "memori_ekstraksi.json", "audit_trail_log.jsonl", "database_manifest.json" })
                 {
                     FileInfo fi = new FileInfo(P(t));
                     Dictionary<string, object> r = new Dictionary<string, object>();
@@ -745,6 +747,9 @@ namespace KsdasDesktop
                 res.Headers["Referrer-Policy"] = "no-referrer";
                 res.Headers["Content-Security-Policy"] = Csp;
                 res.Headers["Cache-Control"] = "no-store";
+                res.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+                res.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
+                res.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
 
                 // Pertahanan DNS rebinding: Host harus loopback pada port ini.
                 string host = req.Headers["Host"] ?? "";
@@ -775,6 +780,15 @@ namespace KsdasDesktop
             }
         }
 
+        /// Perbandingan token waktu-konstan (anti timing attack).
+        bool TokenOk(string given)
+        {
+            if (given == null || given.Length != token.Length) return false;
+            int diff = 0;
+            for (int i = 0; i < token.Length; i++) diff |= given[i] ^ token[i];
+            return diff == 0;
+        }
+
         static string JsonErr(string m) { return "{\"error\":" + LocalDatabase.NewSerializer().Serialize(m) + "}"; }
 
         void SafeSend(HttpListenerResponse res, int code, string mime, string body)
@@ -788,12 +802,12 @@ namespace KsdasDesktop
             // Ping publik hanya menyatakan identitas aplikasi (untuk deteksi satu instans).
             if (path == "/api/ping" && method == "GET")
             {
-                bool authed = req.Headers["X-KSDAS-Token"] == token;
+                bool authed = TokenOk(req.Headers["X-KSDAS-Token"]);
                 string extra = authed ? ",\"dbDir\":" + LocalDatabase.NewSerializer().Serialize(db.Root) + ",\"port\":" + port : "";
                 Send(res, 200, "application/json; charset=utf-8", "{\"app\":\"KSDAS\",\"version\":\"" + Program.Version + "\",\"mode\":\"local-server\"" + extra + "}");
                 return;
             }
-            if (req.Headers["X-KSDAS-Token"] != token) throw new ApiError(401, "Token sesi tidak valid. Muat ulang halaman dari aplikasi KSDAS.");
+            if (!TokenOk(req.Headers["X-KSDAS-Token"])) throw new ApiError(401, "Token sesi tidak valid. Muat ulang halaman dari aplikasi KSDAS.");
             string origin = req.Headers["Origin"];
             if (!string.IsNullOrEmpty(origin) && origin != "http://127.0.0.1:" + port && origin != "http://localhost:" + port) throw new ApiError(403, "Origin tidak diizinkan.");
 
