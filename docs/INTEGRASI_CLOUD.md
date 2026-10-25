@@ -64,7 +64,7 @@ Diuji dengan Firestore tiruan. **Aturan keamanan (`*.rules`) belum diuji dengan 
 
 ## Server Node (VPS, dll.)
 
-`node tools/build-bundle.js node`, lalu di server: `KSDAS_PASSWORD=... KSDAS_TOKEN_SECRET=... PORT=3000 npm start`. Taruh di belakang HTTPS (nginx/Caddy). Variabel: lihat kepala `cloud/node/server.js`.
+`node tools/build-bundle.js node`, lalu di server: `KSDAS_PASSWORD=... KSDAS_TOKEN_SECRET=... KSDAS_TRUST_PROXY=1 PORT=3000 npm start`. Taruh di belakang HTTPS (nginx/Caddy). Variabel: lihat kepala `cloud/node/server.js`.
 
 ## Keamanan yang diterapkan
 

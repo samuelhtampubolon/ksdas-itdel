@@ -12,6 +12,7 @@
  *   KSDAS_ALLOWED_ORIGINS daftar origin yang boleh memanggil API lintas-situs, dipisah koma
  *                         (mis. https://samuelhtampubolon.github.io). Kosong = hanya same-origin.
  *   PORT                  bawaan 7860 (Hugging Face) atau 3000.
+ *   KSDAS_TRUST_PROXY     "1" bila di belakang proxy tepercaya (Hugging Face, nginx) agar IP klien diambil dari X-Forwarded-For.
  *   KSDAS_SERVE_STATIC    "0" untuk hanya melayani API.
  */
 "use strict";
@@ -79,12 +80,13 @@ const repo = {
 const fails = new Map();
 function limited(ip) { const r = fails.get(ip); return r && r.n >= 5 && Date.now() - r.t < 10 * 60 * 1000; }
 function noteFail(ip) { const r = fails.get(ip); if (!r || Date.now() - r.t > 10 * 60 * 1000) fails.set(ip, { n: 1, t: Date.now() }); else r.n++; if (fails.size > 5000) fails.clear(); }
-function clientIp(req) { return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "?"; }
+/** X-Forwarded-For hanya dipercaya bila KSDAS_TRUST_PROXY=1 (server di belakang proxy tepercaya); kalau tidak, penyerang bisa memalsukannya untuk menghindari pembatas login. */
+function clientIp(req) { return (process.env.KSDAS_TRUST_PROXY === "1" && String(req.headers["x-forwarded-for"] || "").split(",").pop().trim()) || req.socket.remoteAddress || "?"; }
 function baseHeaders(extra) { return Object.assign({ "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store", "Cross-Origin-Opener-Policy": "same-origin" }, extra || {}); }
 function corsHeaders(req) {
   const o = req.headers.origin;
   if (!o) return {};
-  const same = o === (req.headers["x-forwarded-proto"] || "http") + "://" + req.headers.host || o === "https://" + req.headers.host || o === "http://" + req.headers.host;
+  let same = false; try { same = new URL(o).host === req.headers.host; } catch { /* Origin tidak valid */ }
   if (same || ORIGINS.indexOf(o) >= 0) return { "Access-Control-Allow-Origin": o, Vary: "Origin", "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS", "Access-Control-Max-Age": "600" };
   return null;
 }
@@ -145,7 +147,7 @@ function serveStatic(req, res, url) {
 }
 
 const server = http.createServer((req, res) => {
-  const url = new URL(req.url, "http://x");
+  const url = new URL(req.url, "https://x.invalid");
   (url.pathname.startsWith("/api/") ? api(req, res, url) : (SERVE_STATIC && (req.method === "GET" || req.method === "HEAD") ? Promise.resolve(serveStatic(req, res, url)) : Promise.resolve(sendJson(res, 404, { error: "Tidak ditemukan." }))))
     .catch((e) => { if (!res.headersSent) sendJson(res, e && e.status || 500, { error: e instanceof Core.ApiError ? e.message : "Kesalahan internal." }); else res.end(); });
 });

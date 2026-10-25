@@ -22,7 +22,10 @@ test("Tidak ada tautan http:// non-loopback", () => {
 
 test("Tidak memuat sumber dari CDN, font, atau lencana pihak ketiga", () => {
   const re = /cdn\.jsdelivr|unpkg\.com|cdnjs|googleapis\.com|gstatic\.com|shields\.io|googletagmanager|google-analytics|facebook\.net/i;
-  const bad = textFiles.filter((f) => re.test(read(f)));
+  // googleapis.com sah hanya sebagai titik akhir Firebase opsional (adaptor, pengatur, tes, dokumen); tidak boleh ada di halaman bawaan.
+  const FIREBASE_OK = /^(js\/providers\/cloud\.js|tools\/configure\.js|tests\/.*|docs\/.*|cloud\/firebase\/.*)$/;
+  const bad = textFiles.filter((f) => { const s = read(f); return re.test(FIREBASE_OK.test(f) ? s.replace(/[\w.-]*googleapis\.com/g, "") : s); });
+  assert.doesNotMatch(read("index.html"), /googleapis\.com/, "CSP bawaan tanpa origin Google");
   assert.deepEqual(bad, []);
 });
 

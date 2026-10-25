@@ -111,7 +111,7 @@
     var q = req.query || {};
     return Promise.resolve().then(function () { return route(repo, method, path, q, req.body, opts); }).catch(function (e) {
       if (e instanceof ApiError) return { status: e.status, json: { error: e.message } };
-      return { status: 500, json: { error: "Kesalahan internal penyimpanan: " + trunc(e && e.message || e, 160) } };
+      return { status: 500, json: { error: "Kesalahan internal penyimpanan." } };
     });
   }
 

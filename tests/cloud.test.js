@@ -102,8 +102,9 @@ test("Node server: kontrak lengkap, login, batas laju, CORS", async () => {
     r = await fetch(base + "/index.html"); assert.equal(r.status, 200); assert.match(r.headers.get("content-security-policy"), /default-src 'self'/);
     for (const bad of ["/KSDAS_ITDel.exe", "/cloud/node/server.js", "/.git/config", "/js/../package.json", "/tests/cloud.test.js"]) { r = await fetch(base + bad); assert.equal(r.status, 404, bad); }
     // batas laju: 5 salah, lalu 429 walau sandi benar
-    for (let i = 0; i < 5; i++) await login("salah", { "X-Forwarded-For": "9.9.9.9" });
-    r = await login("kata-sandi-uji", { "X-Forwarded-For": "9.9.9.9" }); assert.equal(r.status, 429);
+    // X-Forwarded-For palsu tidak boleh menghindari pembatas (tanpa KSDAS_TRUST_PROXY)
+    for (let i = 0; i < 5; i++) await login("salah", { "X-Forwarded-For": "9.9.9." + i });
+    r = await login("kata-sandi-uji", { "X-Forwarded-For": "8.8.8.8" }); assert.equal(r.status, 429);
   } finally { server.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -180,7 +181,7 @@ test("configure.js: menolak kunci rahasia dan URL tidak aman, menulis CSP dan co
   const jwt = (role) => "eyJhbGciOiJIUzI1NiJ9." + Buffer.from(JSON.stringify({ role })).toString("base64url") + ".sig";
   assert.throws(() => build("supabase", { url: "https://a.supabase.co", anonKey: jwt("service_role") }), /service_role/);
   assert.throws(() => build("supabase", { url: "https://a.supabase.co", anonKey: "sb_secret_abc" }), /DITOLAK/);
-  assert.throws(() => build("supabase", { url: "http://a.supabase.co", anonKey: jwt("anon") }), /https/);
+  assert.throws(() => build("supabase", { url: "http://a.contoh.invalid", anonKey: jwt("anon") }), /https/);
   assert.throws(() => build("firebase", { apiKey: "bukan-kunci", projectId: "ksdas-uji" }), /AIza/);
   assert.throws(() => build("rest", { apiBase: "javascript:alert(1)" }), /URL|https/);
   assert.throws(() => build("tidak-ada", {}), /tidak dikenal/);
